@@ -6,7 +6,7 @@ with open('requirements.txt') as f:
   requirements = f.read().splitlines()
 
 version = ''
-with open('discord/__init__.py') as f:
+with open('diskord/__init__.py') as f:
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE).group(1)
 
 if not version:
@@ -30,7 +30,7 @@ if version.endswith(('a', 'b', 'rc')):
         pass
 
 readme = ''
-with open('README.rst') as f:
+with open('README.MD') as f:
     readme = f.read()
 
 extras_require = {
@@ -46,27 +46,27 @@ extras_require = {
 }
 
 packages = [
-    'discord',
-    'discord.types',
-    'discord.ui',
-    'discord.webhook',
-    'discord.ext.commands',
-    'discord.ext.tasks',
+    'diskord',
+    'diskord.types',
+    'diskord.ui',
+    'diskord.webhook',
+    'diskord.ext.commands',
+    'diskord.ext.tasks',
 ]
 
-setup(name='discord.py',
-      author='Rapptz',
-      url='https://github.com/Rapptz/discord.py',
+setup(name='diskord',
+      author='NerdGuyAhmad',
+      url='https://github.com/nerdguyahmad/diskord',
       project_urls={
-        "Documentation": "https://discordpy.readthedocs.io/en/latest/",
-        "Issue tracker": "https://github.com/Rapptz/discord.py/issues",
+        "Documentation": "https://diskord.readthedocs.io/en/latest/",
+        "Issue tracker": "https://github.com/nerdguyahmad/diskord/issues",
       },
       version=version,
       packages=packages,
       license='MIT',
       description='A Python wrapper for the Discord API',
       long_description=readme,
-      long_description_content_type="text/x-rst",
+      long_description_content_type="text/markdown",
       include_package_data=True,
       install_requires=requirements,
       extras_require=extras_require,
