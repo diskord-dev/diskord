@@ -1,9 +1,9 @@
-.. currentmodule:: discord
+.. currentmodule:: diskord
 
 API Reference
 ===============
 
-The following section outlines the API of discord.py.
+The following section outlines the API of diskord.
 
 .. note::
 
@@ -11,7 +11,7 @@ The following section outlines the API of discord.py.
     in an output independent way.  If the logging module is not configured,
     these logs will not be output anywhere.  See :ref:`logging_setup` for
     more information on how to set up and use the logging module with
-    discord.py.
+    diskord.
 
 Version Related Info
 ---------------------
@@ -162,11 +162,11 @@ PCMVolumeTransformer
 Opus Library
 ~~~~~~~~~~~~~
 
-.. autofunction:: discord.opus.load_opus
+.. autofunction:: diskord.opus.load_opus
 
-.. autofunction:: discord.opus.is_loaded
+.. autofunction:: diskord.opus.is_loaded
 
-.. _discord-api-events:
+.. _diskord-api-events:
 
 Event Reference
 ---------------
@@ -177,9 +177,9 @@ There are two ways to register an event, the first way is through the use of
 :meth:`Client.event`. The second way is through subclassing :class:`Client` and
 overriding the specific events. For example: ::
 
-    import discord
+    import diskord
 
-    class MyClient(discord.Client):
+    class MyClient(diskord.Client):
         async def on_message(self, message):
             if message.author == self.user:
                 return
@@ -621,7 +621,7 @@ to handle it, which defaults to print a traceback and ignoring the exception.
 
         This is a low level function that is not generally meant to be used.
         If you are working with components, consider using the callbacks associated
-        with the :class:`~discord.ui.View` instead as it provides a nicer user experience.
+        with the :class:`~diskord.ui.View` instead as it provides a nicer user experience.
 
     .. versionadded:: 2.0
 
@@ -1094,38 +1094,38 @@ to handle it, which defaults to print a traceback and ignoring the exception.
     :param user: The user that joined or left.
     :type user: :class:`User`
 
-.. _discord-api-utils:
+.. _diskord-api-utils:
 
 Utility Functions
 -----------------
 
-.. autofunction:: discord.utils.find
+.. autofunction:: diskord.utils.find
 
-.. autofunction:: discord.utils.get
+.. autofunction:: diskord.utils.get
 
-.. autofunction:: discord.utils.snowflake_time
+.. autofunction:: diskord.utils.snowflake_time
 
-.. autofunction:: discord.utils.oauth_url
+.. autofunction:: diskord.utils.oauth_url
 
-.. autofunction:: discord.utils.remove_markdown
+.. autofunction:: diskord.utils.remove_markdown
 
-.. autofunction:: discord.utils.escape_markdown
+.. autofunction:: diskord.utils.escape_markdown
 
-.. autofunction:: discord.utils.escape_mentions
+.. autofunction:: diskord.utils.escape_mentions
 
-.. autofunction:: discord.utils.resolve_invite
+.. autofunction:: diskord.utils.resolve_invite
 
-.. autofunction:: discord.utils.resolve_template
+.. autofunction:: diskord.utils.resolve_template
 
-.. autofunction:: discord.utils.sleep_until
+.. autofunction:: diskord.utils.sleep_until
 
-.. autofunction:: discord.utils.utcnow
+.. autofunction:: diskord.utils.utcnow
 
-.. autofunction:: discord.utils.format_dt
+.. autofunction:: diskord.utils.format_dt
 
-.. autofunction:: discord.utils.as_chunks
+.. autofunction:: diskord.utils.as_chunks
 
-.. _discord-api-enums:
+.. _diskord-api-enums:
 
 Enumerations
 -------------
@@ -2724,7 +2724,7 @@ Certain utilities make working with async iterators easier, detailed below.
         :param predicate: The predicate to call on every element. Could be a |coroutine_link|_.
         :rtype: :class:`AsyncIterator`
 
-.. _discord-api-audit-logs:
+.. _diskord-api-audit-logs:
 
 Audit Log Data
 ----------------
@@ -3249,7 +3249,7 @@ AuditLogDiff
 Webhook Support
 ------------------
 
-discord.py offers support for creating, editing, and executing webhooks through the :class:`Webhook` class.
+diskord offers support for creating, editing, and executing webhooks through the :class:`Webhook` class.
 
 Webhook
 ~~~~~~~~~
@@ -3285,7 +3285,7 @@ SyncWebhookMessage
 .. autoclass:: SyncWebhookMessage()
     :members:
 
-.. _discord_api_abcs:
+.. _diskord_api_abcs:
 
 Abstract Base Classes
 -----------------------
@@ -3300,58 +3300,58 @@ This library has a module related to abstract base classes, in which all the ABC
 Snowflake
 ~~~~~~~~~~
 
-.. attributetable:: discord.abc.Snowflake
+.. attributetable:: diskord.abc.Snowflake
 
-.. autoclass:: discord.abc.Snowflake()
+.. autoclass:: diskord.abc.Snowflake()
     :members:
 
 User
 ~~~~~
 
-.. attributetable:: discord.abc.User
+.. attributetable:: diskord.abc.User
 
-.. autoclass:: discord.abc.User()
+.. autoclass:: diskord.abc.User()
     :members:
 
 PrivateChannel
 ~~~~~~~~~~~~~~~
 
-.. attributetable:: discord.abc.PrivateChannel
+.. attributetable:: diskord.abc.PrivateChannel
 
-.. autoclass:: discord.abc.PrivateChannel()
+.. autoclass:: diskord.abc.PrivateChannel()
     :members:
 
 GuildChannel
 ~~~~~~~~~~~~~
 
-.. attributetable:: discord.abc.GuildChannel
+.. attributetable:: diskord.abc.GuildChannel
 
-.. autoclass:: discord.abc.GuildChannel()
+.. autoclass:: diskord.abc.GuildChannel()
     :members:
 
 Messageable
 ~~~~~~~~~~~~
 
-.. attributetable:: discord.abc.Messageable
+.. attributetable:: diskord.abc.Messageable
 
-.. autoclass:: discord.abc.Messageable()
+.. autoclass:: diskord.abc.Messageable()
     :members:
     :exclude-members: history, typing
 
-    .. automethod:: discord.abc.Messageable.history
+    .. automethod:: diskord.abc.Messageable.history
         :async-for:
 
-    .. automethod:: discord.abc.Messageable.typing
+    .. automethod:: diskord.abc.Messageable.typing
         :async-with:
 
 Connectable
 ~~~~~~~~~~~~
 
-.. attributetable:: discord.abc.Connectable
+.. attributetable:: diskord.abc.Connectable
 
-.. autoclass:: discord.abc.Connectable()
+.. autoclass:: diskord.abc.Connectable()
 
-.. _discord_api_models:
+.. _diskord_api_models:
 
 Discord Models
 ---------------
@@ -3370,7 +3370,7 @@ the user of the library.
     If you want to get one of these model classes instances they'd have to be through
     the cache, and a common way of doing so is through the :func:`utils.find` function
     or attributes of model classes that you receive from the events specified in the
-    :ref:`discord-api-events`.
+    :ref:`diskord-api-events`.
 
 .. note::
 
@@ -3918,14 +3918,14 @@ PartialWebhookChannel
 .. autoclass:: PartialWebhookChannel()
     :members:
 
-.. _discord_api_data:
+.. _diskord_api_data:
 
 Data Classes
 --------------
 
 Some classes are just there to be data containers, this lists them.
 
-Unlike :ref:`models <discord_api_models>` you are allowed to create
+Unlike :ref:`models <diskord_api_models>` you are allowed to create
 most of these yourself, even if they can also be used to hold attributes.
 
 Nearly all classes here have :ref:`py:slots` defined which means that it is
@@ -4111,7 +4111,7 @@ PublicUserFlags
 .. autoclass:: PublicUserFlags()
     :members:
 
-.. _discord_ui_kit:
+.. _diskord_ui_kit:
 
 Bot UI Kit
 -------------
@@ -4121,40 +4121,40 @@ The library has helpers to help create component-based UIs.
 View
 ~~~~~~~
 
-.. attributetable:: discord.ui.View
+.. attributetable:: diskord.ui.View
 
-.. autoclass:: discord.ui.View
+.. autoclass:: diskord.ui.View
     :members:
 
 Item
 ~~~~~~~
 
-.. attributetable:: discord.ui.Item
+.. attributetable:: diskord.ui.Item
 
-.. autoclass:: discord.ui.Item
+.. autoclass:: diskord.ui.Item
     :members:
 
 Button
 ~~~~~~~
 
-.. attributetable:: discord.ui.Button
+.. attributetable:: diskord.ui.Button
 
-.. autoclass:: discord.ui.Button
+.. autoclass:: diskord.ui.Button
     :members:
     :inherited-members:
 
-.. autofunction:: discord.ui.button
+.. autofunction:: diskord.ui.button
 
 Select
 ~~~~~~~
 
-.. attributetable:: discord.ui.Select
+.. attributetable:: diskord.ui.Select
 
-.. autoclass:: discord.ui.Select
+.. autoclass:: diskord.ui.Select
     :members:
     :inherited-members:
 
-.. autofunction:: discord.ui.select
+.. autofunction:: diskord.ui.select
 
 
 Exceptions
@@ -4191,9 +4191,9 @@ The following exceptions are thrown by the library.
 
 .. autoexception:: InteractionResponded
 
-.. autoexception:: discord.opus.OpusError
+.. autoexception:: diskord.opus.OpusError
 
-.. autoexception:: discord.opus.OpusNotLoaded
+.. autoexception:: diskord.opus.OpusNotLoaded
 
 Exception Hierarchy
 ~~~~~~~~~~~~~~~~~~~~~
