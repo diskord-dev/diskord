@@ -24,14 +24,14 @@ For example, if you want a bot that functions without spammy events like presenc
    :emphasize-lines: 7,9,10
 
     import discord
-    intents = discord.Intents.default()
+    intents = diskord.Intents.default()
     intents.typing = False
     intents.presences = False
 
     # Somewhere else:
-    # client = discord.Client(intents=intents)
+    # client = diskord.Client(intents=intents)
     # or
-    # from discord.ext import commands
+    # from diskord.ext import commands
     # bot = commands.Bot(command_prefix='!', intents=intents)
 
 Note that this doesn't enable :attr:`Intents.members` since it's a privileged intent.
@@ -42,14 +42,14 @@ Another example showing a bot that only deals with messages and guild informatio
    :emphasize-lines: 7,9,10
 
     import discord
-    intents = discord.Intents(messages=True, guilds=True)
+    intents = diskord.Intents(messages=True, guilds=True)
     # If you also want reaction events enable the following:
     # intents.reactions = True
 
     # Somewhere else:
-    # client = discord.Client(intents=intents)
+    # client = diskord.Client(intents=intents)
     # or
-    # from discord.ext import commands
+    # from diskord.ext import commands
     # bot = commands.Bot(command_prefix='!', intents=intents)
 
 .. _privileged_intents:
@@ -76,7 +76,7 @@ A privileged intent is one that requires you to go to the developer portal and m
 
 .. warning::
 
-    Enabling privileged intents when your bot is in over 100 guilds requires going through `bot verification <https://support.discord.com/hc/en-us/articles/360040720412>`_. If your bot is already verified and you would like to enable a privileged intent you must go through `Discord support <https://dis.gd/contact>`_ and talk to them about it.
+    Enabling privileged intents when your bot is in over 100 guilds requires going through `bot verification <https://support.diskord.com/hc/en-us/articles/360040720412>`_. If your bot is already verified and you would like to enable a privileged intent you must go through `Discord support <https://dis.gd/contact>`_ and talk to them about it.
 
 .. note::
 
@@ -163,13 +163,13 @@ For example:
    :emphasize-lines: 3,6,8,9
 
     import discord
-    intents = discord.Intents.default()
+    intents = diskord.Intents.default()
     intents.members = True
 
     # Somewhere else:
-    # client = discord.Client(intents=intents)
+    # client = diskord.Client(intents=intents)
     # or
-    # from discord.ext import commands
+    # from diskord.ext import commands
     # bot = commands.Bot(command_prefix='!', intents=intents)
 
 Why does ``on_ready`` take so long to fire?
