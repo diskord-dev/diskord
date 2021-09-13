@@ -1,9 +1,9 @@
-.. currentmodule:: discord
+.. currentmodule:: diskord
 
 API Reference
 ===============
 
-The following section outlines the API of discord.py's command extension module.
+The following section outlines the API of diskord's command extension module.
 
 .. _ext_commands_api_bot:
 
@@ -13,9 +13,9 @@ Bots
 Bot
 ~~~~
 
-.. attributetable:: discord.ext.commands.Bot
+.. attributetable:: diskord.ext.commands.Bot
 
-.. autoclass:: discord.ext.commands.Bot
+.. autoclass:: diskord.ext.commands.Bot
     :members:
     :inherited-members:
     :exclude-members: after_invoke, before_invoke, check, check_once, command, event, group, listen
@@ -47,17 +47,17 @@ Bot
 AutoShardedBot
 ~~~~~~~~~~~~~~~~
 
-.. attributetable:: discord.ext.commands.AutoShardedBot
+.. attributetable:: diskord.ext.commands.AutoShardedBot
 
-.. autoclass:: discord.ext.commands.AutoShardedBot
+.. autoclass:: diskord.ext.commands.AutoShardedBot
     :members:
 
 Prefix Helpers
 ----------------
 
-.. autofunction:: discord.ext.commands.when_mentioned
+.. autofunction:: diskord.ext.commands.when_mentioned
 
-.. autofunction:: discord.ext.commands.when_mentioned_or
+.. autofunction:: diskord.ext.commands.when_mentioned_or
 
 .. _ext_commands_api_events:
 
@@ -67,7 +67,7 @@ Event Reference
 These events function similar to :ref:`the regular events <discord-api-events>`, except they
 are custom to the command extension module.
 
-.. function:: discord.ext.commands.on_command_error(ctx, error)
+.. function:: diskord.ext.commands.on_command_error(ctx, error)
 
     An error handler that is called when an error is raised
     inside a command either through user input error, check
@@ -80,7 +80,7 @@ are custom to the command extension module.
     :param error: The error that was raised.
     :type error: :class:`.CommandError` derived
 
-.. function:: discord.ext.commands.on_command(ctx)
+.. function:: diskord.ext.commands.on_command(ctx)
 
     An event that is called when a command is found and is about to be invoked.
 
@@ -90,7 +90,7 @@ are custom to the command extension module.
     :param ctx: The invocation context.
     :type ctx: :class:`.Context`
 
-.. function:: discord.ext.commands.on_command_completion(ctx)
+.. function:: diskord.ext.commands.on_command_completion(ctx)
 
     An event that is called when a command has completed its invocation.
 
@@ -108,18 +108,18 @@ Commands
 Decorators
 ~~~~~~~~~~~~
 
-.. autofunction:: discord.ext.commands.command
+.. autofunction:: diskord.ext.commands.command
     :decorator:
 
-.. autofunction:: discord.ext.commands.group
+.. autofunction:: diskord.ext.commands.group
     :decorator:
 
 Command
 ~~~~~~~~~
 
-.. attributetable:: discord.ext.commands.Command
+.. attributetable:: diskord.ext.commands.Command
 
-.. autoclass:: discord.ext.commands.Command
+.. autoclass:: diskord.ext.commands.Command
     :members:
     :special-members: __call__
     :exclude-members: after_invoke, before_invoke, error
@@ -136,9 +136,9 @@ Command
 Group
 ~~~~~~
 
-.. attributetable:: discord.ext.commands.Group
+.. attributetable:: diskord.ext.commands.Group
 
-.. autoclass:: discord.ext.commands.Group
+.. autoclass:: diskord.ext.commands.Group
     :members:
     :inherited-members:
     :exclude-members: after_invoke, before_invoke, command, error, group
@@ -161,9 +161,9 @@ Group
 GroupMixin
 ~~~~~~~~~~~
 
-.. attributetable:: discord.ext.commands.GroupMixin
+.. attributetable:: diskord.ext.commands.GroupMixin
 
-.. autoclass:: discord.ext.commands.GroupMixin
+.. autoclass:: diskord.ext.commands.GroupMixin
     :members:
     :exclude-members: command, group
 
@@ -181,17 +181,17 @@ Cogs
 Cog
 ~~~~
 
-.. attributetable:: discord.ext.commands.Cog
+.. attributetable:: diskord.ext.commands.Cog
 
-.. autoclass:: discord.ext.commands.Cog
+.. autoclass:: diskord.ext.commands.Cog
     :members:
 
 CogMeta
 ~~~~~~~~
 
-.. attributetable:: discord.ext.commands.CogMeta
+.. attributetable:: diskord.ext.commands.CogMeta
 
-.. autoclass:: discord.ext.commands.CogMeta
+.. autoclass:: diskord.ext.commands.CogMeta
     :members:
 
 .. _ext_commands_help_command:
@@ -202,42 +202,42 @@ Help Commands
 HelpCommand
 ~~~~~~~~~~~~
 
-.. attributetable:: discord.ext.commands.HelpCommand
+.. attributetable:: diskord.ext.commands.HelpCommand
 
-.. autoclass:: discord.ext.commands.HelpCommand
+.. autoclass:: diskord.ext.commands.HelpCommand
     :members:
 
 DefaultHelpCommand
 ~~~~~~~~~~~~~~~~~~~
 
-.. attributetable:: discord.ext.commands.DefaultHelpCommand
+.. attributetable:: diskord.ext.commands.DefaultHelpCommand
 
-.. autoclass:: discord.ext.commands.DefaultHelpCommand
+.. autoclass:: diskord.ext.commands.DefaultHelpCommand
     :members:
     :exclude-members: send_bot_help, send_cog_help, send_group_help, send_command_help, prepare_help_command
 
 MinimalHelpCommand
 ~~~~~~~~~~~~~~~~~~~
 
-.. attributetable:: discord.ext.commands.MinimalHelpCommand
+.. attributetable:: diskord.ext.commands.MinimalHelpCommand
 
-.. autoclass:: discord.ext.commands.MinimalHelpCommand
+.. autoclass:: diskord.ext.commands.MinimalHelpCommand
     :members:
     :exclude-members: send_bot_help, send_cog_help, send_group_help, send_command_help, prepare_help_command
 
 Paginator
 ~~~~~~~~~~
 
-.. attributetable:: discord.ext.commands.Paginator
+.. attributetable:: diskord.ext.commands.Paginator
 
-.. autoclass:: discord.ext.commands.Paginator
+.. autoclass:: diskord.ext.commands.Paginator
     :members:
 
 Enums
 ------
 
 .. class:: BucketType
-    :module: discord.ext.commands
+    :module: diskord.ext.commands
 
     Specifies a type of bucket for, e.g. a cooldown.
 
@@ -271,61 +271,61 @@ Enums
 Checks
 -------
 
-.. autofunction:: discord.ext.commands.check(predicate)
+.. autofunction:: diskord.ext.commands.check(predicate)
     :decorator:
 
-.. autofunction:: discord.ext.commands.check_any(*checks)
+.. autofunction:: diskord.ext.commands.check_any(*checks)
     :decorator:
 
-.. autofunction:: discord.ext.commands.has_role(item)
+.. autofunction:: diskord.ext.commands.has_role(item)
     :decorator:
 
-.. autofunction:: discord.ext.commands.has_permissions(**perms)
+.. autofunction:: diskord.ext.commands.has_permissions(**perms)
     :decorator:
 
-.. autofunction:: discord.ext.commands.has_guild_permissions(**perms)
+.. autofunction:: diskord.ext.commands.has_guild_permissions(**perms)
     :decorator:
 
-.. autofunction:: discord.ext.commands.has_any_role(*items)
+.. autofunction:: diskord.ext.commands.has_any_role(*items)
     :decorator:
 
-.. autofunction:: discord.ext.commands.bot_has_role(item)
+.. autofunction:: diskord.ext.commands.bot_has_role(item)
     :decorator:
 
-.. autofunction:: discord.ext.commands.bot_has_permissions(**perms)
+.. autofunction:: diskord.ext.commands.bot_has_permissions(**perms)
     :decorator:
 
-.. autofunction:: discord.ext.commands.bot_has_guild_permissions(**perms)
+.. autofunction:: diskord.ext.commands.bot_has_guild_permissions(**perms)
     :decorator:
 
-.. autofunction:: discord.ext.commands.bot_has_any_role(*items)
+.. autofunction:: diskord.ext.commands.bot_has_any_role(*items)
     :decorator:
 
-.. autofunction:: discord.ext.commands.cooldown(rate, per, type=discord.ext.commands.BucketType.default)
+.. autofunction:: diskord.ext.commands.cooldown(rate, per, type=diskord.ext.commands.BucketType.default)
     :decorator:
 
-.. autofunction:: discord.ext.commands.dynamic_cooldown(cooldown, type=BucketType.default)
+.. autofunction:: diskord.ext.commands.dynamic_cooldown(cooldown, type=BucketType.default)
     :decorator:
 
-.. autofunction:: discord.ext.commands.max_concurrency(number, per=discord.ext.commands.BucketType.default, *, wait=False)
+.. autofunction:: diskord.ext.commands.max_concurrency(number, per=diskord.ext.commands.BucketType.default, *, wait=False)
     :decorator:
 
-.. autofunction:: discord.ext.commands.before_invoke(coro)
+.. autofunction:: diskord.ext.commands.before_invoke(coro)
     :decorator:
 
-.. autofunction:: discord.ext.commands.after_invoke(coro)
+.. autofunction:: diskord.ext.commands.after_invoke(coro)
     :decorator:
 
-.. autofunction:: discord.ext.commands.guild_only(,)
+.. autofunction:: diskord.ext.commands.guild_only(,)
     :decorator:
 
-.. autofunction:: discord.ext.commands.dm_only(,)
+.. autofunction:: diskord.ext.commands.dm_only(,)
     :decorator:
 
-.. autofunction:: discord.ext.commands.is_owner(,)
+.. autofunction:: diskord.ext.commands.is_owner(,)
     :decorator:
 
-.. autofunction:: discord.ext.commands.is_nsfw(,)
+.. autofunction:: diskord.ext.commands.is_nsfw(,)
     :decorator:
 
 .. _ext_commands_api_context:
@@ -333,25 +333,25 @@ Checks
 Cooldown
 ---------
 
-.. attributetable:: discord.ext.commands.Cooldown
+.. attributetable:: diskord.ext.commands.Cooldown
 
-.. autoclass:: discord.ext.commands.Cooldown
+.. autoclass:: diskord.ext.commands.Cooldown
     :members:
 
 Context
 --------
 
-.. attributetable:: discord.ext.commands.Context
+.. attributetable:: diskord.ext.commands.Context
 
-.. autoclass:: discord.ext.commands.Context
+.. autoclass:: diskord.ext.commands.Context
     :members:
     :inherited-members:
     :exclude-members: history, typing
 
-    .. automethod:: discord.ext.commands.Context.history
+    .. automethod:: diskord.ext.commands.Context.history
         :async-for:
 
-    .. automethod:: discord.ext.commands.Context.typing
+    .. automethod:: diskord.ext.commands.Context.typing
         :async-with:
 
 .. _ext_commands_api_converters:
@@ -359,255 +359,255 @@ Context
 Converters
 ------------
 
-.. autoclass:: discord.ext.commands.Converter
+.. autoclass:: diskord.ext.commands.Converter
     :members:
 
-.. autoclass:: discord.ext.commands.ObjectConverter
+.. autoclass:: diskord.ext.commands.ObjectConverter
     :members:
 
-.. autoclass:: discord.ext.commands.MemberConverter
+.. autoclass:: diskord.ext.commands.MemberConverter
     :members:
 
-.. autoclass:: discord.ext.commands.UserConverter
+.. autoclass:: diskord.ext.commands.UserConverter
     :members:
 
-.. autoclass:: discord.ext.commands.MessageConverter
+.. autoclass:: diskord.ext.commands.MessageConverter
     :members:
 
-.. autoclass:: discord.ext.commands.PartialMessageConverter
+.. autoclass:: diskord.ext.commands.PartialMessageConverter
     :members:
 
-.. autoclass:: discord.ext.commands.GuildChannelConverter
+.. autoclass:: diskord.ext.commands.GuildChannelConverter
     :members:
 
-.. autoclass:: discord.ext.commands.TextChannelConverter
+.. autoclass:: diskord.ext.commands.TextChannelConverter
     :members:
 
-.. autoclass:: discord.ext.commands.VoiceChannelConverter
+.. autoclass:: diskord.ext.commands.VoiceChannelConverter
     :members:
 
-.. autoclass:: discord.ext.commands.StoreChannelConverter
+.. autoclass:: diskord.ext.commands.StoreChannelConverter
     :members:
 
-.. autoclass:: discord.ext.commands.StageChannelConverter
+.. autoclass:: diskord.ext.commands.StageChannelConverter
     :members:
 
-.. autoclass:: discord.ext.commands.CategoryChannelConverter
+.. autoclass:: diskord.ext.commands.CategoryChannelConverter
     :members:
 
-.. autoclass:: discord.ext.commands.InviteConverter
+.. autoclass:: diskord.ext.commands.InviteConverter
     :members:
 
-.. autoclass:: discord.ext.commands.GuildConverter
+.. autoclass:: diskord.ext.commands.GuildConverter
     :members:
 
-.. autoclass:: discord.ext.commands.RoleConverter
+.. autoclass:: diskord.ext.commands.RoleConverter
     :members:
 
-.. autoclass:: discord.ext.commands.GameConverter
+.. autoclass:: diskord.ext.commands.GameConverter
     :members:
 
-.. autoclass:: discord.ext.commands.ColourConverter
+.. autoclass:: diskord.ext.commands.ColourConverter
     :members:
 
-.. autoclass:: discord.ext.commands.EmojiConverter
+.. autoclass:: diskord.ext.commands.EmojiConverter
     :members:
 
-.. autoclass:: discord.ext.commands.PartialEmojiConverter
+.. autoclass:: diskord.ext.commands.PartialEmojiConverter
     :members:
 
-.. autoclass:: discord.ext.commands.ThreadConverter
+.. autoclass:: diskord.ext.commands.ThreadConverter
     :members:
 
-.. autoclass:: discord.ext.commands.GuildStickerConverter
+.. autoclass:: diskord.ext.commands.GuildStickerConverter
     :members:
 
-.. autoclass:: discord.ext.commands.clean_content
+.. autoclass:: diskord.ext.commands.clean_content
     :members:
 
-.. autoclass:: discord.ext.commands.Greedy()
+.. autoclass:: diskord.ext.commands.Greedy()
 
-.. autofunction:: discord.ext.commands.run_converters
+.. autofunction:: diskord.ext.commands.run_converters
 
 Flag Converter
 ~~~~~~~~~~~~~~~
 
-.. autoclass:: discord.ext.commands.FlagConverter
+.. autoclass:: diskord.ext.commands.FlagConverter
     :members:
 
-.. autoclass:: discord.ext.commands.Flag()
+.. autoclass:: diskord.ext.commands.Flag()
     :members:
 
-.. autofunction:: discord.ext.commands.flag
+.. autofunction:: diskord.ext.commands.flag
 
 .. _ext_commands_api_errors:
 
 Exceptions
 -----------
 
-.. autoexception:: discord.ext.commands.CommandError
+.. autoexception:: diskord.ext.commands.CommandError
     :members:
 
-.. autoexception:: discord.ext.commands.ConversionError
+.. autoexception:: diskord.ext.commands.ConversionError
     :members:
 
-.. autoexception:: discord.ext.commands.MissingRequiredArgument
+.. autoexception:: diskord.ext.commands.MissingRequiredArgument
     :members:
 
-.. autoexception:: discord.ext.commands.ArgumentParsingError
+.. autoexception:: diskord.ext.commands.ArgumentParsingError
     :members:
 
-.. autoexception:: discord.ext.commands.UnexpectedQuoteError
+.. autoexception:: diskord.ext.commands.UnexpectedQuoteError
     :members:
 
-.. autoexception:: discord.ext.commands.InvalidEndOfQuotedStringError
+.. autoexception:: diskord.ext.commands.InvalidEndOfQuotedStringError
     :members:
 
-.. autoexception:: discord.ext.commands.ExpectedClosingQuoteError
+.. autoexception:: diskord.ext.commands.ExpectedClosingQuoteError
     :members:
 
-.. autoexception:: discord.ext.commands.BadArgument
+.. autoexception:: diskord.ext.commands.BadArgument
     :members:
 
-.. autoexception:: discord.ext.commands.BadUnionArgument
+.. autoexception:: diskord.ext.commands.BadUnionArgument
     :members:
 
-.. autoexception:: discord.ext.commands.BadLiteralArgument
+.. autoexception:: diskord.ext.commands.BadLiteralArgument
     :members:
 
-.. autoexception:: discord.ext.commands.PrivateMessageOnly
+.. autoexception:: diskord.ext.commands.PrivateMessageOnly
     :members:
 
-.. autoexception:: discord.ext.commands.NoPrivateMessage
+.. autoexception:: diskord.ext.commands.NoPrivateMessage
     :members:
 
-.. autoexception:: discord.ext.commands.CheckFailure
+.. autoexception:: diskord.ext.commands.CheckFailure
     :members:
 
-.. autoexception:: discord.ext.commands.CheckAnyFailure
+.. autoexception:: diskord.ext.commands.CheckAnyFailure
     :members:
 
-.. autoexception:: discord.ext.commands.CommandNotFound
+.. autoexception:: diskord.ext.commands.CommandNotFound
     :members:
 
-.. autoexception:: discord.ext.commands.DisabledCommand
+.. autoexception:: diskord.ext.commands.DisabledCommand
     :members:
 
-.. autoexception:: discord.ext.commands.CommandInvokeError
+.. autoexception:: diskord.ext.commands.CommandInvokeError
     :members:
 
-.. autoexception:: discord.ext.commands.TooManyArguments
+.. autoexception:: diskord.ext.commands.TooManyArguments
     :members:
 
-.. autoexception:: discord.ext.commands.UserInputError
+.. autoexception:: diskord.ext.commands.UserInputError
     :members:
 
-.. autoexception:: discord.ext.commands.CommandOnCooldown
+.. autoexception:: diskord.ext.commands.CommandOnCooldown
     :members:
 
-.. autoexception:: discord.ext.commands.MaxConcurrencyReached
+.. autoexception:: diskord.ext.commands.MaxConcurrencyReached
     :members:
 
-.. autoexception:: discord.ext.commands.NotOwner
+.. autoexception:: diskord.ext.commands.NotOwner
     :members:
 
-.. autoexception:: discord.ext.commands.MessageNotFound
+.. autoexception:: diskord.ext.commands.MessageNotFound
     :members:
 
-.. autoexception:: discord.ext.commands.MemberNotFound
+.. autoexception:: diskord.ext.commands.MemberNotFound
     :members:
 
-.. autoexception:: discord.ext.commands.GuildNotFound
+.. autoexception:: diskord.ext.commands.GuildNotFound
     :members:
 
-.. autoexception:: discord.ext.commands.UserNotFound
+.. autoexception:: diskord.ext.commands.UserNotFound
     :members:
 
-.. autoexception:: discord.ext.commands.ChannelNotFound
+.. autoexception:: diskord.ext.commands.ChannelNotFound
     :members:
 
-.. autoexception:: discord.ext.commands.ChannelNotReadable
+.. autoexception:: diskord.ext.commands.ChannelNotReadable
     :members:
 
-.. autoexception:: discord.ext.commands.ThreadNotFound
+.. autoexception:: diskord.ext.commands.ThreadNotFound
     :members:
 
-.. autoexception:: discord.ext.commands.BadColourArgument
+.. autoexception:: diskord.ext.commands.BadColourArgument
     :members:
 
-.. autoexception:: discord.ext.commands.RoleNotFound
+.. autoexception:: diskord.ext.commands.RoleNotFound
     :members:
 
-.. autoexception:: discord.ext.commands.BadInviteArgument
+.. autoexception:: diskord.ext.commands.BadInviteArgument
     :members:
 
-.. autoexception:: discord.ext.commands.EmojiNotFound
+.. autoexception:: diskord.ext.commands.EmojiNotFound
     :members:
 
-.. autoexception:: discord.ext.commands.PartialEmojiConversionFailure
+.. autoexception:: diskord.ext.commands.PartialEmojiConversionFailure
     :members:
 
-.. autoexception:: discord.ext.commands.GuildStickerNotFound
+.. autoexception:: diskord.ext.commands.GuildStickerNotFound
     :members:
 
-.. autoexception:: discord.ext.commands.BadBoolArgument
+.. autoexception:: diskord.ext.commands.BadBoolArgument
     :members:
 
-.. autoexception:: discord.ext.commands.MissingPermissions
+.. autoexception:: diskord.ext.commands.MissingPermissions
     :members:
 
-.. autoexception:: discord.ext.commands.BotMissingPermissions
+.. autoexception:: diskord.ext.commands.BotMissingPermissions
     :members:
 
-.. autoexception:: discord.ext.commands.MissingRole
+.. autoexception:: diskord.ext.commands.MissingRole
     :members:
 
-.. autoexception:: discord.ext.commands.BotMissingRole
+.. autoexception:: diskord.ext.commands.BotMissingRole
     :members:
 
-.. autoexception:: discord.ext.commands.MissingAnyRole
+.. autoexception:: diskord.ext.commands.MissingAnyRole
     :members:
 
-.. autoexception:: discord.ext.commands.BotMissingAnyRole
+.. autoexception:: diskord.ext.commands.BotMissingAnyRole
     :members:
 
-.. autoexception:: discord.ext.commands.NSFWChannelRequired
+.. autoexception:: diskord.ext.commands.NSFWChannelRequired
     :members:
 
-.. autoexception:: discord.ext.commands.FlagError
+.. autoexception:: diskord.ext.commands.FlagError
     :members:
 
-.. autoexception:: discord.ext.commands.BadFlagArgument
+.. autoexception:: diskord.ext.commands.BadFlagArgument
     :members:
 
-.. autoexception:: discord.ext.commands.MissingFlagArgument
+.. autoexception:: diskord.ext.commands.MissingFlagArgument
     :members:
 
-.. autoexception:: discord.ext.commands.TooManyFlags
+.. autoexception:: diskord.ext.commands.TooManyFlags
     :members:
 
-.. autoexception:: discord.ext.commands.MissingRequiredFlag
+.. autoexception:: diskord.ext.commands.MissingRequiredFlag
     :members:
 
-.. autoexception:: discord.ext.commands.ExtensionError
+.. autoexception:: diskord.ext.commands.ExtensionError
     :members:
 
-.. autoexception:: discord.ext.commands.ExtensionAlreadyLoaded
+.. autoexception:: diskord.ext.commands.ExtensionAlreadyLoaded
     :members:
 
-.. autoexception:: discord.ext.commands.ExtensionNotLoaded
+.. autoexception:: diskord.ext.commands.ExtensionNotLoaded
     :members:
 
-.. autoexception:: discord.ext.commands.NoEntryPointError
+.. autoexception:: diskord.ext.commands.NoEntryPointError
     :members:
 
-.. autoexception:: discord.ext.commands.ExtensionFailed
+.. autoexception:: diskord.ext.commands.ExtensionFailed
     :members:
 
-.. autoexception:: discord.ext.commands.ExtensionNotFound
+.. autoexception:: diskord.ext.commands.ExtensionNotFound
     :members:
 
-.. autoexception:: discord.ext.commands.CommandRegistrationError
+.. autoexception:: diskord.ext.commands.CommandRegistrationError
     :members:
 
 
