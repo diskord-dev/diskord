@@ -26,7 +26,7 @@ import argparse
 import sys
 from pathlib import Path
 
-import discord
+import diskord
 import pkg_resources
 import aiohttp
 import platform
@@ -35,12 +35,12 @@ def show_version():
     entries = []
 
     entries.append('- Python v{0.major}.{0.minor}.{0.micro}-{0.releaselevel}'.format(sys.version_info))
-    version_info = discord.version_info
-    entries.append('- discord.py v{0.major}.{0.minor}.{0.micro}-{0.releaselevel}'.format(version_info))
+    version_info = diskord.version_info
+    entries.append('- diskord.py v{0.major}.{0.minor}.{0.micro}-{0.releaselevel}'.format(version_info))
     if version_info.releaselevel != 'final':
-        pkg = pkg_resources.get_distribution('discord.py')
+        pkg = pkg_resources.get_distribution('diskord.py')
         if pkg:
-            entries.append(f'    - discord.py pkg_resources: v{pkg.version}')
+            entries.append(f'    - diskord.py pkg_resources: v{pkg.version}')
 
     entries.append(f'- aiohttp v{aiohttp.__version__}')
     uname = platform.uname()
@@ -53,8 +53,8 @@ def core(parser, args):
 
 _bot_template = """#!/usr/bin/env python3
 
-from discord.ext import commands
-import discord
+from diskord.ext import commands
+import diskord
 import config
 
 class Bot(commands.{base}):
@@ -107,8 +107,8 @@ var/
 config.py
 """
 
-_cog_template = '''from discord.ext import commands
-import discord
+_cog_template = '''from diskord.ext import commands
+import diskord
 
 class {name}(commands.Cog{attrs}):
     """The description for {name} goes here."""
@@ -283,7 +283,7 @@ def add_newcog_args(subparser):
     parser.add_argument('--full', help='add all special methods as well', action='store_true')
 
 def parse_args():
-    parser = argparse.ArgumentParser(prog='discord', description='Tools for helping with discord.py')
+    parser = argparse.ArgumentParser(prog='diskord', description='Tools for helping with diskord.py')
     parser.add_argument('-v', '--version', action='store_true', help='shows the library version')
     parser.set_defaults(func=core)
 

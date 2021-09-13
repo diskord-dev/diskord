@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from typing import Optional, Any, TYPE_CHECKING, List, Callable, Type, Tuple, Union
 
-from diskord.errors import ClientException, diskordException
+from diskord.errors import ClientException, DiscordException
 
 if TYPE_CHECKING:
     from inspect import Parameter
@@ -100,10 +100,10 @@ __all__ = (
     'MissingRequiredFlag',
 )
 
-class CommandError(diskordException):
+class CommandError(DiscordException):
     r"""The base exception type for all command related errors.
 
-    This inherits from :exc:`diskord.diskordException`.
+    This inherits from :exc:`diskord.DiscordException`.
 
     This exception and exceptions inherited from it are handled
     in a special way as they are caught and passed into a special event
@@ -818,10 +818,10 @@ class ExpectedClosingQuoteError(ArgumentParsingError):
         self.close_quote: str = close_quote
         super().__init__(f'Expected closing {close_quote}.')
 
-class ExtensionError(diskordException):
+class ExtensionError(DiscordException):
     """Base exception for extension related errors.
 
-    This inherits from :exc:`~diskord.diskordException`.
+    This inherits from :exc:`~diskord.DiscordException`.
 
     Attributes
     ------------
