@@ -15,3 +15,5 @@ docs/crowdin.py
 *.flac
 *.mo
 *.test.py
+build/
+dist/
