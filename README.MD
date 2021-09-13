@@ -3,6 +3,8 @@ A modern, easy to use, feature-rich, and async ready API wrapper for Discord wri
 
 This library is a maintained and work-in-progress fork of the popular library, [discord.py](https://github.com/Rapptz/discord.py) which was discontinued on August 28th, 2021. You can see more [here](https://gist.github.com/Rapptz/4a2f62751b9600a31a0d3c78100287f1).
 
+**This is ultimately a side project of mine (nerdguyahmad) and I don't yet assure complete stability of this library. I work on this project whenever I get time but I don't have much time to invest on this so please do not use this in production. Have a look at other forks like Pycord.**
+
 ## Key features
 * Modern Pythonic API using `async` and `await`.
 * Proper rate limit handling.
