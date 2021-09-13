@@ -853,9 +853,13 @@ class ConnectionState:
         if guild is None:
             _log.debug('THREAD_DELETE referencing an unknown guild ID: %s. Discarding', guild_id)
             return
+        
+        raw = RawThreadDeleteEvent(data)
+        thread = guild.get_thread(raw.thread_id)
+        raw.thread = thread
 
-        thread_id = int(data['id'])
-        thread = guild.get_thread(thread_id)
+        self.dispatch('raw_thread_delete', raw)
+
         if thread is not None:
             guild._remove_thread(thread)  # type: ignore
             self.dispatch('thread_delete', thread)

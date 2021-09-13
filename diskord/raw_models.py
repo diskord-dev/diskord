@@ -25,6 +25,7 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, Set, List
+from .enums import try_enum, ChannelType
 
 if TYPE_CHECKING:
     from .types.raw_models import (
@@ -34,11 +35,13 @@ if TYPE_CHECKING:
         MessageUpdateEvent,
         ReactionClearEvent,
         ReactionClearEmojiEvent,
-        IntegrationDeleteEvent
+        IntegrationDeleteEvent,
+        ThreadDeleteEvent
     )
     from .message import Message
     from .partial_emoji import PartialEmoji
     from .member import Member
+    from .threads import Thread
 
 
 __all__ = (
@@ -49,6 +52,7 @@ __all__ = (
     'RawReactionClearEvent',
     'RawReactionClearEmojiEvent',
     'RawIntegrationDeleteEvent',
+    'RawThreadDeleteEvent',
 )
 
 
@@ -276,3 +280,35 @@ class RawIntegrationDeleteEvent(_RawReprMixin):
             self.application_id: Optional[int] = int(data['application_id'])
         except KeyError:
             self.application_id: Optional[int] = None
+
+class RawThreadDeleteEvent(_RawReprMixin):
+    """Represents the payload for a :func:`on_raw_thread_delete` event.
+
+    .. versionadded:: 2.5
+
+    Attributes
+    ----------
+
+    thread_id: :class:`int`
+        The ID of the thread that was deleted.
+    thread_type: :class:`ChannelType`
+        The type of the thread that was deleted.
+    parent_id: :class:`int`
+        The channel ID the deleted thread belonged to.
+    guild_id: :class:`int`
+        The ID of guild this thread belonged to.
+    thread: Optional[:class:`Thread`]
+        The thread that was deleted if found in the internal cache.
+
+        .. note:
+            Archived threads are usually not in the internal cache so if an archived
+            thread is deleted, ``thread`` will most probably be ``None``
+    """
+    __slots__ = ('thread_id', 'thread_type', 'parent_id', 'guild_id', 'thread')
+
+    def __init__(self, data: ThreadDeleteEvent):
+        self.thread_id: int = int(data['id'])
+        self.thread_type: ChannelType = try_enum(ChannelType, int(data['type']))
+        self.parent_id: int = int(data['parent_id'])
+        self.guild_id: int = int(data['guild_id'])
+        self.thread: Optional[Thread] = None
