@@ -16,24 +16,24 @@ This library is a maintained and work-in-progress fork of the popular library, [
 To install the library **without** full voice support, you can just run the following command:
 ```sh
 # Linux/macOS
-python3 -m pip install -U discord.py
+python3 -m pip install -U diskord
 
 # Windows
-py -3 -m pip install -U discord.py
+py -3 -m pip install -U diskord
 ```
 Otherwise to get voice support you should run the following command:
 
 ```sh
 # Linux/macOS
-python3 -m pip install -U "discord.py[voice]"
+python3 -m pip install -U "diskord[voice]"
 
 # Windows
-py -3 -m pip install -U discord.py[voice]
+py -3 -m pip install -U diskord[voice]
 ```
 To install the development version, do the following:
 
 ```sh
-$ git clone https://github.com/Rapptz/discord.py
+$ git clone https://github.com/nerdguyahmad/diskord
 $ cd discord.py
 $ python3 -m pip install -U .[voice]
 ```
@@ -47,7 +47,7 @@ Please note that on Linux installing voice you must install the following packag
 
 ## Quick Example
 ```py
-import discord
+import diskord
 
 class MyClient(discord.Client):
     async def on_ready(self):
@@ -67,8 +67,8 @@ client.run('token')
 
 ## Bot Example
 ```py
-import discord
-from discord.ext import commands
+import diskord
+from diskord.ext import commands
 
 bot = commands.Bot(command_prefix='>')
 
