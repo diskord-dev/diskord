@@ -32,6 +32,16 @@ from typing import (
 
 from .snowflake import Snowflake
 
+class _ApplicationCommandOptionOptional(TypedDict, total=False):
+    required: bool
+    choices: Any # TODO: Add proper typehint when choices are implemented
+    options: list # Proper typehint?
+
+class ApplicationCommandOption(_ApplicationCommandOptional):
+    type: int
+    name: str
+    description: str
+
 class _ApplicationCommandOptional(TypedDict, total=False):
     type: Union[Literal[1], Literal[2], Literal[3]]
     guild_id: Snowflake
@@ -44,4 +54,4 @@ class ApplicationCommand(_ApplicationCommandOptional):
     description: str
     default_permission: bool
     version: int
-    
+
