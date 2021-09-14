@@ -120,6 +120,23 @@ class Bot(Client):
         for cmd in self.__to_register:
             if cmd.id == command.id:
                 return self.__to_register.pop(cmd) 
+    
+    def get_application_command(self, id: int, /) -> Optional[ApplicationCommand]:
+        """Returns a bot's application command by it's ID.
+        
+        This function returns ``None`` if the application command is not found.
+
+        Parameters
+        ----------
+        id: :class:`int`
+            The ID of the application command.
+        
+        Returns
+        -------
+        Optional[:class:`ApplicationCommand`]
+            The command matching the ID.
+        """
+        return self._application_commands.get(id)
 
         
     async def register_application_commands(self):
@@ -263,7 +280,7 @@ class Bot(Client):
         if not interaction.is_application_command():
             return
         
-        command = self._application_commands.get(int(interaction.data['id']))
+        command = self.get_application_command(int(interaction.data['id']))
                 
         if not command:
             _log.info('Application command referencing an unknown command %s, Discarding.' % str(interaction.data['id']))
