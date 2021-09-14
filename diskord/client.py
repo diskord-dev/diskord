@@ -1640,3 +1640,7 @@ class Client:
         .. versionadded:: 2.0
         """
         return self._connection.persistent_views
+    
+    # Application commands management
+
+    
