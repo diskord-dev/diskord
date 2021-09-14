@@ -23,7 +23,21 @@ DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
 
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Callable,
+)
+import inspect
+
+from .app_commands import (
+    ApplicationCommand,
+    SlashCommand,
+    UserCommand,
+    MessageCommand,
+)
 from .client import Client
+from .enums import ApplicationCommandType
 
 class Bot(Client):
     """Represents a bot that interacts with Discord API. 
@@ -34,7 +48,165 @@ class Bot(Client):
     The purpose of this class is to aid in creation of application commands and other
     features that are not compatible in :class:`Client`. It is highly recommended
     to use this class instead of :class:`Client` if you aim to use application commands
-    like slash commands, user & message commands etc.
+    like slash commands, user & message commands etc. 
     """
     def __init__(self, **options) -> None:
         super().__init__(**options)
+        self.__to_register: List[ApplicationCommand] = []
+        self._app_commands: List[ApplicationCommand] = []
+    
+    # Commands management
+    
+    def add_application_command(self, type: ApplicationCommandType, callback: Callable, **attrs) -> ApplicationCommand:
+        """Adds an application command to internal list of commands that will be registered on bot connect.
+        
+        This is generally not called. Instead, :func:`application_command` decorator is used.
+
+        Parameters
+        ----------
+
+        cls: Union[:class:`SlashCommand`, :class:`MessageCommand`, :class:`UserCommand`]
+            The object type to use.
+        callback: Callable
+            The callback function for the command.
+        
+        Returns
+        -------
+
+        :class:`ApplicationCommand`
+            The registered command.
+        """
+        types = {
+            1: SlashCommand,
+            2: UserCommand,
+            3: MessageCommand,
+        }
+        if not type in types:
+            raise TypeError('The provided type is not valid.')
+
+        command = types[type](callback, **attrs)
+        self.__to_register.append(command)
+        
+        return command
+    
+    def remove_application_command(self, command: ApplicationCommand):
+        """Removes an application command from internal list of commands that will be registered on bot connect.
+
+        This has no affect when the bot has connected. Use :func:`delete_application_command` instead.
+
+        Parameters
+        ----------
+
+        command: :class:`ApplicationCommand`
+            The command to delete.
+        """
+        for cmd in self.__to_register:
+            if cmd.id == command.id:
+                return self.__to_register.pop(cmd) 
+
+        
+    async def register_application_commands(self):
+        """|coro|
+        
+        Register all the application commands that were added using :func:`Bot.add_application_command`
+        or decorators.
+
+        This method cleans up previously registered commands and registers all the commands
+        that were added using :func:`Bot.add_application_command`.
+        
+        This function is called under-the-hood inside the :func:`on_connect` event. 
+
+        .. warning::
+            If you decided to override the :func:`on_connect` event, You MUST call this manually
+            or the commands will not be registered.
+        """
+        registered_commands = await self.http.get_global_commands(self.user.id)
+        commands = []
+
+        # Firstly, We will register the global commands
+        for command in (cmd for cmd in self.__to_register if not cmd.guild_ids):
+            data = command.to_dict()
+            commands.append(data)
+        
+        cmds = await self.http.bulk_upsert_global_commands(self.user.id, commands)
+        
+        for cmd in cmds:
+            self._app_commands[cmd['id']] = ApplicationCommand._from_data(cmd)
+        
+        # Registering the guild commands now
+        
+        guilds = {}
+
+        for cmd in (command for command in self.__to_register if cmd.guild_ids):
+            data = command.to_dict()
+            for guild in cmd.guild_ids:
+                guilds[guild].extend(data)
+        
+        for guild in guilds:
+            cmds = await self.http.bulk_upsert_guild_commands(self.user.id, guild, guilds[guild])
+            for cmd in cmds:
+                self._app_commands[cmd['id']] = ApplicationCommand._from_data(cmd)
+        
+            
+
+            
+    
+    # Decorators
+
+    def slash_command(self, **options) -> SlashCommand:
+        """A decorator-based interface to add slash commands to the bot.
+        
+        This is equivalent of using ``Bot.add_application_command(1, function, **options)``
+
+        Parameters
+        ----------
+
+        """
+        def inner(func: Callable):
+            if not inspect.iscoroutinefunction(func):
+                raise TypeError('Callback function must be a coroutine.')
+            
+            return self.add_application_command(1, func, **options)
+        
+        return inner
+    
+    def user_command(self, **options) -> SlashCommand:
+        """A decorator-based interface to add user commands to the bot.
+        
+        This is equivalent of using ``Bot.add_application_command(2, function, **options)``
+
+        Parameters
+        ----------
+
+        """
+        def inner(func: Callable):
+            if not inspect.iscoroutinefunction(func):
+                raise TypeError('Callback function must be a coroutine.')
+            
+            return self.add_application_command(2, func, **options)
+        
+        return inner
+
+    def message_command(self, **options) -> SlashCommand:
+        """A decorator-based interface to add message commands to the bot.
+        
+        This is equivalent of using ``Bot.add_application_command(3, function, **options)``
+
+        Parameters
+        ----------
+
+        """
+        def inner(func: Callable):
+            if not inspect.iscoroutinefunction(func):
+                raise TypeError('Callback function must be a coroutine.')
+            
+            return self.add_application_command(2, func, **options)
+        
+        return inner
+
+    # Events
+
+    async def on_connect(self):
+        # TODO: Register commands here when registeration is implemented
+
+        await self.register_application_commands()
