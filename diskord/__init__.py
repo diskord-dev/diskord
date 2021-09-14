@@ -61,6 +61,7 @@ from .components import *
 from .threads import *
 from .welcome_screen import *
 from .app_commands import *
+from .bot import *
 
 
 class VersionInfo(NamedTuple):
