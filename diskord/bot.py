@@ -60,6 +60,12 @@ class Bot(Client):
         super().__init__(**options)
         self.__to_register: List[ApplicationCommand] = []
         self._application_commands: Dict[int, ApplicationCommand] = {}
+
+    # Properties
+    @property
+    def application_commands(self):
+        """Dict[:class:`int`, :class:`ApplicationCommand`]: Returns a mapping with ID of command to the application command."""
+        return self._application_commands
     
     # Commands management
     
@@ -126,6 +132,13 @@ class Bot(Client):
             If you decided to override the :func:`on_connect` event, You MUST call this manually
             or the commands will not be registered.
         """
+        # I'm not satisfied with this code?
+        # Yes.
+        # Rewrite it?
+        # Yes.
+        # When?
+        # idk
+        
         commands = []
 
         # Firstly, We will register the global commands
@@ -308,6 +321,7 @@ class Bot(Client):
     async def on_interaction(self, interaction: Interaction):
         await self.handle_command_interaction(interaction)
 
+# remove this when annotations support are added.
 def slash_option(self, name: str, type: Any = None,  **attrs) -> Option:
     """A decorator-based interface to add options to a slash command.
 
