@@ -27,9 +27,13 @@ from typing import (
     List,
     Optional,
 )
+from .utils import _get_as_snowflake
 
 if TYPE_CHECKING:
-    ...
+    from .types.app_commands import (
+        ApplicationCommand as ApplicationCommandPayload,
+    )
+    from .enums import ApplicationCommandType
 
 class ApplicationCommand:
     """Represents an application command.
@@ -50,11 +54,32 @@ class ApplicationCommand:
         The name of command.
     description: :class:`str`
         The description of command.
-    options: List[:class:`ApplicationCommandOptionType`]
+    options: Optional[List[:class:`ApplicationCommandOptionType`]]
         The list of options this command has.
     default_permission: :class:`bool`
         Whether the command is enabled by default when the app is added to a guild.
     version: :class:`int`
         Auto incrementing version identifier updated during substantial record changes.
     """
-    # TODO
+    __slots__ = (
+        'id', 'type', 'application_id', 'guild_id', 'name', 'description', 
+        'options', 'default_permission', 'version',
+    )
+
+    def __init__(self, data: ApplicationCommandPayload):
+        self.id: int = int(data['id'])
+        self.type: ApplicationCommandType = int(data['type'])
+        self.application_id: int = int(data['application_id'])
+        self.guild_id: Optional[int] = _get_as_snowflake(data.get('guild_id'))
+        self.name: str = data['name']
+        self.description: str = data['description']
+        self.options: Any = data.get('options') # TODO: Proper typehint this when option class is implemented
+        self.default_permission: bool = data['bool']
+        self.version: int = int(data['version'])
+
+    def __repr__(self):
+        # More attributes here?
+        return f'<ApplicationCommand name={self.name!r} description={self.description!r}'
+    
+    def __str__(self):
+        return self.name
