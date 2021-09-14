@@ -28,14 +28,19 @@ from typing import (
     Literal,
     Optional, 
     TypedDict,
+    Union,
 )
 
 from .snowflake import Snowflake
 
+class ApplicationCommandOptionChoice(TypedDict, total=False):
+    name: str
+    value: Union[str, int, float]
+
 class _ApplicationCommandOptionOptional(TypedDict, total=False):
     required: bool
-    choices: Any # TODO: Add proper typehint when choices are implemented
-    options: list # Proper typehint?
+    choices: List[ApplicationCommandOptionChoice]
+    options: List[ApplicationCommandOption]
 
 class ApplicationCommandOption(_ApplicationCommandOptional):
     type: int

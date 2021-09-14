@@ -88,7 +88,7 @@ class Option:
         self.name: str = data['name']
         self.description: str = data['description']
         self.required: bool = data.get('required', False)
-        self.choices: Any = data.get('choices', []) # TODO: Proper typehint when choices are implemented.
+        self.choices: List[OptionType] = [OptionType(choice) for choice in data.get('choices', [])]
         self.options: List[Option] = [Option(option) for option in data.get('options', [])]
 
     def __repr__(self):
