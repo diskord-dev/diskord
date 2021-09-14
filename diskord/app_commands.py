@@ -28,12 +28,50 @@ from typing import (
     Optional,
 )
 from .utils import _get_as_snowflake
+from .enums import (
+    try_enum,
+    ApplicationCommandType,
+    ApplicationCommandOptionType,
+)
 
 if TYPE_CHECKING:
     from .types.app_commands import (
         ApplicationCommand as ApplicationCommandPayload,
+        ApplicationCommandOption as ApplicationCommandOptionPayload,
     )
-    from .enums import ApplicationCommandType
+
+class ApplicationCommandOption:
+    """Represents an option for an application slash command.
+    
+    Attributes
+    ----------
+
+    type: :class:`ApplicationCommandOptionType`
+        The type of the option.
+    name: :class:`str`
+        The name of option.
+    description: :class:`str`
+        The description of option.
+    required: :class:`bool`
+        Whether this option is required or not.
+    choices: List[:class:`ApplicationCommandOptionChoice`]
+        The list of choices this option has.
+    options: List[:class:`ApplicationCommandOption`]
+        The options if the type is a subcommand or subcommand group.
+    """
+    def __init__(self, data: ApplicationCommandOptionPayload):
+        self.type: ApplicationCommandOptionType = try_enum(ApplicationCommandOptionType, int(data['type']))
+        self.name: str = data['name']
+        self.description: str = data['description']
+        self.required: bool = data.get('required', False)
+        self.choices: Any = data.get('choices', []) # TODO: Proper typehint when choices are implemented.
+        self.options: List[ApplicationCommandOption] = [ApplicationCommandOption(option) for option in data.get('options', [])]
+
+    def __repr__(self):
+        return f'<ApplicationCommandOption name={self.name!r} description={self.description!r}'
+
+    def __str__(self):
+        return self.name
 
 class ApplicationCommand:
     """Represents an application command.
@@ -61,19 +99,17 @@ class ApplicationCommand:
     version: :class:`int`
         Auto incrementing version identifier updated during substantial record changes.
     """
-    __slots__ = (
-        'id', 'type', 'application_id', 'guild_id', 'name', 'description', 
-        'options', 'default_permission', 'version',
-    )
 
     def __init__(self, data: ApplicationCommandPayload):
         self.id: int = int(data['id'])
-        self.type: ApplicationCommandType = int(data['type'])
+        self.type: ApplicationCommandType = try_enum(ApplicationCommandType, int(data['type']))
         self.application_id: int = int(data['application_id'])
         self.guild_id: Optional[int] = _get_as_snowflake(data.get('guild_id'))
         self.name: str = data['name']
         self.description: str = data['description']
-        self.options: Any = data.get('options') # TODO: Proper typehint this when option class is implemented
+        self.options: List[ApplicationCommandOption] = [
+            ApplicationCommandOption(option) for option in data.get('options', [])
+            ]
         self.default_permission: bool = data['bool']
         self.version: int = int(data['version'])
 
