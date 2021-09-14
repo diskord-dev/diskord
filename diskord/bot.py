@@ -266,6 +266,7 @@ class Bot(Client):
         command = self._application_commands.get(int(interaction.data['id']))
         
         if not command:
+            _log.info('Application command referencing an unknown command %s, Discarding.' % str(interaction.data['id']))
             return
 
         
