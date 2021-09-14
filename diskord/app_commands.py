@@ -244,6 +244,14 @@ class UserCommand(ApplicationCommand):
     def __init__(self, callback, **attrs):
         self.type = 2
         super().__init__(callback, **attrs)
+    
+    def to_dict(self) -> dict:
+        dict_ = {
+            'name': self.name,
+            'description': '',
+            'type': self.type,
+        }
+        return dict_
 
 class MessageCommand(ApplicationCommand):
     """Represents a message command.
@@ -259,3 +267,11 @@ class MessageCommand(ApplicationCommand):
     def __init__(self, callback, **attrs):
         self.type = 3
         super().__init__(callback, **attrs)
+
+    def to_dict(self) -> dict:
+        dict_ = {
+            'name': self.name,
+            'description': '',
+            'type': self.type,
+        }
+        return dict_
