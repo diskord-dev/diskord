@@ -26,27 +26,45 @@ from typing import (
     TYPE_CHECKING,
     List,
     Optional,
+    Union,
 )
 from .utils import _get_as_snowflake
 from .enums import (
     try_enum,
     ApplicationCommandType,
-    ApplicationCommandOptionType,
+    OptionType,
 )
 
 if TYPE_CHECKING:
     from .types.app_commands import (
         ApplicationCommand as ApplicationCommandPayload,
         ApplicationCommandOption as ApplicationCommandOptionPayload,
+        ApplicationCommandOptionChoice as ApplicationCommandOptionChoicePayload,
     )
 
-class ApplicationCommandOption:
+class OptionChoice:
+    """Represents an option choice for an application command's option.
+
+
+    Attributes
+    ----------
+
+    name: :class:`str`
+        The name of choice.
+    value: Union[:class:`str`, :class:`int`, :class:`float`]
+        The value of the choice.
+    """
+    def __init__(self, data: ApplicationCommandOptionChoicePayload):
+        self.name: str = data['name']
+        self.value: Union[str, int, float] = data['value']
+
+class Option:
     """Represents an option for an application slash command.
     
     Attributes
     ----------
 
-    type: :class:`ApplicationCommandOptionType`
+    type: :class:`OptionType`
         The type of the option.
     name: :class:`str`
         The name of option.
@@ -54,21 +72,21 @@ class ApplicationCommandOption:
         The description of option.
     required: :class:`bool`
         Whether this option is required or not.
-    choices: List[:class:`ApplicationCommandOptionChoice`]
+    choices: List[:class:`OptionChoice`]
         The list of choices this option has.
-    options: List[:class:`ApplicationCommandOption`]
+    options: List[:class:`Option`]
         The options if the type is a subcommand or subcommand group.
     """
     def __init__(self, data: ApplicationCommandOptionPayload):
-        self.type: ApplicationCommandOptionType = try_enum(ApplicationCommandOptionType, int(data['type']))
+        self.type: OptionType = try_enum(OptionType, int(data['type']))
         self.name: str = data['name']
         self.description: str = data['description']
         self.required: bool = data.get('required', False)
         self.choices: Any = data.get('choices', []) # TODO: Proper typehint when choices are implemented.
-        self.options: List[ApplicationCommandOption] = [ApplicationCommandOption(option) for option in data.get('options', [])]
+        self.options: List[Option] = [Option(option) for option in data.get('options', [])]
 
     def __repr__(self):
-        return f'<ApplicationCommandOption name={self.name!r} description={self.description!r}'
+        return f'<Option name={self.name!r} description={self.description!r}'
 
     def __str__(self):
         return self.name
@@ -92,7 +110,7 @@ class ApplicationCommand:
         The name of command.
     description: :class:`str`
         The description of command.
-    options: Optional[List[:class:`ApplicationCommandOptionType`]]
+    options: Optional[List[:class:`Option`]]
         The list of options this command has.
     default_permission: :class:`bool`
         Whether the command is enabled by default when the app is added to a guild.
@@ -107,8 +125,8 @@ class ApplicationCommand:
         self.guild_id: Optional[int] = _get_as_snowflake(data.get('guild_id'))
         self.name: str = data['name']
         self.description: str = data['description']
-        self.options: List[ApplicationCommandOption] = [
-            ApplicationCommandOption(option) for option in data.get('options', [])
+        self.options: List[Option] = [
+            Option(option) for option in data.get('options', [])
             ]
         self.default_permission: bool = data['bool']
         self.version: int = int(data['version'])

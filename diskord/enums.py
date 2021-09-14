@@ -598,7 +598,7 @@ class ApplicationCommandType(Enum, comparable=True):
     # Aliases
     slash_command = 1
 
-class ApplicationCommandOptionType(Enum, comparable=True):
+class OptionType(Enum, comparable=True):
     sub_command = 1
     sub_command_group = 2
     string  = 3
