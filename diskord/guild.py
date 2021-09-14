@@ -3060,6 +3060,10 @@ class Guild(Hashable):
         
         Returns
         -------
+        The members matching the query.
+
+        Return Type
+        -----------
         List[:class:`Member`]
 
         Raises
