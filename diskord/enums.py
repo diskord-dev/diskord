@@ -588,6 +588,17 @@ class NSFWLevel(Enum, comparable=True):
     safe = 2
     age_restricted = 3
 
+# application commands enums
+
+class ApplicationCommandType(Enum, comparable=True):
+    chat_input = 1
+    user = 2
+    message = 3
+
+    # Aliases
+    slash_command = 1
+    
+
 
 T = TypeVar('T')
 
