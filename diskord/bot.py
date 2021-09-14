@@ -211,6 +211,34 @@ class Bot(Client):
     # Command handler
 
     async def handle_command_interaction(self, interaction: Interaction) -> Any:
+        """|coro|
+
+        Handles a command interaction. This function is used under-the-hood to handle all the
+        application commands interactions.
+
+        This is internally called in :func:`on_interaction` event.
+
+        .. warning::
+            If you decide to override the :func:`on_interaction` event, You must call this at the
+            end of your event callback or the commands wouldn't work.
+
+            Usage: ::
+
+                @bot.event
+                async def on_interaction(interaction):
+                    # do something here
+                    ...
+
+                    # at the end of event
+                    await bot.handle_command_interaction(interaction)
+        
+        Parameters
+        ----------
+
+        interaction: :class:`Interaction`
+            The interaction to handle. If the interaction is not a application command interaction,
+            then this will silently ignore the interaction.
+        """
         if not interaction.is_application_command():
             return
         
@@ -220,12 +248,44 @@ class Bot(Client):
             return
         
         context = await self.get_application_context(interaction)
-        await command.callback(context)
+        return (await command.callback(context))
 
     async def get_application_context(self, interaction: Interaction, *, cls: InteractionContext = None) -> InteractionContext:
+        """|coro|
+        
+        Gets the :class:`InteractionContext` for an application command interaction.
+        
+        This function is really useful to add custom contexts. You can override this and
+        implement your own context that inherits :class:`InteractionContext` and pass it in ``cls``
+        parameter.
+
+        Parameters
+        ----------
+
+        interaction: :class:`Interaction`
+            The interaction of which context would be returned.
+        cls: :class:`InteractionContext`
+            The subclass of :class:`InteractionContext` which would be returned. Defaults to :class:`InteractionContext`
+        
+        Returns
+        -------
+
+        :class:`InteractionContext`
+            The context of interaction.
+        
+        Raises
+        ------
+
+        TypeError:
+            The ``cls`` parameter is not of proper type.
+        """
+        
         if not cls:
             cls = InteractionContext
-        
+        else:
+            if not issubclass(cls, InteractionContext):
+                raise TypeError('cls parameter must be a subclass of InteractionContext.')
+
         return cls(self, interaction)
 
     # Events
