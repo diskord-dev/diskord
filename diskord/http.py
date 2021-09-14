@@ -799,6 +799,20 @@ class HTTPClient:
     ) -> Response[member.MemberWithUser]:
         r = Route('PATCH', '/guilds/{guild_id}/members/{user_id}', guild_id=guild_id, user_id=user_id)
         return self.request(r, json=fields, reason=reason)
+    
+    def search_members(
+        self, *,
+        guild_id: Snowflake,
+        query: str,
+        limit: Optional[int] = 1,
+    ) -> Response[List[member.Member]]:
+        r = Route('GET', '/guilds/{guild_id}/members/search', guild_id=guild_id)
+        params = {
+            'query': query,
+            'limit': limit,
+        }
+        return self.request(r, params=params)
+    
 
     # Channel management
 

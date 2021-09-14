@@ -3041,3 +3041,37 @@ class Guild(Hashable):
             new = await self._state.http.edit_welcome_screen(self.id, options, reason=options.get('reason'))
             return WelcomeScreen(data=new, guild=self)
         
+    async def search_members(self, query: str, *, limit: Optional[int] = 1) -> List[Member]:
+        """|coro|
+        
+        Returns members whose name start with the provided query.
+
+        .. note::
+            This method is an API call, For general usage, Use :func:`get_member_named` instead.
+        
+        .. versionadded:: 2.5
+
+        Parameters
+        ----------
+        query: :class:`str`
+            The query to search for.
+        limit: Optional[:class:`int`]
+            The limit of results to return. Defaults to ``1``.
+        
+        Returns
+        -------
+        List[:class:`Member`]
+
+        Raises
+        ------
+        HTTPException:
+            Searching of members failed somehow.
+        """
+        if not isinstance(limit, int):
+            raise TypeError('Expected limit to be an int, Got %s instead.' % limit.__class__.__name__)
+        
+        if limit > 1000 or limit < 1:
+            raise ValueError('limit must not be less then 1 or greater then 1000, Got %s' % str(limit))
+
+        data = await self._state.http.search_members(guild_id=self.id, query=query, limit=limit) 
+        return [Member(data=member, guild=self, state=self._state) for member in data]
