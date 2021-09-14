@@ -104,6 +104,8 @@ class Option:
             'name': self.name,
             'description': self.description,
             'required': self.required,
+            'choices': [],
+            'options': [],
         }
         if self.choices:
             dict_['choices'] = [choice.to_dict() for choice in self.choices]
@@ -154,11 +156,15 @@ class ApplicationCommand:
     
     # TODO: Add to dict methods
 
-    @classmethod
-    def _from_data(cls, data: ApplicationCommandPayload) -> ApplicationCommand:
-        # TODO: write this
-        pass
-
+    def _from_data(self, data: ApplicationCommandPayload) -> ApplicationCommand:
+        self.id: int = _get_as_snowflake(data, 'id')
+        self.type: int = try_enum(ApplicationCommandType, int(data['type']))
+        self.application_id: int = _get_as_snowflake(data, 'application_id')
+        self.guild_id: int = _get_as_snowflake(data, 'guild_id')
+        self.default_permission: bool = data.get('default_permission')
+        self.version: int = _get_as_snowflake(data, 'version') 
+        
+        return self
 
 
 class SlashCommand(ApplicationCommand):
