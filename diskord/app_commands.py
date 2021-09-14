@@ -27,6 +27,7 @@ from typing import (
     List,
     Optional,
     Union,
+    Callable,
 )
 from .utils import _get_as_snowflake
 from .enums import (
@@ -96,53 +97,69 @@ class Option:
 
     def __str__(self):
         return self.name
+    
+    def to_dict(self) -> dict:
+        dict_ = {
+            'type': self.type,
+            'name': self.name,
+            'description': self.description,
+            'required': self.required,
+        }
+        if self.choices:
+            dict_['choices'] = [choice.to_dict() for choice in self.choices]
+        
+        if self.options:
+            dict_['options'] = [option.to_dict() for option in self.options]
+        
+        return dict_
+            
 
 class ApplicationCommand:
-    """Represents an application command.
+    """Represents an application command. This is base class for all application commands like
+    slash commands, user commands etc.
 
     Attributes
     ----------
 
-    id: :class:`int`
-        The ID of application command.
-    type: :class:`ApplicationCommandType`
-        The type of application command.
-    application_id: :class:`int`
-        The ID of application this command belongs.
-    guild_id: Optional[:class:`int`]
-        The ID of guild this command is registered in, This is None if the command
-        is global.
+    callback: Callable
+        The callback for this command.
     name: :class:`str`
-        The name of command.
+        The name of the command. Defaults to callback's name.
     description: :class:`str`
-        The description of command.
-    options: Optional[List[:class:`Option`]]
-        The list of options this command has.
-    default_permission: :class:`bool`
-        Whether the command is enabled by default when the app is added to a guild.
-    version: :class:`int`
-        Auto incrementing version identifier updated during substantial record changes.
+        The description of this command. Defaults to the docstring of the callback.
+    guild_ids: Union[:class:`tuple`, :class:`list`]
+        The guild this command will be registered in. Defaults to None for global commands.
+
     """
 
-    def __init__(self, data: ApplicationCommandPayload):
-        self.id: int = int(data['id'])
-        self.type: ApplicationCommandType = try_enum(ApplicationCommandType, int(data['type']))
-        self.application_id: int = int(data['application_id'])
-        self.guild_id: Optional[int] = _get_as_snowflake(data.get('guild_id'))
-        self.name: str = data['name']
-        self.description: str = data['description']
-        self.options: List[Option] = [
-            Option(option) for option in data.get('options', [])
-            ]
-        self.default_permission: bool = data['default_permission']
-        self.version: int = int(data['version'])
+    def __init__(self, callback: Callable, **attrs):
+        self.callback: Callable = callback
+        self.name: str = attrs.get('name') or callback.__name__
+        self.description: str = attrs.get('description') or self.callback.__doc__ 
+        self.guild_ids = attrs.get('guild_ids', None)
+
+        if self.type in (2, 3):
+            # Message and User Commands do not have any description.
+            # Ref: https://discord.com/developers/docs/interactions/application-commands#user-commands
+            # Ref: https://discord.com/developers/docs/interactions/application-commands#message-commands
+            
+            self.description = '' # type: ignore
 
     def __repr__(self):
         # More attributes here?
-        return f'<ApplicationCommand name={self.name!r} description={self.description!r}'
+        return f'<ApplicationCommand name={self.name!r} description={self.description!r} guild_ids={self.guild_ids!r}'
     
     def __str__(self):
         return self.name
+    
+    # TODO: Add to dict methods
+
+    @classmethod
+    def _from_data(cls, data: ApplicationCommandPayload) -> ApplicationCommand:
+        # TODO: write this
+        pass
+
+
 
 class SlashCommand(ApplicationCommand):
     """Represents a slash command.
@@ -155,8 +172,22 @@ class SlashCommand(ApplicationCommand):
     
     In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.slash_command`
     """
-    def __init__(self, data: ApplicationCommandPayload):
-        super().__init__(data)
+    def __init__(self, callback, **attrs):
+        self.type = 1
+        self.options: List[Option] = [
+            Option(option) for option in attrs.get('options', [])
+            ]
+        super().__init__(callback, **attrs)
+    
+    def to_dict(self) -> dict:
+        dict_ = {
+            'name': self.name,
+            'type': self.type,
+            'description': self.description,
+            "options": [options.to_dict() for option in self.options],
+        }
+        return dict_
+        
 
 class UserCommand(ApplicationCommand):
     """Represents a user command.
@@ -169,8 +200,9 @@ class UserCommand(ApplicationCommand):
     
     In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.user`
     """
-    def __init__(self, data: ApplicationCommandPayload):
-        super().__init__(data)
+    def __init__(self, callback, **attrs):
+        self.type = 2
+        super().__init__(callback, **attrs)
 
 class MessageCommand(ApplicationCommand):
     """Represents a message command.
@@ -183,6 +215,6 @@ class MessageCommand(ApplicationCommand):
     
     In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.message`
     """
-    def __init__(self, data: ApplicationCommandPayload):
-        super().__init__(data)
-
+    def __init__(self, callback, **attrs):
+        self.type = 3
+        super().__init__(callback, **attrs)
