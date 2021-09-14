@@ -597,7 +597,18 @@ class ApplicationCommandType(Enum, comparable=True):
 
     # Aliases
     slash_command = 1
-    
+
+class ApplicationCommandOptionType(Enum, comparable=True):
+    sub_command = 1
+    sub_command_group = 2
+    string  = 3
+    integer = 4
+    boolean = 5
+    user    = 6
+    channel = 7
+    role    = 8
+    mentionble = 9
+    number  = 10
 
 
 T = TypeVar('T')
