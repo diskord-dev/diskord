@@ -264,12 +264,13 @@ class Bot(Client):
             return
         
         command = self._application_commands.get(int(interaction.data['id']))
-        
+                
         if not command:
             _log.info('Application command referencing an unknown command %s, Discarding.' % str(interaction.data['id']))
             return
 
-        
+        self.dispatch('application_command_run', command)
+
         # TODO: 
         # Current arguments parsing is just a toy implementation and it would most certainly 
         # change because we have to take care of subcommand and subcommand group types to. 
@@ -283,7 +284,9 @@ class Bot(Client):
             kwargs[option['name']] = option['value']
 
         context = await self.get_application_context(interaction)
-        return (await command.callback(context, **kwargs))
+        await command.callback(context, **kwargs)
+
+        self.dispatch('application_command_completion', command)
 
     async def get_application_context(self, interaction: Interaction, *, cls: InteractionContext = None) -> InteractionContext:
         """|coro|
