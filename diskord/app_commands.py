@@ -37,7 +37,7 @@ from .enums import (
 )
 
 if TYPE_CHECKING:
-    from .types.app_commands import (
+    from .types.interactions import (
         ApplicationCommand as ApplicationCommandPayload,
         ApplicationCommandOption as ApplicationCommandOptionPayload,
         ApplicationCommandOptionChoice as ApplicationCommandOptionChoicePayload,
