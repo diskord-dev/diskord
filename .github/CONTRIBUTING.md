@@ -4,16 +4,10 @@ First off, thanks for taking the time to contribute. It makes the library substa
 
 The following is a set of guidelines for contributing to the repository. These are guidelines, not hard rules.
 
-## This is too much to read! I want to ask a question!
+We'd suggest you to read this completely to understand this library's styling conventions and contribution guide.
 
-Generally speaking questions are better suited in our resources below.
-
-- The official support server: https://discord.gg/r3sSKJJ
-- The Discord API server under #python_discord-py: https://discord.gg/discord-api
-- [The FAQ in the documentation](https://discordpy.readthedocs.io/en/latest/faq.html)
-- [StackOverflow's `discord.py` tag](https://stackoverflow.com/questions/tagged/discord.py)
-
-Please try your best not to ask questions in our issue tracker. Most of them don't belong there unless they provide value to a larger audience.
+## What doesn't belong here
+This repository acts as an issue tracker for this library to report bugs or suggest features. We do not allow asking for code help here. Please do not ask for code help here instead, Checkout our [support server](https://dsc.gg/diskord-dev)
 
 ## Good Bug Reports
 
@@ -40,6 +34,7 @@ Submitting a pull request is fairly simple, just make sure it focuses on a singl
 - Limit all lines to 72 characters or less.
 - Reference issues or pull requests outside of the first line.
     - Please use the shorthand `#123` and not the full URL.
-- Commits regarding the commands extension must be prefixed with `[commands]`
+- Commits regarding the extension or specific part of library must be prefixed with the part e.g `[commands]` for discord.ext.commands pull requests.
+- Make descriptive commits, Write a short yet descriptive overview of what the commit does. Simply adding `Update file.py` is not helpful.
 
 If you do not meet any of these guidelines, don't fret. Chances are they will be fixed upon rebasing but please do try to meet them to remove some of the workload.
