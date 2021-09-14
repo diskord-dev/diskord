@@ -134,7 +134,7 @@ class ApplicationCommand:
         self.options: List[Option] = [
             Option(option) for option in data.get('options', [])
             ]
-        self.default_permission: bool = data['bool']
+        self.default_permission: bool = data['default_permission']
         self.version: int = int(data['version'])
 
     def __repr__(self):
@@ -143,3 +143,46 @@ class ApplicationCommand:
     
     def __str__(self):
         return self.name
+
+class SlashCommand(ApplicationCommand):
+    """Represents a slash command.
+    
+    A slash command is a user input command that a user can use by typing ``/`` in
+    the chat.
+
+    This class inherits from :class:`ApplicationCommand` so all attributes valid
+    there are valid here too.
+    
+    In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.slash_command`
+    """
+    def __init__(self, data: ApplicationCommandPayload):
+        super().__init__(data)
+
+class UserCommand(ApplicationCommand):
+    """Represents a user command.
+    
+    A user command can be used by right-clicking a user in discord and choosing the
+    command from "Apps" context menu
+
+    This class inherits from :class:`ApplicationCommand` so all attributes valid
+    there are valid here too.
+    
+    In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.user`
+    """
+    def __init__(self, data: ApplicationCommandPayload):
+        super().__init__(data)
+
+class MessageCommand(ApplicationCommand):
+    """Represents a message command.
+    
+    A message command can be used by right-clicking a message in discord and choosing
+    the command from "Apps" context menu.
+
+    This class inherits from :class:`ApplicationCommand` so all attributes valid
+    there are valid here too.
+    
+    In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.message`
+    """
+    def __init__(self, data: ApplicationCommandPayload):
+        super().__init__(data)
+

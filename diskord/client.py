@@ -1642,5 +1642,3 @@ class Client:
         return self._connection.persistent_views
     
     # Application commands management
-
-    
