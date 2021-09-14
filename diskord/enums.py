@@ -621,6 +621,7 @@ class OptionType(Enum, comparable=True):
         elif issubclass(type, float):
             return cls.float
         
+        # using name because circular imports issues
         if type.__name__ == 'User':
             return cls.user
         elif type.__name__ == 'Role':

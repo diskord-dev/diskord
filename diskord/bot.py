@@ -30,6 +30,7 @@ from typing import (
     Any,
 )
 import inspect
+import logging
 
 from . import utils
 from .app_commands import (
@@ -44,6 +45,9 @@ from .interactions import InteractionContext
 
 if TYPE_CHECKING:
     from .interactions import Interaction
+
+_log = logging.getLogger(__name__)
+
 
 class Bot(Client):
     """Represents a bot that interacts with Discord API. 
@@ -62,6 +66,7 @@ class Bot(Client):
         self._application_commands: Dict[int, ApplicationCommand] = {}
 
     # Properties
+
     @property
     def application_commands(self):
         """Dict[:class:`int`, :class:`ApplicationCommand`]: Returns a mapping with ID of command to the application command."""
@@ -138,6 +143,7 @@ class Bot(Client):
         # Yes.
         # When?
         # idk
+        _log.info('Registering %s application commands.' % str(len(self.__to_register)))
         
         commands = []
 
@@ -167,6 +173,8 @@ class Bot(Client):
             for cmd in cmds:
                 self._application_commands[int(cmd['id'])] = utils.get(self.__to_register, name=cmd['name'])._from_data(cmd)
         
+        _log.info('Registered %s commands successfully.' % str(len(self.__to_register)))
+
     
     # Decorators
 
@@ -259,6 +267,7 @@ class Bot(Client):
         
         if not command:
             return
+
         
         # TODO: 
         # Current arguments parsing is just a toy implementation and it would most certainly 
