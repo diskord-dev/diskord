@@ -610,6 +610,27 @@ class OptionType(Enum, comparable=True):
     mentionble = 9
     number  = 10
 
+    @classmethod
+    def from_datatype(cls, type: Any):
+        if issubclass(type, str):
+            return cls.string
+        elif issubclass(type, int):
+            return cls.integer
+        elif issubclass(type, bool):
+            return cls.boolean
+        elif issubclass(type, float):
+            return cls.float
+        
+        if type.__name__ == 'User':
+            return cls.user
+        elif type.__name__ == 'Role':
+            return cls.role
+        elif type.__name__  == 'GuildChannel':
+            return cls.channel
+        
+        else:
+            raise TypeError('Unknown data type for option.')
+
 
 T = TypeVar('T')
 

@@ -84,7 +84,7 @@ class Option:
     options: List[:class:`Option`]
         The options if the type is a subcommand or subcommand group.
     """
-    def __init__(self, data: ApplicationCommandOptionPayload):
+    def __init__(self, **data):
         self.type: OptionType = try_enum(OptionType, int(data['type']))
         self.name: str = data['name']
         self.description: str = data['description']
@@ -98,9 +98,24 @@ class Option:
     def __str__(self):
         return self.name
     
+    def add_choice(self, choice: OptionChoice) -> OptionChoice:
+        """Adds a choice to current option.
+
+        Parameters
+        -----------
+
+        choice: :class:`OptionChoice`
+            The choice to add.
+        """
+        if not isinstance(choice, OptionChoice):
+            raise TypeError('choice must be an instance of OptionChoice.')
+
+        self.choices.append(choice)
+        return choice
+    
     def to_dict(self) -> dict:
         dict_ = {
-            'type': self.type,
+            'type': self.type.value,
             'name': self.name,
             'description': self.description,
             'required': self.required,
@@ -154,6 +169,8 @@ class ApplicationCommand:
     def __str__(self):
         return self.name
     
+
+    
     # TODO: Add to dict methods
 
     def _from_data(self, data: ApplicationCommandPayload) -> ApplicationCommand:
@@ -180,20 +197,38 @@ class SlashCommand(ApplicationCommand):
     """
     def __init__(self, callback, **attrs):
         self.type = 1
-        self.options: List[Option] = [
-            Option(option) for option in attrs.get('options', [])
-            ]
+        self.options: List[Option] = attrs.get('options')
         super().__init__(callback, **attrs)
+    
+    def add_option(self, option: Option) -> Option:
+        """Adds an option to this slash command.
+        
+        Parameters
+        ----------
+        option: :class:`Option`
+            The option to add.
+
+        Returns
+        -------
+        :class:`Option`
+            The added option.
+        
+        """
+        if not isinstance(option, Option):
+            raise TypeError('option must be an instance of Option class.')
+
+        self.options.append(option)
+        return option
+
     
     def to_dict(self) -> dict:
         dict_ = {
             'name': self.name,
             'type': self.type,
             'description': self.description,
-            "options": [options.to_dict() for option in self.options],
+            "options": [option.to_dict() for option in self.options],
         }
         return dict_
-        
 
 class UserCommand(ApplicationCommand):
     """Represents a user command.

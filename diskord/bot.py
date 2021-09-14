@@ -173,7 +173,7 @@ class Bot(Client):
             return self.add_application_command(1, func, **options)
         
         return inner
-    
+
     def user_command(self, **options) -> SlashCommand:
         """A decorator-based interface to add user commands to the bot.
         
@@ -247,8 +247,20 @@ class Bot(Client):
         if not command:
             return
         
+        # TODO: 
+        # Current arguments parsing is just a toy implementation and it would most certainly 
+        # change because we have to take care of subcommand and subcommand group types to. 
+        # The plan is to implement the classic function annotations based system for typing of
+        #  argument and @option decorator for passing attributes.
+
+        options = interaction.data.get('options', [])
+        kwargs = {}
+
+        for option in options:
+            kwargs[option['name']] = option['value']
+
         context = await self.get_application_context(interaction)
-        return (await command.callback(context))
+        return (await command.callback(context, **kwargs))
 
     async def get_application_context(self, interaction: Interaction, *, cls: InteractionContext = None) -> InteractionContext:
         """|coro|
@@ -295,3 +307,15 @@ class Bot(Client):
     
     async def on_interaction(self, interaction: Interaction):
         await self.handle_command_interaction(interaction)
+
+def slash_option(self, name: str, type: Any = None,  **attrs) -> Option:
+    """A decorator-based interface to add options to a slash command.
+
+    This is equivalent to using ``SlashCommand.add_option(**attrs)``
+    """
+    def inner(func):
+        type = type or func.__annotations__.get(name, str)
+        func.__annotations__[name] = Option(name, type, **attrs)
+        return func
+    
+    return inner
