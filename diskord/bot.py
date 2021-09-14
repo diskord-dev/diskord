@@ -27,9 +27,11 @@ from typing import (
     TYPE_CHECKING,
     Dict,
     Callable,
+    Any,
 )
 import inspect
 
+from . import utils
 from .app_commands import (
     ApplicationCommand,
     SlashCommand,
@@ -38,6 +40,10 @@ from .app_commands import (
 )
 from .client import Client
 from .enums import ApplicationCommandType
+from .interactions import InteractionContext
+
+if TYPE_CHECKING:
+    from .interactions import Interaction
 
 class Bot(Client):
     """Represents a bot that interacts with Discord API. 
@@ -53,7 +59,7 @@ class Bot(Client):
     def __init__(self, **options) -> None:
         super().__init__(**options)
         self.__to_register: List[ApplicationCommand] = []
-        self._app_commands: List[ApplicationCommand] = []
+        self._application_commands: Dict[int, ApplicationCommand] = {}
     
     # Commands management
     
@@ -120,7 +126,6 @@ class Bot(Client):
             If you decided to override the :func:`on_connect` event, You MUST call this manually
             or the commands will not be registered.
         """
-        registered_commands = await self.http.get_global_commands(self.user.id)
         commands = []
 
         # Firstly, We will register the global commands
@@ -131,25 +136,24 @@ class Bot(Client):
         cmds = await self.http.bulk_upsert_global_commands(self.user.id, commands)
         
         for cmd in cmds:
-            self._app_commands[cmd['id']] = ApplicationCommand._from_data(cmd)
+            self._application_commands[int(cmd['id'])] = utils.get(self.__to_register, name=cmd['name'])._from_data(cmd)
+
         
         # Registering the guild commands now
         
         guilds = {}
 
-        for cmd in (command for command in self.__to_register if cmd.guild_ids):
-            data = command.to_dict()
+        for cmd in (command for command in self.__to_register if command.guild_ids):
+            data = cmd.to_dict()
             for guild in cmd.guild_ids:
-                guilds[guild].extend(data)
+                guilds[guild] = []
+                guilds[guild].append(data)
         
         for guild in guilds:
             cmds = await self.http.bulk_upsert_guild_commands(self.user.id, guild, guilds[guild])
             for cmd in cmds:
-                self._app_commands[cmd['id']] = ApplicationCommand._from_data(cmd)
+                self._application_commands[int(cmd['id'])] = utils.get(self.__to_register, name=cmd['name'])._from_data(cmd)
         
-            
-
-            
     
     # Decorators
 
@@ -203,10 +207,31 @@ class Bot(Client):
             return self.add_application_command(2, func, **options)
         
         return inner
+    
+    # Command handler
+
+    async def handle_command_interaction(self, interaction: Interaction) -> Any:
+        if not interaction.is_application_command():
+            return
+        
+        command = self._application_commands.get(int(interaction.data['id']))
+        
+        if not command:
+            return
+        
+        context = await self.get_application_context(interaction)
+        await command.callback(context)
+
+    async def get_application_context(self, interaction: Interaction, *, cls: InteractionContext = None) -> InteractionContext:
+        if not cls:
+            cls = InteractionContext
+        
+        return cls(self, interaction)
 
     # Events
 
     async def on_connect(self):
-        # TODO: Register commands here when registeration is implemented
-
         await self.register_application_commands()
+    
+    async def on_interaction(self, interaction: Interaction):
+        await self.handle_command_interaction(interaction)
