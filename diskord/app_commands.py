@@ -57,6 +57,12 @@ class OptionChoice:
     def __init__(self, data: ApplicationCommandOptionChoicePayload):
         self.name: str = data['name']
         self.value: Union[str, int, float] = data['value']
+    
+    def __repr__(self):
+        return f'<OptionChoice name={self.name!r} value={self.value!r}'
+    
+    def __str__(self):
+        return self.name
 
 class Option:
     """Represents an option for an application slash command.
