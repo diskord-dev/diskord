@@ -432,9 +432,9 @@ def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
         if sign is None:
             raise TypeError(f'Parameter for option {name} is missing.')
 
-
-        required = sign.default is inspect._empty
-
+        required = attrs.get('required')
+        if required is None:
+            required = sign.default is inspect._empty
 
         func.__annotations__[name] = Option(name=name, type=type_, required=required, **attrs)
         return func
