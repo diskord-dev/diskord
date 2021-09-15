@@ -50,6 +50,7 @@ from .errors import ApplicationCommandError
 from .interactions import InteractionContext
 from .member import Member
 from .user import User
+from .message import Message
 
 if TYPE_CHECKING:
     from .interactions import Interaction
@@ -341,13 +342,27 @@ class Bot(Client):
                     )
                 else:
                     user = User(
-                        state=self._state,
+                        state=self._connection,
                         data=resolved['users'][interaction.data['target_id']]
                     )
 
-            
             return await command.callback(context, user)
 
+        if interaction.data['type'] == ApplicationCommandType.message.value:
+            if interaction.guild:
+                message = Message(
+                    state=interaction.guild._state,
+                    channel=interaction.channel,
+                    data=interaction.data['resolved']['messages'][interaction.data['target_id']]
+                )
+            else:
+                message = Message(
+                    state=self._connection,
+                    channel=interaction.user,
+                    data=interaction.data['resolved']['messages'][interaction.data['target_id']],
+                )
+            
+            return await command.callback(context, message)
 
         for option in options:
             if option['type'] in (
