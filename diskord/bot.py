@@ -283,7 +283,7 @@ class Bot(Client):
         command = self.get_application_command(int(interaction.data['id']))
                 
         if not command:
-            _log.info('Application command referencing an unknown command %s, Discarding.' % str(interaction.data['id']))
+            _log.info(f'Application command of type {interaction.data['type']} referencing an unknown command {interaction.data['id']}, Discarding.'
             return
 
         self.dispatch('application_command_run', command)
