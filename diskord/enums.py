@@ -607,7 +607,7 @@ class OptionType(Enum, comparable=True):
     user    = 6
     channel = 7
     role    = 8
-    mentionble = 9
+    mentionable = 9
     number  = 10
 
     @classmethod
