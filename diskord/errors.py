@@ -52,6 +52,7 @@ __all__ = (
     'ConnectionClosed',
     'PrivilegedIntentsRequired',
     'InteractionResponded',
+    'ApplicationCommandError',
 )
 
 
@@ -275,3 +276,13 @@ class InteractionResponded(ClientException):
     def __init__(self, interaction: Interaction):
         self.interaction: Interaction = interaction
         super().__init__('This interaction has already been responded to before')
+
+class ApplicationCommandError(ClientException):
+    """Base exception from which other application commands exceptions are derived.
+    
+    This class is really useful to create custom exceptions which you can handle in
+    :func:`on_application_command_error`. An exception that subclasses this class
+    that is raised in an application command will be passed to :func:`on_application_command_error`
+    listener. 
+    """
+    pass
