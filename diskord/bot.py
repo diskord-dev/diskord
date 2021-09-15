@@ -316,12 +316,6 @@ class Bot(Client):
 
         self.dispatch('application_command_run', command)
 
-        # TODO: 
-        # Current arguments parsing is just a toy implementation and it would most certainly 
-        # change because we have to take care of subcommand and subcommand group types to. 
-        # The plan is to implement the classic function annotations based system for typing of
-        #  argument and @option decorator for passing attributes.
-
         options = interaction.data.get('options', [])
         kwargs = {}
 
@@ -436,7 +430,12 @@ def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
         if required is None:
             required = sign.default is inspect._empty
 
-        func.__annotations__[name] = Option(name=name, type=type_, required=required, **attrs)
+        func.__annotations__[name] = Option(
+            name=name, 
+            type=type_, 
+            required=required, 
+            **attrs
+            )
         return func
     
     return inner
