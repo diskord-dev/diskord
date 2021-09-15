@@ -74,15 +74,19 @@ class Bot(Client):
     
     # Commands management
     
-    def add_application_command(self, type: ApplicationCommandType, callback: Callable, **attrs) -> ApplicationCommand:
+    def add_application_command(self, cls: ApplicationCommandType, callback: Callable, **attrs) -> ApplicationCommand:
         """Adds an application command to internal list of commands that will be registered on bot connect.
         
-        This is generally not called. Instead, :func:`application_command` decorator is used.
+        This is generally not called. Instead, one of the following decorators is used:
+        
+        * :func:`slash_command`
+        * :func:`user_command`
+        * :func:`message_command`
 
         Parameters
         ----------
 
-        cls: Union[:class:`SlashCommand`, :class:`MessageCommand`, :class:`UserCommand`]
+        cls: :class:`ApplicationCommand`
             The object type to use.
         callback: Callable
             The callback function for the command.
@@ -98,28 +102,29 @@ class Bot(Client):
             2: UserCommand,
             3: MessageCommand,
         }
-        if not type in types:
+        if not cls in types:
             raise TypeError('The provided type is not valid.')
 
-        command = types[type](callback, **attrs)
+        command = types[cls](callback, **attrs)
         self.__to_register.append(command)
         
         return command
     
-    def remove_application_command(self, command: ApplicationCommand):
-        """Removes an application command from internal list of commands that will be registered on bot connect.
+    def remove_application_command(self, id: int, /) -> Optional[ApplicationCommand]:
+        """Removes an application command from registered application commands.
 
-        This has no affect when the bot has connected. Use :func:`delete_application_command` instead.
+        Once an application command is removed using this method, It will not be invoked.
 
         Parameters
         ----------
 
-        command: :class:`ApplicationCommand`
-            The command to delete.
+        id: :class:`int`
+            The ID of command to delete.
         """
-        for cmd in self.__to_register:
-            if cmd.id == command.id:
-                return self.__to_register.pop(cmd) 
+        try:
+            return self._application_commands.pop(id)
+        except KeyError:
+            return
     
     def get_application_command(self, id: int, /) -> Optional[ApplicationCommand]:
         """Returns a bot's application command by it's ID.
