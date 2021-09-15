@@ -301,9 +301,12 @@ class Bot(Client):
             kwargs[option['name']] = option['value']
 
         context = await self.get_application_context(interaction)
-        await command.callback(context, **kwargs)
-
-        self.dispatch('application_command_completion', command)
+        try:
+            await command.callback(context, **kwargs)
+        except ApplicationCommandError as error:
+            self.dispatch('application_command_error', context, error)
+        else:
+            self.dispatch('application_command_completion', command)
 
     async def get_application_context(self, interaction: Interaction, *, cls: InteractionContext = None) -> InteractionContext:
         """|coro|
