@@ -48,6 +48,8 @@ from .enums import (
     )
 from .errors import ApplicationCommandError
 from .interactions import InteractionContext
+from .member import Member
+from .user import User
 
 if TYPE_CHECKING:
     from .interactions import Interaction
@@ -69,7 +71,7 @@ class Bot(Client):
     """
     def __init__(self, **options) -> None:
         super().__init__(**options)
-        self.__to_register: List[ApplicationCommand] = []
+        self._pending_commands: List[ApplicationCommand] = []
         self._application_commands: Dict[int, ApplicationCommand] = {}
 
     # Properties
@@ -113,7 +115,7 @@ class Bot(Client):
             raise TypeError('The provided type is not valid.')
 
         command = types[cls](callback, **attrs)
-        self.__to_register.append(command)
+        self._pending_commands.append(command)
         
         if command.type == ApplicationCommandType.slash.value:
             for opt in callback.__annotations__:
@@ -176,26 +178,26 @@ class Bot(Client):
         # Yes.
         # When?
         # idk
-        _log.info('Registering %s application commands.' % str(len(self.__to_register)))
+        _log.info('Registering %s application commands.' % str(len(self._pending_commands)))
         
         commands = []
 
         # Firstly, We will register the global commands
-        for command in (cmd for cmd in self.__to_register if not cmd.guild_ids):
+        for command in (cmd for cmd in self._pending_commands if not cmd.guild_ids):
             data = command.to_dict()
             commands.append(data)
         
         cmds = await self.http.bulk_upsert_global_commands(self.user.id, commands)
         
         for cmd in cmds:
-            self._application_commands[int(cmd['id'])] = utils.get(self.__to_register, name=cmd['name'])._from_data(cmd)
+            self._application_commands[int(cmd['id'])] = utils.get(self._pending_commands, name=cmd['name'])._from_data(cmd)
 
         
         # Registering the guild commands now
         
         guilds = {}
 
-        for cmd in (command for command in self.__to_register if command.guild_ids):
+        for cmd in (command for command in self._pending_commands if command.guild_ids):
             data = cmd.to_dict()
             for guild in cmd.guild_ids:
                 guilds[guild] = []
@@ -204,9 +206,9 @@ class Bot(Client):
         for guild in guilds:
             cmds = await self.http.bulk_upsert_guild_commands(self.user.id, guild, guilds[guild])
             for cmd in cmds:
-                self._application_commands[int(cmd['id'])] = utils.get(self.__to_register, name=cmd['name'])._from_data(cmd)
+                self._application_commands[int(cmd['id'])] = utils.get(self._pending_commands, name=cmd['name'])._from_data(cmd)
         
-        _log.info('Registered %s commands successfully.' % str(len(self.__to_register)))
+        _log.info('Registered %s commands successfully.' % str(len(self._pending_commands)))
 
     
     # Decorators
@@ -318,6 +320,34 @@ class Bot(Client):
 
         options = interaction.data.get('options', [])
         kwargs = {}
+        context = await self.get_application_context(interaction)
+
+        if interaction.data['type'] == ApplicationCommandType.user.value:
+            if interaction.guild:
+                user = interaction.guild.get_member(interaction.data['target_id'])
+            else:
+                user = self.get_user(interaction.data['target_id'])
+            
+            if user is None:
+                resolved = interaction.data['resolved']
+                if interaction.guild:
+                    member_with_user = resolved['members'][interaction.data['target_id']]
+                    member_with_user['user'] = resolved['users'][interaction.data['target_id']]
+                    
+                    user = Member(
+                        data=member_with_user,
+                        guild=interaction.guild,
+                        state=interaction.guild._state,
+                    )
+                else:
+                    user = User(
+                        state=self._state,
+                        data=resolved['users'][interaction.data['target_id']]
+                    )
+
+            
+            return await command.callback(context, user)
+
 
         for option in options:
             if option['type'] in (
@@ -348,7 +378,6 @@ class Bot(Client):
                 
             kwargs[option['name']] = value
 
-        context = await self.get_application_context(interaction)
         try:
             await command.callback(context, **kwargs)
         except ApplicationCommandError as error:
