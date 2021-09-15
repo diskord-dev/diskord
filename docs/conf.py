@@ -159,7 +159,7 @@ html_experimental_html5_writer = True
 html_theme = 'basic'
 
 html_context = {
-  'diskord_invite': 'https://discord.gg/r3sSKJJ',
+  'diskord_invite': 'https://discord.gg/V6VxfDYHkB',
   'diskord_extensions': [
     ('diskord.ext.commands', 'ext/commands'),
     ('diskord.ext.tasks', 'ext/tasks'),
@@ -167,7 +167,7 @@ html_context = {
 }
 
 resource_links = {
-  'discord': 'https://discord.gg/r3sSKJJ',
+  'discord': 'https://discord.gg/V6VxfDYHkB',
   'issues': 'https://github.com/nerdguyahmad/diskord/issues',
   'discussions': 'https://github.com/nerdguyahmad/diskord/discussions',
   'examples': f'https://github.com/nerdguyahmad/diskord/tree/{branch}/examples',
@@ -358,4 +358,4 @@ def setup(app):
   if app.config.language == 'ja':
     app.config.intersphinx_mapping['py'] = ('https://docs.python.org/ja/3', None)
     app.config.html_context['diskord_invite'] = 'https://discord.gg/nXzj3dg'
-    app.config.resource_links['diskord'] = 'https://discord.gg/nXzj3dg'
+    app.config.resource_links['diskord'] = 'https://discord.gg/V6VxfDYHkB'
