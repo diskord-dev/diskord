@@ -300,7 +300,7 @@ class RawThreadDeleteEvent(_RawReprMixin):
     thread: Optional[:class:`Thread`]
         The thread that was deleted if found in the internal cache.
 
-        .. note:
+        .. note::
             Archived threads are usually not in the internal cache so if an archived
             thread is deleted, ``thread`` will most probably be ``None``
     """
