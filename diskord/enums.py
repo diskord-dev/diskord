@@ -611,25 +611,26 @@ class OptionType(Enum, comparable=True):
     number  = 10
 
     @classmethod
-    def from_datatype(cls, type: Any):
-        if issubclass(type, str):
+    def from_datatype(cls, type_: Any, /):
+        if issubclass(type_, str):
             return cls.string
-        elif issubclass(type, int):
+        elif issubclass(type_, int):
             return cls.integer
-        elif issubclass(type, bool):
+        elif issubclass(type_, bool):
             return cls.boolean
-        elif issubclass(type, float):
+        elif issubclass(type_, float):
             return cls.float
         
         # using name because circular imports issues
-        if type.__name__ == 'User':
+        if type_.__name__ in ['User', 'Member']:
             return cls.user
-        elif type.__name__ == 'Role':
+        elif type_.__name__ == 'Role':
             return cls.role
-        elif type.__name__  == 'GuildChannel':
+        elif type_.__name__  == 'GuildChannel':
             return cls.channel
         
         else:
+            print(type_.__name__)
             raise TypeError('Unknown data type for option.')
 
 

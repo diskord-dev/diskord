@@ -38,15 +38,19 @@ from .app_commands import (
     SlashCommand,
     UserCommand,
     MessageCommand,
+    Option,
+    OptionChoice,
 )
 from .client import Client
 from .enums import ApplicationCommandType
+from .errors import ApplicationCommandError
 from .interactions import InteractionContext
 
 if TYPE_CHECKING:
     from .interactions import Interaction
 
 _log = logging.getLogger(__name__)
+MISSING = utils.MISSING
 
 
 class Bot(Client):
@@ -108,6 +112,10 @@ class Bot(Client):
         command = types[cls](callback, **attrs)
         self.__to_register.append(command)
         
+        if command.type == ApplicationCommandType.slash.value:
+            for opt in callback.__annotations__:
+                command.add_option(callback.__annotations__[opt])
+                
         return command
     
     def remove_application_command(self, id: int, /) -> Optional[ApplicationCommand]:
@@ -300,7 +308,7 @@ class Bot(Client):
         command = self.get_application_command(int(interaction.data['id']))
                 
         if not command:
-            _log.info(f'Application command of type {interaction.data['type']} referencing an unknown command {interaction.data['id']}, Discarding.'
+            _log.info(f'Application command of type {interaction.data["type"]} referencing an unknown command {interaction.data["id"]}, Discarding.')
             return
 
         self.dispatch('application_command_run', command)
@@ -371,15 +379,32 @@ class Bot(Client):
     async def on_interaction(self, interaction: Interaction):
         await self.handle_command_interaction(interaction)
 
-# remove this when annotations support are added.
-def slash_option(self, name: str, type: Any = None,  **attrs) -> Option:
+def slash_option(name: str,  **attrs) -> Option:
     """A decorator-based interface to add options to a slash command.
 
-    This is equivalent to using ``SlashCommand.add_option(**attrs)``
+    Usage: ::
+        
+        @bot.slash_command()
+        @diskord.slash_option('member', description='The member to high-five.')
+        async def highfive(ctx, member: diskord.Member):
+            await ctx.send(f'{ctx.author.name} high-fived {member.name}')
+    
+    .. warning::
+        The callback function must contain the argument and properly annotated or TypeError
+        will be raised.
     """
     def inner(func):
-        type = type or func.__annotations__.get(name, str)
-        func.__annotations__[name] = Option(name, type, **attrs)
+        type_ = func.__annotations__.get(name, MISSING)
+        if type_ is MISSING:
+            raise TypeError(f'Parameter for option {name} is missing or not annotated.')
+
+        if func.__defaults__:
+            sign = inspect.signature(func).parameters
+            required = sign.get(name).default is inspect._empty
+        else:
+            required = False
+
+        func.__annotations__[name] = Option(name=name, type=type_, required=required, **attrs)
         return func
     
     return inner

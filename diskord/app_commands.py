@@ -85,7 +85,11 @@ class Option:
         The options if the type is a subcommand or subcommand group.
     """
     def __init__(self, **data):
-        self.type: OptionType = try_enum(OptionType, int(data['type']))
+        if isinstance(data.get('type'), type):
+            self.type: OptionType = OptionType.from_datatype(data.get('type'))
+        else:
+            self.type: OptionType = data.get('type')
+
         self.name: str = data['name']
         self.description: str = data['description']
         self.required: bool = data.get('required', False)
@@ -200,7 +204,7 @@ class SlashCommand(ApplicationCommand):
     """
     def __init__(self, callback, **attrs):
         self.type = ApplicationCommandType.slash.value
-        self.options: List[Option] = attrs.get('options')
+        self.options: List[Option] = attrs.get('options', [])
         super().__init__(callback, **attrs)
     
     def add_option(self, option: Option) -> Option:
@@ -231,6 +235,7 @@ class SlashCommand(ApplicationCommand):
             'description': self.description,
             "options": [option.to_dict() for option in self.options],
         }
+        print(dict_)
         return dict_
 
 class UserCommand(ApplicationCommand):
