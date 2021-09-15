@@ -155,7 +155,10 @@ class ApplicationCommand:
         self.description: str = attrs.get('description') or self.callback.__doc__ 
         self.guild_ids = attrs.get('guild_ids', None)
 
-        if self.type in (2, 3):
+        if self.type in (
+            ApplicationCommandType.user.value,
+            ApplicationCommandType.message.value,
+        ):
             # Message and User Commands do not have any description.
             # Ref: https://discord.com/developers/docs/interactions/application-commands#user-commands
             # Ref: https://discord.com/developers/docs/interactions/application-commands#message-commands
@@ -193,10 +196,10 @@ class SlashCommand(ApplicationCommand):
     This class inherits from :class:`ApplicationCommand` so all attributes valid
     there are valid here too.
     
-    In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.slash_command`
+    In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.slash`
     """
     def __init__(self, callback, **attrs):
-        self.type = 1
+        self.type = ApplicationCommandType.slash.value
         self.options: List[Option] = attrs.get('options')
         super().__init__(callback, **attrs)
     
@@ -242,7 +245,7 @@ class UserCommand(ApplicationCommand):
     In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.user`
     """
     def __init__(self, callback, **attrs):
-        self.type = 2
+        self.type = ApplicationCommandType.user.value
         super().__init__(callback, **attrs)
     
     def to_dict(self) -> dict:
@@ -265,7 +268,7 @@ class MessageCommand(ApplicationCommand):
     In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.message`
     """
     def __init__(self, callback, **attrs):
-        self.type = 3
+        self.type = ApplicationCommandType.message.value
         super().__init__(callback, **attrs)
 
     def to_dict(self) -> dict:

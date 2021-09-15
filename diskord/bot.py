@@ -213,7 +213,11 @@ class Bot(Client):
             if not inspect.iscoroutinefunction(func):
                 raise TypeError('Callback function must be a coroutine.')
             
-            return self.add_application_command(1, func, **options)
+            return self.add_application_command(
+                ApplicationCommandType.slash.value, 
+                func, 
+                **options
+                )
         
         return inner
 
@@ -230,7 +234,11 @@ class Bot(Client):
             if not inspect.iscoroutinefunction(func):
                 raise TypeError('Callback function must be a coroutine.')
             
-            return self.add_application_command(2, func, **options)
+            return self.add_application_command(
+                ApplicationCommandType.user.value, 
+                func, 
+                **options
+                )
         
         return inner
 
@@ -247,7 +255,11 @@ class Bot(Client):
             if not inspect.iscoroutinefunction(func):
                 raise TypeError('Callback function must be a coroutine.')
             
-            return self.add_application_command(2, func, **options)
+            return self.add_application_command(
+                ApplicationCommandType.message.value, 
+                func, 
+                **options
+                )
         
         return inner
     
