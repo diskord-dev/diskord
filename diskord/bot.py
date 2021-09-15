@@ -42,7 +42,10 @@ from .app_commands import (
     OptionChoice,
 )
 from .client import Client
-from .enums import ApplicationCommandType
+from .enums import (
+    ApplicationCommandType,
+    OptionType,
+    )
 from .errors import ApplicationCommandError
 from .interactions import InteractionContext
 
@@ -323,7 +326,33 @@ class Bot(Client):
         kwargs = {}
 
         for option in options:
-            kwargs[option['name']] = option['value']
+            if option['type'] in (
+                OptionType.string.value,
+                OptionType.integer.value,
+                OptionType.boolean.value,
+                OptionType.number.value,
+            ):
+                value = option['value']
+
+            elif option['type'] == OptionType.user.value:
+                if interaction.guild:
+                    value = interaction.guild.get_member(int(option['value']))
+                else:
+                    value = self.get_user(int(option['value']))
+            
+            elif option['type'] == OptionType.channel.value:
+                value = interaction.guild.get_channel(int(option['value']))
+                
+            elif option['type'] == OptionType.role.value:
+                value = interaction.guild.get_role(int(option['value']))
+                
+            elif option['type'] == OptionType.mentionable.value:
+                value = (
+                    interaction.guild.get_member(int(option['value'])) or
+                    interaction.guild.get_role(int(option['value']))
+                    )
+                
+            kwargs[option['name']] = value
 
         context = await self.get_application_context(interaction)
         try:
@@ -379,12 +408,12 @@ class Bot(Client):
     async def on_interaction(self, interaction: Interaction):
         await self.handle_command_interaction(interaction)
 
-def slash_option(name: str,  **attrs) -> Option:
+def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
     """A decorator-based interface to add options to a slash command.
 
     Usage: ::
         
-        @bot.slash_command()
+        @bot.slash_command(description="Highfive a member!")
         @diskord.slash_option('member', description='The member to high-five.')
         async def highfive(ctx, member: diskord.Member):
             await ctx.send(f'{ctx.author.name} high-fived {member.name}')
@@ -394,15 +423,14 @@ def slash_option(name: str,  **attrs) -> Option:
         will be raised.
     """
     def inner(func):
-        type_ = func.__annotations__.get(name, MISSING)
+        nonlocal type_
+        type_ = type_ or func.__annotations__.get(name, MISSING)
         if type_ is MISSING:
             raise TypeError(f'Parameter for option {name} is missing or not annotated.')
 
-        if func.__defaults__:
-            sign = inspect.signature(func).parameters
-            required = sign.get(name).default is inspect._empty
-        else:
-            required = False
+        sign = inspect.signature(func).parameters
+        required = sign.get(name).default is inspect._empty
+
 
         func.__annotations__[name] = Option(name=name, type=type_, required=required, **attrs)
         return func
