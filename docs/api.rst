@@ -648,6 +648,42 @@ to handle it, which defaults to print a traceback and ignoring the exception.
     :param command: The command that was invoked.
     :type command: :class:`ApplicationCommand`
 
+.. function:: on_application_command_error(ctx, error)
+
+    Called whenever an application command raises :class:`ApplicationCommandError`.
+
+    This is a really helpful event and acts as an error handler for your application
+    commands.
+
+    You can create your own exceptions that subclass :class:`ApplicationCommandError` that 
+    you can raise in your commands and handle them within this event.
+
+    Usage: ::
+
+        class UserBlacklisted(diskord.ApplicationCommandError):
+            pass
+        
+        @bot.command()
+        async def test(ctx):
+            if ctx.author.id == 123456789:
+                raise UserBlacklisted()
+            
+        @bot.event
+        async def on_application_command_error(ctx, error):
+            if isinstance(error, ApplicationCommandError):
+                await ctx.send('You are blacklisted from using this command.')
+            else:
+                raise error
+
+    .. versionadded:: 2.5
+
+    :param ctx: The context of the interaction.
+    :type ctx: :class:`InteractionContext`
+    :param error: The error that was raised.
+    :type error: :class:`ApplicationCommandError`
+
+    
+
 .. function:: on_private_channel_update(before, after)
 
     Called whenever a private group DM is updated. e.g. changed name or topic.
@@ -4414,6 +4450,8 @@ The following exceptions are thrown by the library.
 
 .. autoexception:: InteractionResponded
 
+.. autoexception:: ApplicationCommandError
+
 .. autoexception:: diskord.opus.OpusError
 
 .. autoexception:: diskord.opus.OpusNotLoaded
@@ -4432,6 +4470,7 @@ Exception Hierarchy
                 - :exc:`ConnectionClosed`
                 - :exc:`PrivilegedIntentsRequired`
                 - :exc:`InteractionResponded`
+                - :exc:`ApplicationCommandError`
             - :exc:`NoMoreItems`
             - :exc:`GatewayNotFound`
             - :exc:`HTTPException`
