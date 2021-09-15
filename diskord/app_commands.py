@@ -156,7 +156,7 @@ class ApplicationCommand:
     def __init__(self, callback: Callable, **attrs):
         self.callback: Callable = callback
         self.name: str = attrs.get('name') or callback.__name__
-        self.description: str = attrs.get('description') or self.callback.__doc__ 
+        self.description: str = attrs.get('description') or self.callback.__doc__
         self.guild_ids = attrs.get('guild_ids', None)
 
         if self.type in (
@@ -207,6 +207,9 @@ class SlashCommand(ApplicationCommand):
         self.options: List[Option] = attrs.get('options', [])
         super().__init__(callback, **attrs)
     
+        if not self.description:
+            raise TypeError('description for slash commands is required.')
+    
     def add_option(self, option: Option) -> Option:
         """Adds an option to this slash command.
         
@@ -232,9 +235,10 @@ class SlashCommand(ApplicationCommand):
         dict_ = {
             'name': self.name,
             'type': self.type,
-            'description': self.description,
             "options": [option.to_dict() for option in self.options],
+            'description': self.description,
         }
+
         print(dict_)
         return dict_
 
