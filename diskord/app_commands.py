@@ -239,7 +239,6 @@ class SlashCommand(ApplicationCommand):
             'description': self.description,
         }
 
-        print(dict_)
         return dict_
 
 class UserCommand(ApplicationCommand):

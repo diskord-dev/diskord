@@ -74,6 +74,7 @@ class Bot(Client):
         super().__init__(**options)
         self._pending_commands: List[ApplicationCommand] = []
         self._application_commands: Dict[int, ApplicationCommand] = {}
+        self.overwrite_application_commands: bool = options.get('overwrite_application_commands', False)
 
     # Properties
 
@@ -156,8 +157,68 @@ class Bot(Client):
             The command matching the ID.
         """
         return self._application_commands.get(id)
+    
+    async def sync_application_commands(self, delete_unregistered_commands: bool = False):
+        """|coro|
 
+        Updates the internal cache of application commands with the ones that are already
+        registered on the API.
+
+        Unlike :func:`register_application_commands`, This doesn't bulk overwrite the
+        registered commands. Instead, it fetches the registered commands and sync the
+        internal cache with the new commands.
+
+        This must be used when you don't intend to overwrite all the previous commands but
+        want to add new ones.
+
+        Parameters
+        ----------
+
+        delete_unregistered_commands: :class:`bool`
+            Whether or not to delete the commands that were sent by API but are not
+            found in internal cache. Defaults to ``False``
+        """
+        _log.info('Synchronizing internal cache commands.')
+        commands = await self.http.get_global_commands(self.user.id)
+        non_registered = []
+
+        # Synchronising the fetched commands with internal cache.
+        for command in commands:
+            registered = utils.get(
+                [c for c in self._pending_commands if not c.guild_ids], 
+                name=command['name'], 
+                type=command['type']
+                )
+            if registered is None:
+                non_registered.append(command)
+                continue
+            
+            self._app_commands[int(command['id'])] = registered
+            self._pending_commands.pop(registered)
         
+        
+        # Deleting the command that weren't found in internal cache
+        if delete_unregistered_commands:
+            for command in non_registered:
+                if command.get('guild_id'):
+                    await self.http.delete_guild_command(self.user.id, command['guild_id'], command['id'])
+                else:
+                    await self.http.delete_global_command(self.user.id, command['id'])
+        
+        # Registering the remaining commands
+        while len(self._pending_commands):
+            index = len(self._pending_commands) - 1
+            command = self._pending_commands[index]
+            if command.guild_ids:
+                for guild_id in command.guild_ids:
+                    cmd = await self.http.upsert_guild_command(self.user.id, guild_id, command.to_dict())
+            else:
+                cmd = await self.http.upsert_global_command(self.user.id, command.to_dict())
+            
+            self._application_commands[int(cmd['id'])] = command
+            self._pending_commands.pop(index)
+        
+
     async def register_application_commands(self):
         """|coro|
         
@@ -188,6 +249,7 @@ class Bot(Client):
             data = command.to_dict()
             commands.append(data)
         
+        
         cmds = await self.http.bulk_upsert_global_commands(self.user.id, commands)
         
         for cmd in cmds:
@@ -201,9 +263,11 @@ class Bot(Client):
         for cmd in (command for command in self._pending_commands if command.guild_ids):
             data = cmd.to_dict()
             for guild in cmd.guild_ids:
-                guilds[guild] = []
+                if guilds.get(guild) is None:
+                    guilds[guild] = []
+
                 guilds[guild].append(data)
-        
+                
         for guild in guilds:
             cmds = await self.http.bulk_upsert_guild_commands(self.user.id, guild, guilds[guild])
             for cmd in cmds:
@@ -314,6 +378,7 @@ class Bot(Client):
         command = self.get_application_command(int(interaction.data['id']))
                 
         if not command:
+            self.dispatch('unknown_application_command', interaction)
             _log.info(f'Application command of type {interaction.data["type"]} referencing an unknown command {interaction.data["id"]}, Discarding.')
             return
 
@@ -441,7 +506,7 @@ class Bot(Client):
     # Events
 
     async def on_connect(self):
-        await self.register_application_commands()
+        await self.sync_application_commands()
     
     async def on_interaction(self, interaction: Interaction):
         await self.handle_command_interaction(interaction)
