@@ -67,7 +67,7 @@ rst_prolog = """
 """
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+# templates_path = ['_templates']
 
 # The suffix of source filenames.
 source_suffix = '.rst'
@@ -156,7 +156,7 @@ html_experimental_html5_writer = True
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'sphinx_material'
+html_theme = 'sphinx_rtd_theme'
 
 html_context = {
   'diskord_invite': 'https://discord.gg/V6VxfDYHkB',
@@ -178,20 +178,6 @@ resource_links = {
 # documentation.
 # html_theme_options = {
 # }
-
-html_theme_options = {
-
-    # Set the name of the project to appear in the navigation.
-    'nav_title': 'Diskord',
-
-    # Set the color and the accent color
-    'color_primary': 'blue',
-    'color_accent': 'light-blue',
-
-    # Set the repo location to get a badge with stats
-    'repo_url': 'https://github.com/diskord-dev/diskord/',
-    'repo_name': 'Diskord',
-}
 
 
 # Add any paths that contain custom themes here, relative to this directory.
@@ -216,7 +202,7 @@ html_favicon = './images/discord_py_logo.ico'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -276,14 +262,14 @@ html_static_path = ['_static']
 
 # The name of a javascript file (relative to the configuration directory) that
 # implements a search results scorer. If empty, the default will be used.
-html_search_scorer = '_static/scorer.js'
+# html_search_scorer = '_static/scorer.js'
 
-html_js_files = [
-  'custom.js',
-  'settings.js',
-  'copy.js',
-  'sidebar.js'
-]
+# html_js_files = [
+#   'custom.js',
+#   'settings.js',
+#   'copy.js',
+#   'sidebar.js'
+# ]
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'diskord.pydoc'
