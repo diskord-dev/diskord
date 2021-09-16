@@ -70,6 +70,18 @@ class Bot(Client):
     features that are not compatible in :class:`Client`. It is highly recommended
     to use this class instead of :class:`Client` if you aim to use application commands
     like slash commands, user & message commands etc. 
+
+    Attributes
+    ----------
+
+    overwrite_application_commands: :class:`bool`
+        Whether to overwrite the previously registered commands with new ones or simply
+        synchronise them.
+
+        If this is ``True``, :func:`register_application_commands` will be called in 
+        :func:`on_connect`, Otherwise :func:`sync_application_commands` will be called.
+
+        This defaults to ``False`` and is strongly recommended to be ``False``.
     """
     def __init__(self, **options) -> None:
         super().__init__(**options)
@@ -329,7 +341,14 @@ class Bot(Client):
     # Decorators
 
     def slash_command(self, **options) -> SlashCommand:
-        """A decorator-based interface to add slash commands to the bot."""
+        """A decorator-based interface to add slash commands to the bot.
+        
+        Usage: ::
+
+            @bot.slash_command(description='My cool slash command.')
+            async def test(ctx):
+                await ctx.send('Hello world')
+        """
         def inner(func: Callable):
             if not inspect.iscoroutinefunction(func):
                 raise TypeError('Callback function must be a coroutine.')
@@ -343,7 +362,14 @@ class Bot(Client):
         return inner
 
     def user_command(self, **options) -> SlashCommand:
-        """A decorator-based interface to add user commands to the bot."""
+        """A decorator-based interface to add user commands to the bot.
+        
+        Usage: ::
+
+            @bot.user_command()
+            async def test(ctx):
+                await ctx.send('Hello world')
+        """
         def inner(func: Callable):
             if not inspect.iscoroutinefunction(func):
                 raise TypeError('Callback function must be a coroutine.')
@@ -357,7 +383,14 @@ class Bot(Client):
         return inner
 
     def message_command(self, **options) -> SlashCommand:
-        """A decorator-based interface to add message commands to the bot."""
+        """A decorator-based interface to add message commands to the bot.
+        
+        Usage: ::
+
+            @bot.message_command()
+            async def test(ctx):
+                await ctx.send('Hello world')
+        """
         def inner(func: Callable):
             if not inspect.iscoroutinefunction(func):
                 raise TypeError('Callback function must be a coroutine.')
@@ -535,8 +568,11 @@ class Bot(Client):
     # Events
 
     async def on_connect(self):
-        await self.sync_application_commands()
-    
+        if not self.overwrite_application_commands:
+            await self.sync_application_commands()
+        else:
+            await self.register_application_commands()
+
     async def on_interaction(self, interaction: Interaction):
         await self.handle_command_interaction(interaction)
 
