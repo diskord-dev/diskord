@@ -28,6 +28,7 @@ from typing import (
     Dict,
     Callable,
     Any,
+    List,
 )
 import inspect
 import logging
@@ -125,10 +126,16 @@ class Bot(Client):
                 
         return command
     
+    
     def remove_application_command(self, id: int, /) -> Optional[ApplicationCommand]:
         """Removes an application command from registered application commands.
 
         Once an application command is removed using this method, It will not be invoked.
+        Instead, When that command is sent :func:`on_unknown_application_command` would
+        be called.
+
+        .. note::
+            To remove a command from API, Use :func:`delete_application_command`
 
         Parameters
         ----------
@@ -157,6 +164,43 @@ class Bot(Client):
             The command matching the ID.
         """
         return self._application_commands.get(id)
+    
+    async def delete_application_command(self, *,
+        guild_id: int = MISSING,
+        guild_ids: List[int] = MISSING,
+        command_id: int = MISSING, 
+        ):
+        """|coro|
+        
+        Deletes an application command.
+
+        .. note::
+            This method is an API call. For removing a command from client internal cache,
+            Use :func:`remove_application_command` instead.
+        
+        Parameters
+        ----------
+
+        command_id: :class:`int`
+            The command's ID to delete.
+        guild_id: :class:`int`
+            The guild's ID this command belongs to. If not global.
+        guild_ids: List[:class:`int`]
+            The list of guilds IDs this command belongs to. If not global.
+
+        """
+        if guild_id and guild_ids:
+            raise TypeError('guild_id and guild_ids parameters cannot be mixed.')
+        
+        if guild_id:
+            guild_ids = [guild_id]
+        
+        if guild_ids:
+            for guild_id in guild_ids:
+                await self.http.delete_guild_command(self.user.id, guild_id, command_id)
+            
+        else:
+            await self.http.delete_global_command(self.user.id, command_id)
     
     async def sync_application_commands(self, delete_unregistered_commands: bool = False):
         """|coro|
