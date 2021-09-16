@@ -405,11 +405,12 @@ class Bot(Client):
     
     # Command handler
 
-    async def handle_command_interaction(self, interaction: Interaction) -> Any:
+    async def process_application_commands(self, interaction: Interaction) -> Any:
         """|coro|
 
-        Handles a command interaction. This function is used under-the-hood to handle all the
-        application commands interactions.
+        Handles an application command interaction. 
+        
+        This function is used under-the-hood to handle all the application commands interactions.
 
         This is internally called in :func:`on_interaction` event.
 
@@ -425,7 +426,7 @@ class Bot(Client):
                     ...
 
                     # at the end of event
-                    await bot.handle_command_interaction(interaction)
+                    await bot.process_application_commands(interaction)
         
         Parameters
         ----------
@@ -574,7 +575,7 @@ class Bot(Client):
             await self.register_application_commands()
 
     async def on_interaction(self, interaction: Interaction):
-        await self.handle_command_interaction(interaction)
+        await self.process_application_commands(interaction)
 
 def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
     """A decorator-based interface to add options to a slash command.
