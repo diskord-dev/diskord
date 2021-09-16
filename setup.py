@@ -4,7 +4,7 @@ import re
 requirements = []
 with open('requirements.txt') as f:
   requirements = f.read().splitlines()
-  requirements.remove('guzzle_sphinx_theme')
+  requirements.remove('pydata-sphinx-theme')
 
 version = ''
 with open('diskord/__init__.py') as f:
