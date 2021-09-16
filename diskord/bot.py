@@ -92,6 +92,22 @@ class Bot(Client):
     # Properties
 
     @property
+    def pending_commands(self):
+        """
+        Returns a list of application commands that will be registered once the bot connects.
+
+        Note that this is most likely to be empty after the bot has connected to Discord because
+        all commands are registered as soon as the connection is made.
+        
+        Returns
+        -------
+
+        List[:class:`ApplicationCommands`]
+            List of application commands that will be registered. 
+        """
+        return self._pending_commands
+
+    @property
     def application_commands(self):
         """Dict[:class:`int`, :class:`ApplicationCommand`]: Returns a mapping with ID of command to the application command."""
         return self._application_commands
