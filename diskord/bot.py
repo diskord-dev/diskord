@@ -102,7 +102,7 @@ class Bot(Client):
         Returns
         -------
 
-        List[:class:`ApplicationCommands`]
+        List[:class:`ApplicationCommand`]
             List of application commands that will be registered. 
         """
         return self._pending_commands
@@ -193,10 +193,10 @@ class Bot(Client):
         """
         return self._application_commands.get(id)
     
-    async def delete_application_command(self, *,
+    async def delete_application_command(self, 
+        command_id: int = MISSING, /, *,
         guild_id: int = MISSING,
         guild_ids: List[int] = MISSING,
-        command_id: int = MISSING, 
         ):
         """|coro|
         
@@ -229,6 +229,43 @@ class Bot(Client):
             
         else:
             await self.http.delete_global_command(self.user.id, command_id)
+        
+    async def fetch_application_command(self, command_id, /, *, guild_id: int = MISSING) -> ApplicationCommand:
+        """Fetches a global or guild application command.
+
+        .. note::
+            This method is an API call, Use :func:`get_application_command` to get
+            commands from internal cache.
+        
+        .. note::
+            The ``callback`` and ``guild_ids`` attribute of returned command can be ``None``
+            if the fetched command is not found in the client's internal cache.
+
+        Parameters
+        ----------
+
+        guild_id: :class:`int`
+            The guild which command belongs to, If not global.
+        
+        Returns
+        -------
+
+        :class:`ApplicationCommand`
+            The fetched command.
+        """ 
+        if guild_id:
+            command = await self.http.get_guild_command(self.user.id, guild_id, command_id)
+        else:
+            command = await self.http.get_global_command(self.user.id, command_id)
+        
+        resolved = ApplicationCommand(None)._from_data(command) # type: ignore
+        cached = self.get_application_command(int(command['id']))
+        if cached:
+            resolved.guild_ids = cached.guild_ids
+            resolved.callback  = cached.callback
+
+        return resolved 
+
     
     # TODO: Add other API methods
     
@@ -273,7 +310,7 @@ class Bot(Client):
                 non_registered.append(command)
                 continue
             
-            self._app_commands[int(command['id'])] = registered
+            self._app_commands[int(command['id'])] = registered._from_data(command)
             self._pending_commands.pop(registered)
         
         
@@ -295,7 +332,7 @@ class Bot(Client):
             else:
                 cmd = await self.http.upsert_global_command(self.user.id, command.to_dict())
             
-            self._application_commands[int(cmd['id'])] = command
+            self._application_commands[int(cmd['id'])] = command._from_data(cmd)
             self._pending_commands.pop(index)
         
 
@@ -368,6 +405,8 @@ class Bot(Client):
         def inner(func: Callable):
             if not inspect.iscoroutinefunction(func):
                 raise TypeError('Callback function must be a coroutine.')
+            
+            options['name'] = options.get('name') or func.__name__
             
             return self.add_application_command(
                 ApplicationCommandType.slash.value, 

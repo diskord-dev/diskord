@@ -55,15 +55,22 @@ class OptionChoice:
     value: Union[:class:`str`, :class:`int`, :class:`float`]
         The value of the choice.
     """
-    def __init__(self, data: ApplicationCommandOptionChoicePayload):
+    def __init__(self, **data):
         self.name: str = data['name']
         self.value: Union[str, int, float] = data['value']
     
+    def to_dict(self) -> dict:
+        return {
+            'name': self.name,
+            'value': self.value,
+        }
+
     def __repr__(self):
         return f'<OptionChoice name={self.name!r} value={self.value!r}'
     
     def __str__(self):
         return self.name
+
 
 class Option:
     """Represents an option for an application slash command.
@@ -93,8 +100,8 @@ class Option:
         self.name: str = data['name']
         self.description: str = data['description']
         self.required: bool = data.get('required', False)
-        self.choices: List[OptionType] = [OptionType(choice) for choice in data.get('choices', [])]
-        self.options: List[Option] = [Option(option) for option in data.get('options', [])]
+        self.choices: List[OptionType] = data.get('choices', [])
+        self.options: List[Option] = data.get('options', [])
 
     def __repr__(self):
         return f'<Option name={self.name!r} description={self.description!r}'
@@ -150,7 +157,16 @@ class ApplicationCommand:
         The description of this command. Defaults to the docstring of the callback.
     guild_ids: Union[:class:`tuple`, :class:`list`]
         The guild this command will be registered in. Defaults to None for global commands.
-
+    type: :class:`ApplicationCommandType`
+        The type of application command.
+    id: :class:`int`
+        The ID of the command. This can be ``None``.
+    application_id: :class:`int`
+        The ID of the application command belongs to. This can be ``None``.
+    default_permission: :class:`bool`
+        Whether the command will be enabled by default or not when added to a guild.
+    version: :class:`int`
+        The version of command. Can be ``None``
     """
 
     def __init__(self, callback: Callable, **attrs):
@@ -168,6 +184,8 @@ class ApplicationCommand:
             # Ref: https://discord.com/developers/docs/interactions/application-commands#message-commands
             
             self.description = '' # type: ignore
+        
+        self._from_data(attrs)
 
     def __repr__(self):
         # More attributes here?
@@ -182,13 +200,15 @@ class ApplicationCommand:
 
     def _from_data(self, data: ApplicationCommandPayload) -> ApplicationCommand:
         self.id: int = _get_as_snowflake(data, 'id')
-        self.type: int = try_enum(ApplicationCommandType, int(data['type']))
         self.application_id: int = _get_as_snowflake(data, 'application_id')
         self.guild_id: int = _get_as_snowflake(data, 'guild_id')
         self.default_permission: bool = data.get('default_permission')
         self.version: int = _get_as_snowflake(data, 'version') 
-        
+        self.name = data.get('name')
+        self.description = data.get('description')
+
         return self
+    
 
 
 class SlashCommand(ApplicationCommand):
