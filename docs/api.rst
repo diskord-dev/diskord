@@ -33,6 +33,14 @@ There are two main ways to query version information about the library. For guar
 Clients
 --------
 
+Bot
+~~~
+
+.. attributetable:: Bot
+
+.. autoclass:: Bot()
+    :members:
+
 Client
 ~~~~~~~
 
