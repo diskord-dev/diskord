@@ -25,10 +25,11 @@ DEALINGS IN THE SOFTWARE.
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List, Optional, TYPE_CHECKING, Tuple, Union
+from typing import Any, Dict, List, Optional, TYPE_CHECKING, Tuple, Union, Callable
 import asyncio
 
 from . import utils
+from . import abc
 from .enums import try_enum, InteractionType, InteractionResponseType
 from .errors import InteractionResponded, HTTPException, ClientException
 from .channel import PartialMessageable, ChannelType
@@ -159,6 +160,11 @@ class Interaction:
                 self.user = User(state=self._state, data=data['user'])
             except KeyError:
                 pass
+            
+    def is_application_command(self):
+        """:class:`bool`: Whether the interaction is an application command or not."""
+
+        return self.type == InteractionType.application_command
 
     @property
     def guild(self) -> Optional[Guild]:
@@ -765,3 +771,66 @@ class InteractionMessage(Message):
             asyncio.create_task(inner_call())
         else:
             await self._state._interaction.delete_original_message()
+
+class InteractionContext:
+    """Represents the context of an interaction usually in application commands.
+    
+    This class is passed in application command's callback function as first argument.
+
+    Attributes
+    ----------
+
+    bot: :class:`~discord.Bot`
+        The bot this interaction context belongs to.
+    interaction: :class:`Interaction`
+        The actual interaction this context belongs to.
+
+    """
+    def __init__(self, bot: "discord.Bot", interaction: Interaction) -> None:
+        self.bot = bot
+        self.interaction = interaction
+    
+    @property
+    def channel(self) -> abc.Snowflake:
+        """:class:`abc.Snowflake`: The channel in which interaction was made."""
+        return self.interaction.channel
+    
+    @property
+    def guild(self) -> Optional[Guild]:
+        """Optional[:class:`Guild`]: The guild in which interaction was made. If applicable."""
+        return self.interaction.guild
+    
+    @property
+    def message(self) -> InteractionMessage:
+        """:class:`InteractionMessage`: The original interaction response message."""
+        return self.interaction.message
+
+    @property
+    def user(self) -> Union[Member, User]:
+        """Union[:class:`Member`, :class:`User`]: The user who made the interaction."""
+        return self.interaction.user
+    
+    author = user
+
+    @property
+    def response(self) -> InteractionResponse:
+        """:class:`InteractionResponse`: The response of interaction."""
+        return self.interaction.response
+    
+    # actions
+
+    @property
+    def respond(self) -> Callable:
+        return self.interaction.response.send_message
+
+    @property
+    def send(self) -> Callable:
+        return self.respond
+
+    @property
+    def defer(self) -> Callable:
+        return self.interaction.response.defer
+
+    @property
+    def followup(self) -> Callable:
+        return self.interaction.followup

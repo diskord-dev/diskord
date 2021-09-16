@@ -588,6 +588,51 @@ class NSFWLevel(Enum, comparable=True):
     safe = 2
     age_restricted = 3
 
+# application commands enums
+
+class ApplicationCommandType(Enum, comparable=True):
+    chat_input = 1
+    user = 2
+    message = 3
+
+    # Aliases
+    slash = 1
+
+class OptionType(Enum, comparable=True):
+    sub_command = 1
+    sub_command_group = 2
+    string  = 3
+    integer = 4
+    boolean = 5
+    user    = 6
+    channel = 7
+    role    = 8
+    mentionable = 9
+    number  = 10
+
+    @classmethod
+    def from_datatype(cls, type_: Any, /):
+        if issubclass(type_, str):
+            return cls.string
+        elif issubclass(type_, int):
+            return cls.integer
+        elif issubclass(type_, bool):
+            return cls.boolean
+        elif issubclass(type_, float):
+            return cls.float
+        
+        # using name because circular imports issues
+        if type_.__name__ in ['User', 'Member']:
+            return cls.user
+        elif type_.__name__ == 'Role':
+            return cls.role
+        elif type_.__name__  == 'GuildChannel':
+            return cls.channel
+        
+        else:
+            print(type_.__name__)
+            raise TypeError('Unknown data type for option.')
+
 
 T = TypeVar('T')
 

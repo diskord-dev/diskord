@@ -628,6 +628,62 @@ to handle it, which defaults to print a traceback and ignoring the exception.
     :param interaction: The interaction data.
     :type interaction: :class:`Interaction`
 
+.. function:: on_application_command_run(command)
+    
+    Called when an application command is ran.
+
+    This is called regardless of whether command is successfully invoked or not.
+
+    .. versionadded:: 2.5
+
+    :param command: The command that was run.
+    :type command: :class:`ApplicationCommand`
+
+.. function:: on_application_command_completion(command)
+
+    Called when an application command is successfully invoked.
+
+    .. versionadded:: 2.5
+
+    :param command: The command that was invoked.
+    :type command: :class:`ApplicationCommand`
+
+.. function:: on_application_command_error(ctx, error)
+
+    Called whenever an application command raises :class:`ApplicationCommandError`.
+
+    This is a really helpful event and acts as an error handler for your application
+    commands.
+
+    You can create your own exceptions that subclass :class:`ApplicationCommandError` that 
+    you can raise in your commands and handle them within this event.
+
+    Usage: ::
+
+        class UserBlacklisted(diskord.ApplicationCommandError):
+            pass
+        
+        @bot.command()
+        async def test(ctx):
+            if ctx.author.id == 123456789:
+                raise UserBlacklisted()
+            
+        @bot.event
+        async def on_application_command_error(ctx, error):
+            if isinstance(error, ApplicationCommandError):
+                await ctx.send('You are blacklisted from using this command.')
+            else:
+                raise error
+
+    .. versionadded:: 2.5
+
+    :param ctx: The context of the interaction.
+    :type ctx: :class:`InteractionContext`
+    :param error: The error that was raised.
+    :type error: :class:`ApplicationCommandError`
+
+    
+
 .. function:: on_private_channel_update(before, after)
 
     Called whenever a private group DM is updated. e.g. changed name or topic.
@@ -2610,6 +2666,119 @@ of :class:`enum.Enum`.
 
         The guild may contain NSFW content.
 
+.. class:: ApplicationCommandType
+
+    Represents the type of an application command.
+
+    .. versionadded:: 2.5
+
+    .. container:: operations
+
+        .. describe:: x == y
+
+            Checks if two command types are equal.
+        .. describe:: x != y
+
+            Checks if two command types are not equal.
+        .. describe:: x > y
+
+            Checks if a command types is higher than another.
+        .. describe:: x < y
+
+            Checks if a command types is lower than another.
+        .. describe:: x >= y
+
+            Checks if a command types is higher or equal to another.
+        .. describe:: x <= y
+
+            Checks if a command types is lower or equal to another.
+    
+    .. attribute:: chat_input
+
+        The option is a chat input "aka" a slash command.
+    
+    .. attribute:: user
+
+        The option is a user command.
+    
+    .. attribute:: message
+
+        The option is a message command.
+    
+    .. attribute:: slash_command
+
+        The option is a chat input "aka" a slash command.
+
+
+.. class:: OptionType
+
+    Represents the option type of a slash command.
+
+    .. versionadded:: 2.5
+
+    .. container:: operations
+
+        .. describe:: x == y
+
+            Checks if two option types are equal.
+        .. describe:: x != y
+
+            Checks if two option types are not equal.
+        .. describe:: x > y
+
+            Checks if a option types is higher than another.
+        .. describe:: x < y
+
+            Checks if a option types is lower than another.
+        .. describe:: x >= y
+
+            Checks if a option types is higher or equal to another.
+        .. describe:: x <= y
+
+            Checks if a option types is lower or equal to another.
+
+    .. attribute:: sub_command
+
+        The option is a sub-command.
+
+    .. attribute:: sub_command_group
+
+        The option is a sub-command group.
+
+    .. attribute:: string
+
+        The option is a string.
+
+    .. attribute:: integer
+
+        The option is an integer.
+    
+    .. attribute:: boolean
+
+        The option is a boolean.
+    
+    .. attribute:: user
+
+        The option is a discord user.
+    
+    .. attribute:: channel
+
+        The option is a guild channel.
+    
+    .. attribute:: role
+
+        The option is a guild role.
+    
+    .. attribute:: mentionable
+
+        The option is a role or user.
+    
+    .. attribute:: number
+
+        The option is a floating option number.
+    
+
+
 Async Iterator
 ----------------
 
@@ -3572,6 +3741,57 @@ InteractionMessage
 .. autoclass:: InteractionMessage()
     :members:
 
+ApplicationCommand
+~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: ApplicationCommand
+
+.. autoclass:: ApplicationCommand()
+    :members:
+
+SlashCommand
+~~~~~~~~~~~~
+
+.. attributetable:: SlashCommand
+
+.. autoclass:: SlashCommand()
+    :members:
+
+Option
+~~~~~~
+
+.. attributetable:: Option
+
+.. autoclass:: Option()
+    :members:
+
+OptionChoice
+~~~~~~~~~~~~
+
+.. attributetable:: OptionChoice
+
+.. autoclass:: OptionChoice()
+    :members:
+
+
+UserCommand
+~~~~~~~~~~~
+
+.. attributetable:: UserCommand
+
+.. autoclass:: UserCommand()
+    :members:
+
+MessageCommand
+~~~~~~~~~~~~~~
+
+.. attributetable:: MessageCommand
+
+.. autoclass:: MessageCommand()
+    :members:
+
+
+
 Member
 ~~~~~~
 
@@ -4230,6 +4450,8 @@ The following exceptions are thrown by the library.
 
 .. autoexception:: InteractionResponded
 
+.. autoexception:: ApplicationCommandError
+
 .. autoexception:: diskord.opus.OpusError
 
 .. autoexception:: diskord.opus.OpusNotLoaded
@@ -4248,6 +4470,7 @@ Exception Hierarchy
                 - :exc:`ConnectionClosed`
                 - :exc:`PrivilegedIntentsRequired`
                 - :exc:`InteractionResponded`
+                - :exc:`ApplicationCommandError`
             - :exc:`NoMoreItems`
             - :exc:`GatewayNotFound`
             - :exc:`HTTPException`

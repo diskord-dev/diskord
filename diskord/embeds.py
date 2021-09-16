@@ -423,6 +423,21 @@ class Embed:
             }
 
         return self
+    
+    def remove_image(self: E) -> E:
+        """Removes the image data of the embed.
+
+        This function returns the class instance to allow for fluent-style
+        chaining.
+
+        .. versionadded:: 2.5
+        """
+        try:
+            del self._image
+        except AttributeError:
+            pass
+        
+        return self
 
     @property
     def thumbnail(self) -> _EmbedMediaProxy:
@@ -464,6 +479,21 @@ class Embed:
                 'url': str(url),
             }
 
+        return self
+
+    def remove_thumbnail(self: E) -> E:
+        """Removes the thumbnail data of the embed.
+
+        This function returns the class instance to allow for fluent-style
+        chaining.
+
+        .. versionadded:: 2.5
+        """
+        try:
+            del self._thumbnail
+        except AttributeError:
+            pass
+        
         return self
 
     @property
