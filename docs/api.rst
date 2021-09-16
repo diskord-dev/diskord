@@ -3758,6 +3758,14 @@ InteractionMessage
 .. autoclass:: InteractionMessage()
     :members:
 
+InteractionContext
+~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: InteractionContext
+
+.. autoclass:: InteractionContext()
+    :members:
+
 ApplicationCommand
 ~~~~~~~~~~~~~~~~~~
 
