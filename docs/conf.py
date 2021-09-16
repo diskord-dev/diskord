@@ -156,7 +156,7 @@ html_experimental_html5_writer = True
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'basic'
+html_theme = 'sphinx_material'
 
 html_context = {
   'diskord_invite': 'https://discord.gg/V6VxfDYHkB',
@@ -178,6 +178,21 @@ resource_links = {
 # documentation.
 # html_theme_options = {
 # }
+
+html_theme_options = {
+
+    # Set the name of the project to appear in the navigation.
+    'nav_title': 'Diskord',
+
+    # Set the color and the accent color
+    'color_primary': 'blue',
+    'color_accent': 'light-blue',
+
+    # Set the repo location to get a badge with stats
+    'repo_url': 'https://github.com/diskord-dev/diskord/',
+    'repo_name': 'Diskord',
+}
+
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
