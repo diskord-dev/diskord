@@ -682,7 +682,16 @@ to handle it, which defaults to print a traceback and ignoring the exception.
     :param error: The error that was raised.
     :type error: :class:`ApplicationCommandError`
 
-    
+.. function:: on_unknown_application_command(interaction)
+
+    Called when a command interaction was sent but the command was not found in the
+    internal cache of registered commands.
+
+    .. versionadded:: 2.5
+
+    :param interaction: The application command interaction that was sent.
+    :type interaction: :class:`Interaction`
+
 
 .. function:: on_private_channel_update(before, after)
 
