@@ -67,7 +67,7 @@ rst_prolog = """
 """
 
 # Add any paths that contain templates here, relative to this directory.
-# templates_path = ['_templates']
+templates_path = ['_templates']
 
 # The suffix of source filenames.
 source_suffix = '.rst'
@@ -156,7 +156,7 @@ html_experimental_html5_writer = True
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'pydata_sphinx_theme'
+html_theme = 'basic'
 
 html_context = {
   'diskord_invite': 'https://discord.gg/V6VxfDYHkB',
@@ -178,7 +178,6 @@ resource_links = {
 # documentation.
 # html_theme_options = {
 # }
-
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
