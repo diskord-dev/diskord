@@ -4,6 +4,7 @@ import re
 requirements = []
 with open('requirements.txt') as f:
   requirements = f.read().splitlines()
+  requirements.remove('sphinx-material')
 
 version = ''
 with open('diskord/__init__.py') as f:
@@ -39,6 +40,7 @@ extras_require = {
         'sphinx==4.0.2',
         'sphinxcontrib_trio==1.1.2',
         'sphinxcontrib-websupport',
+        'sphinx-material'
     ],
     'speed': [
         'orjson>=3.5.4',
