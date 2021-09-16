@@ -1,1 +1,1 @@
-sphinx-material
+guzzle_sphinx_theme
