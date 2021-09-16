@@ -202,6 +202,8 @@ class Bot(Client):
         else:
             await self.http.delete_global_command(self.user.id, command_id)
     
+    # TODO: Add other API methods
+    
     async def sync_application_commands(self, delete_unregistered_commands: bool = False):
         """|coro|
 
@@ -214,6 +216,12 @@ class Bot(Client):
 
         This must be used when you don't intend to overwrite all the previous commands but
         want to add new ones.
+
+        This function is called under-the-hood inside the :func:`on_connect` event. 
+
+        .. warning::
+            If you decided to override the :func:`on_connect` event, You MUST call this manually
+            or the commands will not be registered.
 
         Parameters
         ----------
@@ -272,11 +280,9 @@ class Bot(Client):
         This method cleans up previously registered commands and registers all the commands
         that were added using :func:`Bot.add_application_command`.
         
-        This function is called under-the-hood inside the :func:`on_connect` event. 
-
-        .. warning::
-            If you decided to override the :func:`on_connect` event, You MUST call this manually
-            or the commands will not be registered.
+        .. danger:: 
+            This function overwrites all the commands and can lead to unexpected issues,
+            Consider using :func:`sync_application_commands`
         """
         # I'm not satisfied with this code?
         # Yes.
@@ -323,14 +329,7 @@ class Bot(Client):
     # Decorators
 
     def slash_command(self, **options) -> SlashCommand:
-        """A decorator-based interface to add slash commands to the bot.
-        
-        This is equivalent of using ``Bot.add_application_command(1, function, **options)``
-
-        Parameters
-        ----------
-
-        """
+        """A decorator-based interface to add slash commands to the bot."""
         def inner(func: Callable):
             if not inspect.iscoroutinefunction(func):
                 raise TypeError('Callback function must be a coroutine.')
@@ -344,14 +343,7 @@ class Bot(Client):
         return inner
 
     def user_command(self, **options) -> SlashCommand:
-        """A decorator-based interface to add user commands to the bot.
-        
-        This is equivalent of using ``Bot.add_application_command(2, function, **options)``
-
-        Parameters
-        ----------
-
-        """
+        """A decorator-based interface to add user commands to the bot."""
         def inner(func: Callable):
             if not inspect.iscoroutinefunction(func):
                 raise TypeError('Callback function must be a coroutine.')
@@ -365,14 +357,7 @@ class Bot(Client):
         return inner
 
     def message_command(self, **options) -> SlashCommand:
-        """A decorator-based interface to add message commands to the bot.
-        
-        This is equivalent of using ``Bot.add_application_command(3, function, **options)``
-
-        Parameters
-        ----------
-
-        """
+        """A decorator-based interface to add message commands to the bot."""
         def inner(func: Callable):
             if not inspect.iscoroutinefunction(func):
                 raise TypeError('Callback function must be a coroutine.')
