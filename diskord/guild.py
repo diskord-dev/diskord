@@ -3061,6 +3061,7 @@ class Guild(Hashable):
         Returns
         -------
         List[:class:`Member`]
+            The list of members found for the provided query.
 
         Raises
         ------

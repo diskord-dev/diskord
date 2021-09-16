@@ -159,6 +159,7 @@ class WelcomeScreen:
         guild to do this.
         
         Usage: ::
+        
             rules_channel = guild.get_channel(12345678)
             announcements_channel = guild.get_channel(87654321)
             custom_emoji = utils.get(guild.emojis, name='loudspeaker')
