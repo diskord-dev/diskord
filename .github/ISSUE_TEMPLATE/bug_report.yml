@@ -1,32 +1,32 @@
 name: Bug Report
-description: Report broken or incorrect behaviour
+description: Report broken or incorrect behaviour of this library.
 labels: unconfirmed bug
 body:
   - type: markdown
     attributes:
       value: >
         Thanks for taking the time to fill out a bug.
-        If you want real-time support, consider joining our Discord at https://discord.gg/r3sSKJJ instead.
+        If you want real-time support, consider joining our Discord at https://discord.gg/V6VxfDYHkB instead.
 
         Please note that this form is for bugs only!
   - type: input
     attributes:
       label: Summary
-      description: A simple summary of your bug report
+      description: A simple summary of your bug.
     validations:
       required: true
   - type: textarea
     attributes:
       label: Reproduction Steps
       description: >
-         What you did to make it happen.
+         What you did to make it happen. Explain the steps so we can reproduce it.
     validations:
       required: true
   - type: textarea
     attributes:
       label: Minimal Reproducible Code
       description: >
-        A short snippet of code that showcases the bug.
+        A short snippet of code that potentially reproduces the bug. If any.
       render: python
   - type: textarea
     attributes:
