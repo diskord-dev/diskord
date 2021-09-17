@@ -19,7 +19,7 @@
 * Optimised in both speed and memory.
 * Actively maintained
 * Provides 100% coverage of Discord API.
-* User-friendly Object oriented API.
+* User-friendly OOP-based API.
 
 ## Installation
 
