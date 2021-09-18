@@ -62,6 +62,10 @@ class File:
         a string then the ``filename`` will default to the string given.
     spoiler: :class:`bool`
         Whether the attachment is a spoiler.
+    ephemeral: :class:`bool`
+        Whether this attachment is an ephemeral attachment.
+
+        .. versionadded:: 2.5
     """
 
     __slots__ = ('fp', 'filename', 'spoiler', '_original_pos', '_owner', '_closer')
@@ -77,6 +81,7 @@ class File:
         filename: Optional[str] = None,
         *,
         spoiler: bool = False,
+        ephemeral: bool = False,
     ):
         if isinstance(fp, io.IOBase):
             if not (fp.seekable() and fp.readable()):
@@ -108,6 +113,7 @@ class File:
             self.filename = 'SPOILER_' + self.filename
 
         self.spoiler = spoiler or (self.filename is not None and self.filename.startswith('SPOILER_'))
+        self.ephemeral = ephemeral
 
     def reset(self, *, seek: Union[int, bool] = True) -> None:
         # The `seek` parameter is needed because

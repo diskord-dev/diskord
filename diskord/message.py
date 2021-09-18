@@ -324,6 +324,8 @@ class Attachment(Hashable):
             result['width'] = self.width
         if self.content_type:
             result['content_type'] = self.content_type
+        if self.ephemeral:
+            result['ephemeral'] = self.ephemeral
         return result
 
 
