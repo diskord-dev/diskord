@@ -77,7 +77,6 @@ from .threads import Thread, ThreadMember
 from .sticker import GuildSticker
 from .file import File
 from .welcome_screen import WelcomeScreen, WelcomeScreenChannel
-from .interactions import ApplicationCommand
 
 
 __all__ = (
@@ -3118,6 +3117,8 @@ class Guild(Hashable):
         command_id: :class:`int`
             The ID of the command to remove.
         """
+        from .interactions import ApplicationCommand # due to circular import
+
         for command in self._state._application_commands:
             if command.id == command_id and self.id in command.guild_ids:
                 try:
