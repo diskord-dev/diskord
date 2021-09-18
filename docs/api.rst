@@ -3801,9 +3801,9 @@ OptionChoice
 SlashSubCommand
 ~~~~~~~~~~~~~~~
 
-.. attributetable:: SubSlashCommand
+.. attributetable:: SlashSubCommand
 
-.. autoclass:: SubSlashCommand()
+.. autoclass:: SlashSubCommand()
     :members:
 
 UserCommand
