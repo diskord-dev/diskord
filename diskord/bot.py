@@ -343,7 +343,6 @@ class Bot(Client):
         
         # Registering the remaining commands
         while len(self._pending_commands):
-            print(self._pending_commands)
             index = len(self._pending_commands) - 1
             command = self._pending_commands[index]
             if command.guild_ids:
@@ -591,9 +590,7 @@ class Bot(Client):
                     interaction.guild.get_member(int(option['value'])) or
                     interaction.guild.get_role(int(option['value']))
                     )
-            else:
-                value = option['value']
-                
+ 
             kwargs[option['name']] = value
 
         try:
