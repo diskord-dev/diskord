@@ -3076,3 +3076,36 @@ class Guild(Hashable):
 
         data = await self._state.http.search_members(guild_id=self.id, query=query, limit=limit) 
         return [Member(data=member, guild=self, state=self._state) for member in data]
+
+    async def fetch_application_command(self, command_id: int, /) -> ApplicationCommand:
+        """|coro|
+
+        Fetches an application command for this guild.
+        
+        .. note::
+            This function is an API call, For general usage, Consider using 
+            :func:`Bot.get_application_command` instead.
+        
+        Parameters
+        ----------
+        command_id: :class:`int`
+            The ID of the command to fetch.
+        
+        Returns
+        -------
+        :class:`ApplicationCommand`
+            The fetched application command.
+
+        Raises
+        ------
+        NotFound:
+            The command doesn't exist.
+        HTTPException:
+            The fetching of command failed.
+        """
+        data = self._state.http.get_guild_command(
+            command_id=command_id, 
+            application_id=self._state.user.id,
+            guild_id=self.id,
+            )
+        return ApplicationCommand(None)._from_data(data)

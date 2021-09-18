@@ -235,7 +235,7 @@ class ConnectionState:
 
         self.clear()
 
-    def clear(self, *, views: bool = True) -> None:
+    def clear(self, *, views: bool = True, application_commands: bool = True) -> None:
         self.user: Optional[ClientUser] = None
         # Originally, this code used WeakValueDictionary to maintain references to the
         # global user mapping.
@@ -255,6 +255,8 @@ class ConnectionState:
         self._guilds: Dict[int, Guild] = {}
         if views:
             self._view_store: ViewStore = ViewStore(self)
+        if application_commands:
+            self._application_commands  = {}
 
         self._voice_clients: Dict[int, VoiceProtocol] = {}
 
