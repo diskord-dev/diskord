@@ -110,7 +110,7 @@ class Bot(Client):
     @property
     def application_commands(self):
         """Dict[:class:`int`, :class:`ApplicationCommand`]: Returns a mapping with ID of command to the application command."""
-        return self._state._application_commands
+        return self._connection._application_commands
     
     # Commands management
     
@@ -191,7 +191,7 @@ class Bot(Client):
             The ID of command to delete.
         """
         try:
-            return self._state._application_commands.pop(id)
+            return self._connection._application_commands.pop(id)
         except KeyError:
             return
     
@@ -210,7 +210,7 @@ class Bot(Client):
         Optional[:class:`ApplicationCommand`]
             The command matching the ID.
         """
-        return self._state._application_commands.get(id)
+        return self._connection._application_commands.get(command_id)
     
     async def delete_application_command(self, 
         command_id: int = MISSING, /, *,
@@ -329,8 +329,8 @@ class Bot(Client):
                 non_registered.append(command)
                 continue
             
-            self._state._application_commands[int(command['id'])] = registered._from_data(command)
-            self._pending_commands.pop(registered)
+            self._connection._application_commands[int(command['id'])] = registered._from_data(command)
+            self._pending_commands.remove(registered)
         
         
         # Deleting the command that weren't found in internal cache
@@ -343,6 +343,7 @@ class Bot(Client):
         
         # Registering the remaining commands
         while len(self._pending_commands):
+            print(self._pending_commands)
             index = len(self._pending_commands) - 1
             command = self._pending_commands[index]
             if command.guild_ids:
@@ -351,7 +352,7 @@ class Bot(Client):
             else:
                 cmd = await self.http.upsert_global_command(self.user.id, command.to_dict())
             
-            self._state._application_commands[int(cmd['id'])] = command._from_data(cmd)
+            self._connection._application_commands[int(cmd['id'])] = command._from_data(cmd)
             self._pending_commands.pop(index)
         
 
@@ -384,7 +385,7 @@ class Bot(Client):
         cmds = await self.http.bulk_upsert_global_commands(self.user.id, commands)
         
         for cmd in cmds:
-            self._state._application_commands[int(cmd['id'])] = utils.get(self._pending_commands, name=cmd['name'])._from_data(cmd)
+            self._connection._application_commands[int(cmd['id'])] = utils.get(self._pending_commands, name=cmd['name'])._from_data(cmd)
 
         
         # Registering the guild commands now
@@ -402,7 +403,7 @@ class Bot(Client):
         for guild in guilds:
             cmds = await self.http.bulk_upsert_guild_commands(self.user.id, guild, guilds[guild])
             for cmd in cmds:
-                self._state._application_commands[int(cmd['id'])] = utils.get(self._pending_commands, name=cmd['name'])._from_data(cmd)
+                self._connection._application_commands[int(cmd['id'])] = utils.get(self._pending_commands, name=cmd['name'])._from_data(cmd)
         
         _log.info('Registered %s commands successfully.' % str(len(self._pending_commands)))
 
