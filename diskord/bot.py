@@ -71,7 +71,7 @@ class Bot(Client):
     to use this class instead of :class:`Client` if you aim to use application commands
     like slash commands, user & message commands etc. 
 
-    Attributes
+    Parameters
     ----------
 
     overwrite_application_commands: :class:`bool`
@@ -105,6 +105,7 @@ class Bot(Client):
         List[:class:`ApplicationCommand`]
             List of application commands that will be registered. 
         """
+        # Remove this property? it seems kind of useless.
         return self._pending_commands
 
     @property
@@ -349,12 +350,9 @@ class Bot(Client):
             This function overwrites all the commands and can lead to unexpected issues,
             Consider using :func:`sync_application_commands`
         """
-        # I'm not satisfied with this code?
-        # Yes.
-        # Rewrite it?
-        # Yes.
-        # When?
-        # idk
+        # This needs a refactor as current implementation is kind of hacky and can
+        # be unstable.
+
         _log.info('Registering %s application commands.' % str(len(self._pending_commands)))
         
         commands = []
@@ -463,7 +461,8 @@ class Bot(Client):
     async def process_application_commands(self, interaction: Interaction) -> Any:
         """|coro|
 
-        Handles an application command interaction. 
+        Handles an application command interaction.  This function holds the application 
+        command main processing logic.
         
         This function is used under-the-hood to handle all the application commands interactions.
 
