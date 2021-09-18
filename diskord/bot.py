@@ -34,13 +34,14 @@ import inspect
 import logging
 
 from . import utils
-from .app_commands import (
+from .interactions import (
     ApplicationCommand,
     SlashCommand,
     UserCommand,
     MessageCommand,
     Option,
     OptionChoice,
+    InteractionContext,
 )
 from .client import Client
 from .enums import (
@@ -48,7 +49,6 @@ from .enums import (
     OptionType,
     )
 from .errors import ApplicationCommandError
-from .interactions import InteractionContext
 from .member import Member
 from .user import User
 from .message import Message
@@ -311,7 +311,7 @@ class Bot(Client):
                 non_registered.append(command)
                 continue
             
-            self._app_commands[int(command['id'])] = registered._from_data(command)
+            self._application_commands[int(command['id'])] = registered._from_data(command)
             self._pending_commands.pop(registered)
         
         
