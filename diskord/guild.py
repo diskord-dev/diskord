@@ -77,6 +77,7 @@ from .threads import Thread, ThreadMember
 from .sticker import GuildSticker
 from .file import File
 from .welcome_screen import WelcomeScreen, WelcomeScreenChannel
+from .interactions import ApplicationCommand
 
 
 __all__ = (
