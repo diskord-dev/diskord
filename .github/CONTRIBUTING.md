@@ -1,4 +1,4 @@
-## Contributing to discord.py
+## Contributing to diskord
 
 First off, thanks for taking the time to contribute. It makes the library substantially better. :+1:
 
@@ -27,6 +27,8 @@ If the bug report is missing this information then it'll take us longer to fix t
 ## Submitting a Pull Request
 
 Submitting a pull request is fairly simple, just make sure it focuses on a single aspect and doesn't manage to have scope creep and it's probably good to go. It would be incredibly lovely if the style is consistent to that found in the project. This project follows PEP-8 guidelines (mostly) with a column limit of 125.
+
+**:star: Tip:** You can see active [projects](https://github.com/diskord-dev/diskord/projects) and can find things to work on that are not yet done.  
 
 ### Git Commit Guidelines
 
