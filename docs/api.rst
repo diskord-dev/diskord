@@ -3798,6 +3798,13 @@ OptionChoice
 .. autoclass:: OptionChoice()
     :members:
 
+SlashSubCommand
+~~~~~~~~~~~~~~~
+
+.. attributetable:: SubSlashCommand
+
+.. autoclass:: SubSlashCommand()
+    :members:
 
 UserCommand
 ~~~~~~~~~~~
