@@ -55,6 +55,7 @@ from .message import Message
 
 if TYPE_CHECKING:
     from .interactions import Interaction
+    from .types.interactions import ApplicationCommandOption as ApplicationCommandPayload
 
 _log = logging.getLogger(__name__)
 MISSING = utils.MISSING
@@ -114,7 +115,7 @@ class Bot(Client):
     
     # Commands management
     
-    def add_pending_command(self, cls: ApplicationCommandType, callback: Callable, **attrs) -> ApplicationCommand:
+    def add_pending_command(self, type: ApplicationCommandType, callback: Callable, **attrs) -> ApplicationCommand:
         """Adds an application command to internal list of *pending* commands that will be 
         registered on bot connect.
         
@@ -127,8 +128,8 @@ class Bot(Client):
         Parameters
         ----------
 
-        cls: :class:`ApplicationCommand`
-            The object type to use.
+        type: :class:`ApplicationCommandType`
+            The type of application to add.
         callback: Callable
             The callback function for the command.
         
@@ -143,15 +144,14 @@ class Bot(Client):
             2: UserCommand,
             3: MessageCommand,
         }
-        if not cls in types:
+        if not type in types:
             raise TypeError('The provided type is not valid.')
 
-        command = types[cls](callback, **attrs)
+        command = types[type](callback, bot=self, **attrs)
         self._pending_commands.append(command)
-        
-        if command.type == ApplicationCommandType.slash.value:
-            for opt in callback.__annotations__:
-                command.add_option(callback.__annotations__[opt])
+
+        for opt in callback.__annotations__:
+            command.add_option(callback.__annotations__[opt])
                 
         return command
 
@@ -168,7 +168,8 @@ class Bot(Client):
             The application command to register.
         """
         try:
-            return self._pending_commands.remove(command)
+            self._pending_commands.remove(command)
+            return command
         except ValueError:
             return 
     
@@ -277,7 +278,7 @@ class Bot(Client):
         else:
             command = await self.http.get_global_command(self.user.id, command_id)
         
-        resolved = ApplicationCommand(None)._from_data(command) # type: ignore
+        resolved = ApplicationCommand(None, self)._from_data(command) # type: ignore
         cached = self.get_application_command(int(command['id']))
         if cached:
             resolved.guild_ids = cached.guild_ids
@@ -427,7 +428,7 @@ class Bot(Client):
             return self.add_pending_command(
                 ApplicationCommandType.slash.value, 
                 func, 
-                **options
+                **options,
                 )
         
         return inner
@@ -476,6 +477,35 @@ class Bot(Client):
     
     # Command handler
 
+    async def _parse_option(self, option: ApplicationCommandOptionPayload) -> Any:
+        if option['type'] in (
+                OptionType.string.value,
+                OptionType.integer.value,
+                OptionType.boolean.value,
+                OptionType.number.value,
+            ):
+                value = option['value']
+
+        elif option['type'] == OptionType.user.value:
+            if interaction.guild:
+                value = interaction.guild.get_member(int(option['value']))
+            else:
+                value = self.get_user(int(option['value']))
+            
+        elif option['type'] == OptionType.channel.value:
+            value = interaction.guild.get_channel(int(option['value']))
+            
+        elif option['type'] == OptionType.role.value:
+            value = interaction.guild.get_role(int(option['value']))
+            
+        elif option['type'] == OptionType.mentionable.value:
+            value = (
+                interaction.guild.get_member(int(option['value'])) or
+                interaction.guild.get_role(int(option['value']))
+                )    
+            
+        return value
+
     async def process_application_commands(self, interaction: Interaction) -> Any:
         """|coro|
 
@@ -509,7 +539,7 @@ class Bot(Client):
         """
         if not interaction.is_application_command():
             return
-        
+
         command = self.get_application_command(int(interaction.data['id']))
                 
         if not command:
@@ -521,7 +551,7 @@ class Bot(Client):
 
         options = interaction.data.get('options', [])
         kwargs = {}
-        context = await self.get_application_context(interaction)
+        context = self.get_application_context(interaction)
 
         if interaction.data['type'] == ApplicationCommandType.user.value:
             if interaction.guild:
@@ -565,32 +595,20 @@ class Bot(Client):
             return await command.callback(context, message)
 
         for option in options:
-            if option['type'] in (
-                OptionType.string.value,
-                OptionType.integer.value,
-                OptionType.boolean.value,
-                OptionType.number.value,
-            ):
-                value = option['value']
+            if option['type'] == OptionType.sub_command.value:
+                # We will use the name to get the child because 
+                # subcommands do not have any ID. They are essentially 
+                # just options of a command.
+                sub_options = option.get('options', [])
+                for sub_option in sub_options:
+                    value = await self._parse_option(sub_option)
+                    kwargs[sub_option['name']] = value
 
-            elif option['type'] == OptionType.user.value:
-                if interaction.guild:
-                    value = interaction.guild.get_member(int(option['value']))
-                else:
-                    value = self.get_user(int(option['value']))
-            
-            elif option['type'] == OptionType.channel.value:
-                value = interaction.guild.get_channel(int(option['value']))
-                
-            elif option['type'] == OptionType.role.value:
-                value = interaction.guild.get_role(int(option['value']))
-                
-            elif option['type'] == OptionType.mentionable.value:
-                value = (
-                    interaction.guild.get_member(int(option['value'])) or
-                    interaction.guild.get_role(int(option['value']))
-                    )
- 
+                sub_command = command.get_child(option['name'])
+                return (await sub_command.callback(context, **kwargs))
+            else:
+                value = await self._parse_option(option) 
+
             kwargs[option['name']] = value
 
         try:
@@ -600,9 +618,8 @@ class Bot(Client):
         else:
             self.dispatch('application_command_completion', command)
 
-    async def get_application_context(self, interaction: Interaction, *, cls: InteractionContext = None) -> InteractionContext:
-        """|coro|
-        
+    def get_application_context(self, interaction: Interaction, *, cls: InteractionContext = None) -> InteractionContext:
+        """
         Gets the :class:`InteractionContext` for an application command interaction.
         
         This function is really useful to add custom contexts. You can override this and
@@ -665,10 +682,8 @@ def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
     """
     def inner(func):
         nonlocal type_
-        type_ = type_ or func.__annotations__.get(name, MISSING)
-        if type_ is MISSING:
-            raise TypeError(f'Type for option {name} is not provided.')
-
+        type_ = type_ or func.__annotations__.get(name, str)
+        
         sign = inspect.signature(func).parameters.get(name)
         if sign is None:
             raise TypeError(f'Parameter for option {name} is missing.')

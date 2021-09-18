@@ -910,8 +910,8 @@ class Option:
         else:
             self.type: OptionType = data.get('type')
 
-        self.name: str = data['name']
-        self.description: str = data['description']
+        self.name: str = data.get('name')
+        self.description: str = data.get('description')
         self.required: bool = data.get('required', False)
         self.choices: List[OptionType] = data.get('choices', [])
         self.options: List[Option] = data.get('options', [])
@@ -921,6 +921,10 @@ class Option:
 
     def __str__(self):
         return self.name
+    
+    def is_subcommand(self):
+        """:class:`bool`: Indicates whether this option is a subcommand."""
+        return hasattr(self, 'callback') and callable(self.callback)
     
     def add_choice(self, choice: OptionChoice) -> OptionChoice:
         """Adds a choice to current option.
@@ -942,7 +946,6 @@ class Option:
             'type': self.type.value,
             'name': self.name,
             'description': self.description,
-            'required': self.required,
             'choices': [],
             'options': [],
         }
@@ -951,7 +954,9 @@ class Option:
         
         if self.options:
             dict_['options'] = [option.to_dict() for option in self.options]
-        
+        if not self.is_subcommand():
+            dict_['required'] = self.required
+
         return dict_
             
 
@@ -983,6 +988,7 @@ class ApplicationCommand:
     """
 
     def __init__(self, callback: Callable, **attrs):
+        self.bot = attrs.get('bot')
         self.callback: Callable = callback
         self.name: str = attrs.get('name') or callback.__name__
         self.description: str = attrs.get('description') or self.callback.__doc__
@@ -1022,26 +1028,52 @@ class ApplicationCommand:
 
         return self
     
+class SlashSubCommand(Option):
+    """Represents a subcommand of a slash command.
 
+    This can be registered using :func:`SlashCommand.sub_command` decorator.
 
-class SlashCommand(ApplicationCommand):
-    """Represents a slash command.
+    Example: ::
+            
+        @bot.slash_command(description='A cool command that has subcommands.')
+        async def git(ctx):
+            pass
+        
+        @git.sub_command(description='This is git push!')
+        async def push(ctx):
+            await ctx.send('Pushed!')
     
-    A slash command is a user input command that a user can use by typing ``/`` in
-    the chat.
+    Attributes
+    ----------
 
-    This class inherits from :class:`ApplicationCommand` so all attributes valid
-    there are valid here too.
-    
-    In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.slash`
+    name: :class:`str`
+        The name of sub-command.
+    description: :class:`str`
+        The description of sub-command.
+    options: List[:class:`Option`]
+        The options of sub-command.
+    callback: Callable
+        The callback for this sub-command.
     """
-    def __init__(self, callback, **attrs):
-        self.type = ApplicationCommandType.slash.value
-        self.options: List[Option] = attrs.get('options', [])
-        super().__init__(callback, **attrs)
+    def __init__(self, callback: Callable, parent: SlashCommand, **attrs):
+        self.callback = callback
+        self.parent = parent
+        self.guild_ids = parent.guild_ids
+        super().__init__(
+            name=callback.__name__ or attrs.get('name'),
+            description=callback.__doc__ or attrs.get('description'),
+            type=OptionType.sub_command.value,
+        )
+
+        self._from_data = parent._from_data
     
-        if not self.description:
-            raise TypeError('description for slash commands is required.')
+    def to_dict(self) -> dict:
+        return {
+            'name': self.name,
+            'description': self.description,
+            'type': OptionType.sub_command.value,
+            'options': [option.to_dict() for option in self.options],
+        }
     
     def add_option(self, option: Option) -> Option:
         """Adds an option to this slash command.
@@ -1063,16 +1095,130 @@ class SlashCommand(ApplicationCommand):
         self.options.append(option)
         return option
 
+
+
+class SlashCommand(ApplicationCommand):
+    """Represents a slash command.
+    
+    A slash command is a user input command that a user can use by typing ``/`` in
+    the chat.
+
+    This class inherits from :class:`ApplicationCommand` so all attributes valid
+    there are valid here too.
+    
+    In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.slash`
+    """
+    def __init__(self, callback, **attrs):
+        self.type = ApplicationCommandType.slash.value
+        self.options: List[Option] = []
+        self.children: List[SubSlashCommand, SubSlashGroup] = [] 
+        super().__init__(callback, **attrs)
+    
+    def add_option(self, option: Option) -> Option:
+        """Adds an option to this slash command.
+        
+        Parameters
+        ----------
+        option: :class:`Option`
+            The option to add.
+
+        Returns
+        -------
+        :class:`Option`
+            The added option.
+        
+        """
+        if not isinstance(option, Option):
+            raise TypeError('option must be an instance of Option class.')
+
+        self.options.append(option)
+        return option
+    
+    def add_child(self, child: SlashSubCommand, /):
+        """
+        Adds a child to the command.
+
+        This shouldn't generally be used. Instead, :func:`sub_command` decorator 
+        should be used.
+
+        Parameters
+        ----------
+
+        child: Union[:class:`SlashSubCommand`, :class:`SlashSubCommandGroup`]
+            The child to add.
+        """
+        subc = self.add_option(child)
+        self.children.append(subc)
+
+        for opt in child.callback.__annotations__:
+            child.add_option(child.callback.__annotations__[opt])
+
+        return subc
+
+    def sub_command(self, **attrs):
+        """A decorator to register a subcommand within a slash command.
+        
+        .. note::
+            Once a slash sub-command is registered the callback for parent command
+            would not work. For example:
+
+            ``/hello`` is not a valid command because it has two subcommands ``foo`` and ``world``
+            so ``/hello foo`` and ``/hello world`` are two valid commands.
+    
+        Usage: ::
+            
+            @bot.slash_command(description='A cool command that has subcommands.')
+            async def git(ctx):
+                pass
+            
+            @git.sub_command(description='This is git push!')
+            async def push(ctx):
+                await ctx.send('Pushed!')
+        
+        Options and other features can be added to the subcommands.
+        """
+        def inner(func: Callable):
+            return self.add_child(SlashSubCommand(func, self, **attrs))
+
+        return inner
+
+    def get_child(self, name: str, /):
+        """
+        Gets a child of this command i.e a subcommand or subcommand group of this command
+        by the child's name.
+        
+        Returns ``None`` if the child is not found.
+
+        Parameters
+        ----------
+        name: :class:`str`
+            The name of the child.
+
+        Returns
+        -------
+        Union[:class:`SlashSubCommand`, :class:`SlashSubGroup`]
+            The required slash subcommand or subcommand group.
+        """
+        return (utils.get(self.children, name=name))
     
     def to_dict(self) -> dict:
+        # We're reversing the options list here because the order of how options are
+        # registered using decorator is below-to-top so we have to reverse it to 
+        # normalize the list. The core reason is that discord API does not
+        # allow to put the non-required options before required ones which makes sense.  
+                
+        reversed_options = self.options
+        reversed_options.reverse()
+
         dict_ = {
             'name': self.name,
             'type': self.type,
-            "options": [option.to_dict() for option in self.options],
+            'options': [option.to_dict() for option in reversed_options],
             'description': self.description,
         }
 
         return dict_
+
 
 class UserCommand(ApplicationCommand):
     """Represents a user command.
