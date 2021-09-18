@@ -3077,6 +3077,53 @@ class Guild(Hashable):
         data = await self._state.http.search_members(guild_id=self.id, query=query, limit=limit) 
         return [Member(data=member, guild=self, state=self._state) for member in data]
 
+
+    # Application commands management
+
+    def get_application_command(self, command_id: int, /) -> ApplicationCommand:
+        """
+        Gets an application command for this guild with the command's ID.
+
+        The command for provided ID must belong to this guild.
+
+        Parameters
+        ----------
+
+        command_id: :class:`int`
+            The ID of the command to get.
+
+        Returns
+        -------
+
+        :class:`ApplicationCommand`
+            The required command. 
+        """
+        for command in self._application_commands:
+            if command.id == command_id and self.id in command.guild_ids:
+                return command
+    
+    def remove_application_command(self, command_id: int, /):
+        """
+        Removes an application command from internal application commands list for this
+        guild.
+        
+        The command for provided ID must belong to this guild.
+
+        If any error is raised during command removal, It is silently suppressed.
+
+        Parameters
+        -----------
+
+        command_id: :class:`int`
+            The ID of the command to remove.
+        """
+        for command in self._state._application_commands:
+            if command.id == command_id and self.id in command.guild_ids:
+                try:
+                    return self._state._application_commands.remove(command)
+                except ValueError:
+                    return
+
     async def fetch_application_command(self, command_id: int, /) -> ApplicationCommand:
         """|coro|
 
@@ -3108,4 +3155,4 @@ class Guild(Hashable):
             application_id=self._state.user.id,
             guild_id=self.id,
             )
-        return ApplicationCommand(None)._from_data(data)
+    
