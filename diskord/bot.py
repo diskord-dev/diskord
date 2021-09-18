@@ -591,6 +591,8 @@ class Bot(Client):
                     interaction.guild.get_member(int(option['value'])) or
                     interaction.guild.get_role(int(option['value']))
                     )
+            else:
+                value = option['value']
                 
             kwargs[option['name']] = value
 
