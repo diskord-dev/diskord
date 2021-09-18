@@ -79,6 +79,7 @@ if TYPE_CHECKING:
     from .ui.view import View
     from .channel import VoiceChannel, StageChannel, TextChannel, CategoryChannel, StoreChannel, PartialMessageable
     from .threads import Thread
+    from .bot import Bot
 
     InteractionChannel = Union[
         VoiceChannel, StageChannel, TextChannel, CategoryChannel, StoreChannel, Thread, PartialMessageable
@@ -804,7 +805,7 @@ class InteractionContext:
         The actual interaction this context belongs to.
 
     """
-    def __init__(self, bot: "discord.Bot", interaction: Interaction) -> None:
+    def __init__(self, bot: Bot, interaction: Interaction) -> None:
         self.bot = bot
         self.interaction = interaction
     
