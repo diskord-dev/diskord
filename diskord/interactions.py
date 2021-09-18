@@ -865,12 +865,19 @@ class OptionChoice:
 
     name: :class:`str`
         The name of choice.
-    value: Union[:class:`str`, :class:`int`, :class:`float`]
+    value: :class:`str`
         The value of the choice.
     """
+    @overload
+    def __init__(self, *,
+        name: str = ...,
+        value: str = ...,
+    ):
+        ...
+        
     def __init__(self, **data):
         self.name: str = data['name']
-        self.value: Union[str, int, float] = data['value']
+        self.value: str = data['value']
     
     def to_dict(self) -> dict:
         return {
