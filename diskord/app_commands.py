@@ -279,7 +279,7 @@ class UserCommand(ApplicationCommand):
     def to_dict(self) -> dict:
         dict_ = {
             'name': self.name,
-            'description': '',
+            'description': self.description,
             'type': self.type,
         }
         return dict_
@@ -302,7 +302,7 @@ class MessageCommand(ApplicationCommand):
     def to_dict(self) -> dict:
         dict_ = {
             'name': self.name,
-            'description': '',
+            'description': self.description,
             'type': self.type,
         }
         return dict_
