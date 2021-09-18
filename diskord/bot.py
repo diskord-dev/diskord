@@ -195,14 +195,14 @@ class Bot(Client):
         except KeyError:
             return
     
-    def get_application_command(self, id: int, /) -> Optional[ApplicationCommand]:
+    def get_application_command(self, command_id: int, /) -> Optional[ApplicationCommand]:
         """Returns a bot's application command by it's ID.
         
         This function returns ``None`` if the application command is not found.
 
         Parameters
         ----------
-        id: :class:`int`
+        command_id: :class:`int`
             The ID of the application command.
         
         Returns
