@@ -154,6 +154,24 @@ class Bot(Client):
                 command.add_option(callback.__annotations__[opt])
                 
         return command
+
+    def remove_pending_command(self, command: ApplicationCommand, /):
+        """Removes an application command from the pending commands list that will be
+        registered upon bot connect.
+
+        If the command is not found then error is suppressed by this function.
+        
+        Parameters
+        ----------
+
+        command: :class:`ApplicationCommand`
+            The application command to register.
+        """
+        try:
+            return self._pending_commands.remove(command)
+        except ValueError:
+            return 
+    
     
     
     def remove_application_command(self, id: int, /) -> Optional[ApplicationCommand]:
