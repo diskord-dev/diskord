@@ -477,7 +477,7 @@ class Bot(Client):
     
     # Command handler
 
-    async def _parse_option(self, option: ApplicationCommandOptionPayload) -> Any:
+    async def _parse_option(self, interaction: Interaction, option: ApplicationCommandOptionPayload) -> Any:
         if option['type'] in (
                 OptionType.string.value,
                 OptionType.integer.value,
@@ -598,16 +598,33 @@ class Bot(Client):
             if option['type'] == OptionType.sub_command.value:
                 # We will use the name to get the child because 
                 # subcommands do not have any ID. They are essentially 
-                # just options of a command.
+                # just options of a command. And option names are unique
+                
                 sub_options = option.get('options', [])
                 for sub_option in sub_options:
-                    value = await self._parse_option(sub_option)
+                    value = await self._parse_option(interaction, sub_option)
                     kwargs[sub_option['name']] = value
 
                 sub_command = command.get_child(option['name'])
                 return (await sub_command.callback(context, **kwargs))
-            else:
-                value = await self._parse_option(option) 
+            
+            elif option['type'] == OptionType.sub_command_group.value:
+                # In case of sub-command groups interactions, The options array
+                # only has one element which is the subcommand that is being used
+                # so we essentially just have to get the first element of the options 
+                # list and lookup the callback function for name of that element to 
+                # get the subcommand object.
+
+                subcommand_raw = option['options'][0]
+                group = command.get_child(option['name'])
+                sub_options = subcommand_raw.get('options', [])
+
+                for sub_option in sub_options:
+                    value = await self._parse_option(interaction, sub_option)
+                    kwargs[sub_option['name']] = value
+                
+                subcommand = group.get_child(subcommand_raw['name'])                
+                return (await subcommand.callback(context, **kwargs))
 
             kwargs[option['name']] = value
 
