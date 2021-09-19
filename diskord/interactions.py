@@ -34,6 +34,7 @@ from typing import (
     Tuple,
     Union,
     Callable,
+    overload,
 )
 import asyncio
 
@@ -874,7 +875,7 @@ class OptionChoice:
         value: str = ...,
     ):
         ...
-        
+
     def __init__(self, **data):
         self.name: str = data['name']
         self.value: str = data['value']
@@ -912,11 +913,12 @@ class Option:
         The options if the type is a subcommand or subcommand group.
     """
     def __init__(self, **data):
-        if isinstance(data.get('type'), type):
+        print(data.get('name'))
+        try:
             self.type: OptionType = OptionType.from_datatype(data.get('type'))
-        else:
+        except TypeError:
             self.type: OptionType = data.get('type')
-
+            
         self.name: str = data.get('name')
         self.description: str = data.get('description')
         self.required: bool = data.get('required', False)
@@ -928,7 +930,7 @@ class Option:
 
     def __str__(self):
         return self.name
-    
+        
     def is_subcommand(self):
         """:class:`bool`: Indicates whether this option is a subcommand."""
         return hasattr(self, 'callback') and callable(self.callback)
@@ -1034,6 +1036,156 @@ class ApplicationCommand:
         self.description = data.get('description')
 
         return self
+
+
+class SlashSubCommandGroup(Option):
+    """Represents a subcommand group of a slash command.
+    
+    A slash subcommand group holds subcommands of that group.
+    
+    Example: ::
+        @bot.slash_command(description="Edits permission of a role or user.")
+        async def permissions(ctx):
+            pass
+        
+        @permission.sub_command_group(description="Edits permission of a role.")
+        async def role(ctx):
+            pass
+        
+        @role.sub_command(description="Clears the permissions of the role.")
+        @diskord.slash_option('role', description='The role to clear permissions of.')
+        async def clear(ctx, role: discord.Role):
+            await ctx.send('Permissions cleared!')
+        
+
+    In above example, ``/permissions`` is a slash command and ``role`` is a subcommand group
+    in that slash command that holds command ``clear`` to use the ``clear`` command, The
+    command will be ``/permissions role clear``.
+
+    More command groups can be added in a slash command and similarly, more commands
+    can be added into a group.
+
+    Attributes
+    ----------
+
+    name: :class:`str`
+        The name of command group.
+    description: :class:`str`
+        The description of command group.
+    callback: Callable
+        The callback for this command group.
+    parent: :class:`SlashCommand`
+        The parent command for this group.
+    children: List[:class:`SlashSubCommand`]
+        The list of commands this subcommand group holds.
+    guild_ids: List[:class:`int`]
+        A short-hand for :attr:`parent.guild_ids`
+
+        Changing this will have no affect as the guild for a sub-command 
+        depend upon the guilds of parent command.
+    """
+    def __init__(self, callback: Callable, parent: SlashCommand, **attrs):
+        self.callback = callback
+        self.parent = parent
+        self.children = []
+        self.guild_ids = parent.guild_ids
+        super().__init__(
+            name=callback.__name__ or attrs.get('name'),
+            description=callback.__doc__ or attrs.get('description'),
+            type=OptionType.sub_command_group.value,
+        )
+
+        self._from_data = parent._from_data
+    
+    def add_child(self, child: SlashSubCommand, /):
+        """
+        Adds a child i.e subcommand to the command group.
+
+        This shouldn't generally be used. Instead, :func:`sub_command` decorator 
+        should be used.
+
+        Parameters
+        ----------
+
+        child: :class:`SlashSubCommand`
+            The child to add.
+        """
+        self.options.append(child)
+        self.children.append(child)
+
+        for opt in child.callback.__annotations__:
+            child.add_option(child.callback.__annotations__[opt])
+
+        return child
+    
+    def remove_child(self, child: Union[str, SlashSubCommand], /):
+        """Removes a child like sub-command or sub-command group from the command.
+
+        Parameters
+        ----------
+
+        child: Union[:class:`str`, :class:`SlashSubCommand`]
+            The child to remove.
+        """
+        if isinstance(child, str):
+            child = utils.get(self.children, name=child)
+        
+        try:
+            self.children.remove(child)
+        except ValueError:
+            return
+
+    def sub_command(self, **attrs):
+        """A decorator to register a subcommand in the command group.
+        
+    
+        Usage: ::
+            
+            @bot.slash_command(description='A cool command that has subcommand groups.')
+            async def command(ctx):
+                pass
+            
+            @command.sub_command_group(description='This is a cool group.')
+            async def group(ctx):
+                pass
+            
+            @group.sub_command(description='This is a cool command inside a command group.')
+            async def subcommand(ctx):
+                await ctx.send('Hello world!')
+        """
+        def inner(func: Callable):
+            return self.add_child(SlashSubCommand(func, self, **attrs))
+
+        return inner
+
+    def get_child(self, name: str, /):
+        """
+        Gets a child of this command i.e a subcommand or subcommand group of this command
+        by the child's name.
+        
+        Returns ``None`` if the child is not found.
+
+        Parameters
+        ----------
+        name: :class:`str`
+            The name of the child.
+
+        Returns
+        -------
+        Union[:class:`SlashSubCommand`, :class:`SlashSubGroup`]
+            The required slash subcommand or subcommand group.
+        """
+        return (utils.get(self.children, name=name))
+    
+    def to_dict(self) -> dict:
+        return {
+            'name': self.name,
+            'description': self.description,
+            'type': OptionType.sub_command_group.value,
+            'options': [option.to_dict() for option in self.options],
+        }
+    
+    
     
 class SlashSubCommand(Option):
     """Represents a subcommand of a slash command.
@@ -1050,6 +1202,8 @@ class SlashSubCommand(Option):
         async def push(ctx):
             await ctx.send('Pushed!')
     
+    The usage of above command would be like ``/git push``.
+    
     Attributes
     ----------
 
@@ -1061,6 +1215,14 @@ class SlashSubCommand(Option):
         The options of sub-command.
     callback: Callable
         The callback for this sub-command.
+    parent: :class:`SlashCommand`
+        The parent command for this sub-command.
+    guild_ids: List[:class:`int`]
+        A short-hand for :attr:`parent.guild_ids`
+
+        Changing this will have no affect as the guild for a sub-command 
+        depend upon the guilds of parent command.
+    
     """
     def __init__(self, callback: Callable, parent: SlashCommand, **attrs):
         self.callback = callback
@@ -1075,11 +1237,15 @@ class SlashSubCommand(Option):
         self._from_data = parent._from_data
     
     def to_dict(self) -> dict:
+        options = self.options
+        if isinstance(self.parent, SlashSubCommandGroup):
+            options.reverse()
+
         return {
             'name': self.name,
             'description': self.description,
             'type': OptionType.sub_command.value,
-            'options': [option.to_dict() for option in self.options],
+            'options': [option.to_dict() for option in options],
         }
     
     def add_option(self, option: Option) -> Option:
@@ -1161,6 +1327,23 @@ class SlashCommand(ApplicationCommand):
             child.add_option(child.callback.__annotations__[opt])
 
         return subc
+    
+    def remove_child(self, child: Union[str, SlashSubCommand, SlashSubCommandGroup], /):
+        """Removes a child like sub-command or sub-command group from the command.
+
+        Parameters
+        ----------
+
+        child: Union[:class:`str`, :class:`SlashSubCommand`, :class:`SlashSubCommandGroup`]
+            The child to remove.
+        """
+        if isinstance(child, str):
+            child = utils.get(self.children, name=child)
+        
+        try:
+            self.children.remove(child)
+        except ValueError:
+            return
 
     def sub_command(self, **attrs):
         """A decorator to register a subcommand within a slash command.
@@ -1187,6 +1370,29 @@ class SlashCommand(ApplicationCommand):
         def inner(func: Callable):
             return self.add_child(SlashSubCommand(func, self, **attrs))
 
+        return inner
+    
+    def sub_command_group(self, **attrs):
+        """A decorator to register a subcommand group within a slash command.
+        
+    
+        Usage: ::
+            
+            @bot.slash_command(description='A cool command that has subcommand groups.')
+            async def command(ctx):
+                pass
+            
+            @command.sub_command_group(description='This is a cool group.')
+            async def group(ctx):
+                pass
+            
+            @group.sub_command(description='This is a cool command inside a command group.')
+            async def subcommand(ctx):
+                await ctx.send('Hello world!')
+        """
+        def inner(func: Callable):
+            return self.add_child(SlashSubCommandGroup(func, self, **attrs))
+        
         return inner
 
     def get_child(self, name: str, /):
