@@ -61,6 +61,13 @@ __all__ = (
     'Interaction',
     'InteractionMessage',
     'InteractionResponse',
+    'ApplicationCommand',
+    'SlashCommand',
+    'SlashSubCommand',
+    'UserCommand',
+    'MessageCommand',
+    'Option',
+    'OptionChoice',
 )
 
 if TYPE_CHECKING:

@@ -690,8 +690,10 @@ def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
         
         @bot.slash_command(description="Highfive a member!")
         @diskord.slash_option('member', description='The member to high-five.')
-        async def highfive(ctx, member: diskord.Member):
-            await ctx.send(f'{ctx.author.name} high-fived {member.name}')
+        @diskord.slash_option('reason', description='Reason to high-five')
+        
+        async def highfive(ctx, member: diskord.Member, reason = 'No reason!'):
+            await ctx.send(f'{ctx.author.name} high-fived {member.name} for {reason}')
     
     .. warning::
         The callback function must contain the argument and properly annotated or TypeError
