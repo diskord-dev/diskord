@@ -24,7 +24,18 @@ DEALINGS IN THE SOFTWARE.
 
 import types
 from collections import namedtuple
-from typing import Any, ClassVar, Dict, List, Optional, TYPE_CHECKING, Type, TypeVar
+from typing import (
+    Any,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    TYPE_CHECKING,
+    Type,
+    TypeVar,
+    Union,
+    get_origin,
+    )
 
 __all__ = (
     'Enum',
@@ -612,15 +623,25 @@ class OptionType(Enum, comparable=True):
 
     @classmethod
     def from_datatype(cls, type_: Any, /):
-        if issubclass(type_, str):
+        if isinstance(type_, int):
+            return try_enum(cls, type_)
+
+        if type_ == str:
             return cls.string
-        elif issubclass(type_, int):
+        elif type_ == int:
             return cls.integer
-        elif issubclass(type_, bool):
+        elif type_ == bool:
             return cls.boolean
-        elif issubclass(type_, float):
-            return cls.float
+        elif type_ == float:
+            return cls.number
         
+        # checking for types from typing
+        if get_origin(type_) is Union:
+            args = type_.__args__
+            args = [arg.__name__ for arg in args]
+            if 'Role' in args and any(['Member' in args, 'User' in args]):
+                return cls.mentionable
+
         # using name because circular imports issues
         if type_.__name__ in ['User', 'Member']:
             return cls.user
@@ -630,7 +651,6 @@ class OptionType(Enum, comparable=True):
             return cls.channel
         
         else:
-            print(type_.__name__)
             raise TypeError('Unknown data type for option.')
 
 
