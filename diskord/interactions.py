@@ -77,6 +77,7 @@ if TYPE_CHECKING:
         ApplicationCommand as ApplicationCommandPayload,
         ApplicationCommandOption as ApplicationCommandOptionPayload,
         ApplicationCommandOptionChoice as ApplicationCommandOptionChoicePayload,
+        ApplicationCommandPermissions as ApplicationCommandPermissionsPayload,
     )
     from .guild import Guild
     from .state import ConnectionState
@@ -975,6 +976,85 @@ class Option:
 
         return dict_
             
+
+class ApplicationCommandPermissions:
+    """Represents the permissions for an application command in a :class:`Guild`.
+    
+    Application commands permissions allow you to restrict a guild application command
+    to a certain roles or users.
+
+    Attributes
+    ----------
+
+    command_id: :class:`int`
+        The ID of the command these permissions belong to.
+    application_id: :class:`int`
+        The ID of application this command belongs to.
+    guild_id: :class:`int`
+        The ID of the guild this command belongs to.
+    permissions: List[:class:`ApplicationCommandPermissions`]
+        The list that the commands hold in the guild.
+    """
+    __slots__ = (
+        'command_id',
+        'application_id',
+        'guild_id',
+        'permissions',
+    )
+    def __init__(self, data: ApplicationCommandPermissionsPayload):
+        self.command_id: int = int(data['command_id'])
+        self.application_id: int = int(data['application_id'])
+        self.guild_id: int = int(data['guild_id'])
+        self.permissions: ApplicationCommandPermission = (
+            [ApplicationCommandPermission._from_data(perm) 
+            for perm in data.get('permissions', [])]
+        )
+
+class ApplicationCommandPermission:
+    """A class representing a specific permission for an application command.
+    
+    The purpose of this class is to edit the commands permissions of a command in a guild.
+    A number of parameters can be passed in this class initialization to customise
+    the permissions.
+
+    Parameters
+    ----------
+
+    role: :class:`~abc.Snowflake`
+        The ID of role whose permission is defined. This cannot be mixed with ``user``
+        parameter.
+    user: :class:`~abc.Snowflake`
+        The ID of role whose permission is defined. This cannot be mixed with ``role``
+        parameter.
+    permission: :class:`bool`
+        The permission for the command. If this is set to ``False`` the provided 
+        user or role will not be able to use the command. Defaults to ``False``
+    """  
+    def __init__(self, **options):
+        self.user: abc.Snowflake: options.get('user')
+        self.role: abc.Snowflake: options.get('role')
+        
+        if self.user is None and self.role is None:
+            raise TypeError('at least one of role or user keyword parameter must be passed.')
+        
+        self.permission: abc.Snowflake: options.get('permission', False)
+
+        if self.user:
+            self._id = self.user.id
+        elif self.role:
+            self._id = self.role.id
+        
+    def to_dict(self):
+        ret = {
+            'id': self._id,
+            'permission': self.permission 
+        }
+        if self.user:
+            ret['type'] = ApplicationCommandPermissionType.user.value
+        elif self.role:
+            ret['type'] = ApplicationCommandPermissionType.role.value
+        
+        return ret
 
 class ApplicationCommand:
     """Represents an application command. This is base class for all application commands like

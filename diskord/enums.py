@@ -653,6 +653,9 @@ class OptionType(Enum, comparable=True):
         else:
             raise TypeError('Unknown data type for option.')
 
+class ApplicationCommandPermissionType(Enum, comparable=True):
+    role = 1
+    user = 2
 
 T = TypeVar('T')
 
