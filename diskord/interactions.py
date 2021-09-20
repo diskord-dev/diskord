@@ -976,7 +976,10 @@ class Option:
             dict_['required'] = self.required
 
         return dict_
-            
+    
+
+# TODO: Work on Application command permissions.
+
 
 class ApplicationCommandPermissions:
     """Represents the permissions for an application command in a :class:`Guild`.
@@ -1032,13 +1035,13 @@ class ApplicationCommandPermission:
         user or role will not be able to use the command. Defaults to ``False``
     """  
     def __init__(self, **options):
-        self.user: abc.Snowflake: options.get('user')
-        self.role: abc.Snowflake: options.get('role')
+        self.user: abc.Snowflake = options.get('user')
+        self.role: abc.Snowflake = options.get('role')
         
         if self.user is None and self.role is None:
             raise TypeError('at least one of role or user keyword parameter must be passed.')
         
-        self.permission: abc.Snowflake: options.get('permission', False)
+        self.permission: abc.Snowflake = options.get('permission', False)
 
         if self.user:
             self._id = self.user.id

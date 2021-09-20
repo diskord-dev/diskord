@@ -25,7 +25,10 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, Set, List
+import datetime
+
 from .enums import try_enum, ChannelType
+from .utils import _get_as_snowflake
 
 if TYPE_CHECKING:
     from .types.raw_models import (
@@ -36,7 +39,8 @@ if TYPE_CHECKING:
         ReactionClearEvent,
         ReactionClearEmojiEvent,
         IntegrationDeleteEvent,
-        ThreadDeleteEvent
+        ThreadDeleteEvent,
+        TypingEvent,
     )
     from .message import Message
     from .partial_emoji import PartialEmoji
@@ -312,3 +316,28 @@ class RawThreadDeleteEvent(_RawReprMixin):
         self.parent_id: int = int(data['parent_id'])
         self.guild_id: int = int(data['guild_id'])
         self.thread: Optional[Thread] = None
+
+class RawTypingEvent(_RawReprMixin):
+    """Represents event payload for a :func:`on_raw_typing` event.
+
+    .. versionadded:: 2.5
+
+    Attributes
+    ----------
+
+    user_id: :class:`int`
+        The ID of the user who started typing.
+    channel_id: :class:`int`
+        The ID of the channel in which typing was started.
+    started_at: :class:`datetime.datetime`
+        The time when the typing was started.
+    """
+    __slots__ = ('user_id', 'channel_id', 'started_at')
+    
+    def __init__(self, data: TypingEvent):
+        self.user_id: int = _get_as_snowflake(data, 'user_id')
+        self.channel_id: int = _get_as_snowflake(data, 'channel_id')
+        self.started_at: datetime.datetime = datetime.datetime.fromtimestamp(
+            data.get('timestamp'), tz=datetime.timezone.utc
+            )
+        

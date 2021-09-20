@@ -91,3 +91,8 @@ class ThreadDeleteEvent(TypedDict):
     thread_type: int
     guild_id: Snowflake
     parent_id: Snowflake
+
+class TypingEvent(TypedDict):
+    user_id: Snowflake
+    channel_id: Snowflake
+    timestamp: str
