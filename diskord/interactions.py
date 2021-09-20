@@ -46,6 +46,7 @@ from .enums import (
     OptionType,
     InteractionType, 
     InteractionResponseType,
+    ApplicationCommandPermissionType,
 )
 from .errors import InteractionResponded, HTTPException, ClientException
 from .channel import PartialMessageable, ChannelType
