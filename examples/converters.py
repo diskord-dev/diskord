@@ -2,8 +2,8 @@
 
 import typing
 
-import discord
-from discord.ext import commands
+import diskord
+from diskord.ext import commands
 
 intents = discord.Intents.default()
 intents.members = True

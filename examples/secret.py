@@ -1,7 +1,7 @@
 import typing
 
-import discord
-from discord.ext import commands
+import diskord
+from diskord.ext import commands
 
 bot = commands.Bot(command_prefix=commands.when_mentioned, description="Nothing to see here!")
 

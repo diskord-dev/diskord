@@ -1,9 +1,9 @@
 import asyncio
 
-import discord
+import diskord
 import youtube_dl
 
-from discord.ext import commands
+from diskord.ext import commands
 
 # Suppress noise about console usage from errors
 youtube_dl.utils.bug_reports_message = lambda: ''

@@ -1,7 +1,7 @@
 import random
 
-import discord
-from discord.ext import commands
+import diskord
+from diskord.ext import commands
 
 
 class MyContext(commands.Context):

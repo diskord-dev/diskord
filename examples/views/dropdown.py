@@ -1,7 +1,7 @@
 import typing
 
-import discord
-from discord.ext import commands
+import diskord
+from diskord.ext import commands
 
 # Defines a custom Select containing colour options
 # that the user can choose. The callback function

@@ -1,6 +1,6 @@
-from discord.ext import commands
+from diskord.ext import commands
 
-import discord
+import diskord
 
 
 class CounterBot(commands.Bot):

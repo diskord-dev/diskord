@@ -70,7 +70,7 @@ Linuxで音声サポートを導入するには、前述のコマンドを実行
 
 .. code:: py
 
-    import discord
+    import diskord
 
     class MyClient(discord.Client):
         async def on_ready(self):
@@ -92,8 +92,8 @@ Botの例
 
 .. code:: py
 
-    import discord
-    from discord.ext import commands
+    import diskord
+    from diskord.ext import commands
 
     bot = commands.Bot(command_prefix='>')
 
