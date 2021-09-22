@@ -543,6 +543,7 @@ class Bot(Client):
             return
 
         command = self.get_application_command(int(interaction.data['id']))
+        print(interaction.data['id'], self._connection._application_commands)
 
         if not command:
             self.dispatch('unknown_application_command', interaction)
@@ -724,5 +725,62 @@ def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
             **attrs
             )
         return func
+
+    return inner
+
+# Decorators
+
+def slash_command(**options) -> SlashCommand:
+    """A decorator that converts a function to :class:`SlashCommand`
+
+    Usage: ::
+
+        @bot.slash_command(description='My cool slash command.')
+        async def test(ctx):
+            await ctx.send('Hello world')
+    """
+    def inner(func: Callable):
+        if not inspect.iscoroutinefunction(func):
+            raise TypeError('Callback function must be a coroutine.')
+
+        options['name'] = options.get('name') or func.__name__
+
+        return SlashCommand(func, **options)
+
+    return inner
+
+def user_command(**options) -> SlashCommand:
+    """A decorator-based interface to add user commands to the bot.
+
+    Usage: ::
+
+        @bot.user_command()
+        async def test(ctx):
+            await ctx.send('Hello world')
+    """
+    def inner(func: Callable):
+        if not inspect.iscoroutinefunction(func):
+            raise TypeError('Callback function must be a coroutine.')
+        options['name'] = options.get('name') or func.__name__
+
+        return UserCommand(func, **options)
+
+    return inner
+
+def message_command(**options) -> SlashCommand:
+    """A decorator-based interface to add message commands to the bot.
+
+    Usage: ::
+
+        @bot.message_command()
+        async def test(ctx):
+            await ctx.send('Hello world')
+    """
+    def inner(func: Callable):
+        if not inspect.iscoroutinefunction(func):
+            raise TypeError('Callback function must be a coroutine.')
+        options['name'] = options.get('name') or func.__name__
+
+        return MessageCommand(func, **options)
 
     return inner

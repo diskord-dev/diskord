@@ -1033,7 +1033,7 @@ class BotBase(GroupMixin):
     async def on_message(self, message):
         await self.process_commands(message)
 
-class Bot(BotBase, diskord.Client):
+class Bot(BotBase, diskord.Bot):
     """Represents a diskord bot.
 
     This class is a subclass of :class:`diskord.Client` and as a result
