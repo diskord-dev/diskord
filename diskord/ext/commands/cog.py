@@ -256,9 +256,9 @@ class Cog(metaclass=CogMeta):
 
             .. note::
 
-                This does not include subcommands.
+                This does not include subcommands and groups.
         """
-        return [c for c in self.__cog_application_commands__ if not hasattr(c, 'parent')]
+        return [c for c in self.__cog_application_commands__]
 
 
     @property
@@ -464,15 +464,14 @@ class Cog(metaclass=CogMeta):
 
         for index, command in enumerate(self.__cog_application_commands__):
             command.cog = self
-            if command.parent is None:
-                try:
-                    bot.add_pending_command(command)
-                except Exception as e:
-                    # undo our additions
-                    for to_undo in self.__cog_application_commands__[:index]:
-                        if command.parent is None:
-                            bot.add_pending_command(to_undo)
-                    raise e
+            # subcommand and groups inherit option so, we are checking for it for convinience.
+            try:
+                bot.add_pending_command(command)
+            except Exception as e:
+                # undo our additions
+                for to_undo in self.__cog_application_commands__[:index]:
+                    bot.remove_pending_command(to_undo)
+                raise e
 
         # check if we're overriding the default
         if cls.bot_check is not Cog.bot_check:
