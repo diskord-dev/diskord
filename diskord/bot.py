@@ -583,7 +583,10 @@ class Bot(Client):
                         data=resolved['users'][interaction.data['target_id']]
                     )
 
-            return await command.callback(context, user)
+            if command.cog is not None:
+                return await command.callback(command.cog, context, user)
+            else:
+                return await command.callback(context, user)
 
         if interaction.data['type'] == ApplicationCommandType.message.value:
             if interaction.guild:
@@ -599,7 +602,10 @@ class Bot(Client):
                     data=interaction.data['resolved']['messages'][interaction.data['target_id']],
                 )
 
-            return await command.callback(context, message)
+            if command.cog is not None:
+                return await command.callback(command.cog, context, message)
+            else:
+                return await command.callback(context, message)
 
         for option in options:
             if option['type'] == OptionType.sub_command.value:
@@ -613,7 +619,11 @@ class Bot(Client):
                     kwargs[sub_option['name']] = value
 
                 sub_command = command.get_child(option['name'])
-                return (await sub_command.callback(context, **kwargs))
+
+                if sub_command.cog is not None:
+                    return await sub_command.callback(sub_command.cog, context, **kwargs)
+                else:
+                    return await sub_command.callback(context, **kwargs)
 
             elif option['type'] == OptionType.sub_command_group.value:
                 # In case of sub-command groups interactions, The options array
@@ -631,12 +641,18 @@ class Bot(Client):
                     kwargs[sub_option['name']] = value
 
                 subcommand = group.get_child(subcommand_raw['name'])
-                return (await subcommand.callback(context, **kwargs))
+                if subcommand.cog is not None:
+                    return await subcommand.callback(subcommand.cog, context, **kwargs)
+                else:
+                    return await subcommand.callback(context, **kwargs)
 
             kwargs[option['name']] = value
 
         try:
-            await command.callback(context, **kwargs)
+            if command.cog is not None:
+                await command.callback(command.cog, context, **kwargs)
+            else:
+                await command.callback(context, **kwargs)
         except ApplicationCommandError as error:
             self.dispatch('application_command_error', context, error)
         else:
