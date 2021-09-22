@@ -1127,8 +1127,8 @@ class ApplicationCommand:
         self.guild_id: int = utils._get_as_snowflake(data, 'guild_id')
         self.default_permission: bool = data.get('default_permission')
         self.version: int = utils._get_as_snowflake(data, 'version')
-        self.name = data.get('name') or self.name
-        self.description = data.get('description') or self.name
+        self.name = data.get('name')
+        self.description = data.get('description')
 
         return self
 
