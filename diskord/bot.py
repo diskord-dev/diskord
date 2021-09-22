@@ -140,6 +140,7 @@ class Bot(Client):
         if not isinstance(command, ApplicationCommand):
             raise TypeError('command parameter must be an instance of ApplicationCommand.')
 
+        command.bot = self
         self._pending_commands.append(command)
 
         for opt in command.callback.__annotations__:

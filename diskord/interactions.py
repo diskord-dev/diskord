@@ -1091,7 +1091,7 @@ class ApplicationCommand:
 
     def __init__(self, callback: Callable, **attrs):
         self.bot = attrs.get('bot')
-        self.callback: Callable = callback
+        self.callback: Callableg = callback
         self.name: str = attrs.get('name') or callback.__name__
         self.description: str = attrs.get('description') or self.callback.__doc__
         self.guild_ids: List[int] = attrs.get('guild_ids', [])
