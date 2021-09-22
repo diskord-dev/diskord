@@ -1094,7 +1094,7 @@ class ApplicationCommand:
         self.callback: Callable = callback
         self.name: str = attrs.get('name') or callback.__name__
         self.description: str = attrs.get('description') or self.callback.__doc__
-        self.guild_ids = attrs.get('guild_ids', [])
+        self.guild_ids: List[int] = attrs.get('guild_ids', [])
         self.cog = None
 
 
