@@ -543,7 +543,6 @@ class Bot(Client):
             return
 
         command = self.get_application_command(int(interaction.data['id']))
-        print(interaction.data['id'], self._connection._application_commands)
 
         if not command:
             self.dispatch('unknown_application_command', interaction)
