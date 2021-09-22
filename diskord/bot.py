@@ -125,6 +125,10 @@ class Bot(Client):
         * :func:`user_command`
         * :func:`message_command`
 
+        If this function is called once the application commands are registered/synchronized,
+        :func:`sync_application_commands` must be called afterwards to synchronise all the
+        commands properly.
+
         Parameters
         ----------
 
