@@ -115,7 +115,7 @@ class Bot(Client):
 
     # Commands management
 
-    def add_pending_command(self, type: ApplicationCommandType, callback: Callable, **attrs) -> ApplicationCommand:
+    def add_pending_command(self, command: ApplicationCommand) -> ApplicationCommand:
         """Adds an application command to internal list of *pending* commands that will be
         registered on bot connect.
 
@@ -128,30 +128,22 @@ class Bot(Client):
         Parameters
         ----------
 
-        type: :class:`ApplicationCommandType`
-            The type of application to add.
-        callback: Callable
-            The callback function for the command.
+        command: :class:`ApplicationCommand`
+            The application command to add.
 
         Returns
         -------
 
         :class:`ApplicationCommand`
-            The registered command.
+            The added command.
         """
-        types = {
-            1: SlashCommand,
-            2: UserCommand,
-            3: MessageCommand,
-        }
-        if not type in types:
-            raise TypeError('The provided type is not valid.')
+        if not isinstance(command, ApplicationCommand):
+            raise TypeError('command parameter must be an instance of ApplicationCommand.')
 
-        command = types[type](callback, bot=self, **attrs)
         self._pending_commands.append(command)
 
-        for opt in callback.__annotations__:
-            command.add_option(callback.__annotations__[opt])
+        for opt in command.callback.__annotations__:
+            command.callback.add_option(command.callback.__annotations__[opt])
 
         return command
 
@@ -427,11 +419,8 @@ class Bot(Client):
 
             options['name'] = options.get('name') or func.__name__
 
-            return self.add_pending_command(
-                ApplicationCommandType.slash.value,
-                func,
-                **options,
-                )
+            command = SlashCommand(func, **options)
+            return self.add_pending_command(command)
 
         return inner
 
@@ -448,11 +437,8 @@ class Bot(Client):
             if not inspect.iscoroutinefunction(func):
                 raise TypeError('Callback function must be a coroutine.')
 
-            return self.add_pending_command(
-                ApplicationCommandType.user.value,
-                func,
-                **options
-                )
+            command = UserCommand(func, **options)
+            return self.add_pending_command(command)
 
         return inner
 
@@ -469,11 +455,8 @@ class Bot(Client):
             if not inspect.iscoroutinefunction(func):
                 raise TypeError('Callback function must be a coroutine.')
 
-            return self.add_pending_command(
-                ApplicationCommandType.message.value,
-                func,
-                **options
-                )
+            command = MessageCommand(func, **options)
+            return self.add_pending_command(command)
 
         return inner
 

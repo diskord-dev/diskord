@@ -466,12 +466,12 @@ class Cog(metaclass=CogMeta):
             command.cog = self
             if command.parent is None:
                 try:
-                    bot._pending_commands.append(command)
+                    bot.add_pending_command(command)
                 except Exception as e:
                     # undo our additions
                     for to_undo in self.__cog_application_commands__[:index]:
                         if command.parent is None:
-                            bot._pending_commands.remove(to_undo)
+                            bot.add_pending_command(to_undo)
                     raise e
 
         # check if we're overriding the default
