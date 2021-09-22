@@ -1106,7 +1106,7 @@ class ApplicationCommand:
             # Ref: https://discord.com/developers/docs/interactions/application-commands#user-commands
             # Ref: https://discord.com/developers/docs/interactions/application-commands#message-commands
 
-            self.description = '' # type: ignore
+            self.description = ''
 
         self._from_data(attrs)
 
