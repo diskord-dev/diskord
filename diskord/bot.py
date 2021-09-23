@@ -34,14 +34,14 @@ import inspect
 import logging
 
 from . import utils
-from .interactions import (
+from .interactions import InteractionContext
+from .application_commands import (
     ApplicationCommand,
     SlashCommand,
     UserCommand,
     MessageCommand,
     Option,
     OptionChoice,
-    InteractionContext,
 )
 from .client import Client
 from .enums import (
