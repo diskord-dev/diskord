@@ -1566,14 +1566,30 @@ class SlashCommand(ApplicationCommand):
     there are valid here too.
 
     In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.slash`
+
+    Attributes
+    ----------
+
+    type: :class:`ApplicationCommandType`
+        The type of command, Always :attr:`ApplicationCommandType.slash`
+    options: List[:class:`Option`]
+        The list of options this command has.
+
+        .. tip::
+            To get only the children i.e sub-commands and sub-command groups,
+            Consider using :attr:`children`
+
+    children: List[:class:`SlashSubCommand`, `SlashSubCommandGroup`]
+        The children of this commands i.e sub-commands and sub-command groups.
     """
     def __init__(self, callback, **attrs):
         self.type = ApplicationCommandType.slash.value
         self.options: List[Option] = []
-        self.children: List[SubSlashCommand, SubSlashGroup] = []
+        self.children: List[SlashSubCommand, SlashSubCommandGroup] = []
 
         # To stay consistent with the discord.ext.commands models, I added this
         # parent attribute here which will always be None in case of this.
+        # this is not documented for obvious reason.
         self.parent = None
 
         super().__init__(callback, **attrs)
