@@ -6,20 +6,19 @@
     <img src="https://canary.discord.com/api/guilds/887217168276656188/embed.png">
     <img src="https://readthedocs.org/projects/diskord/badge">
     <hr>
+    <sup>This library is a maintained fork of the popular and now archived library, <a href="https://github.com/Rapptz/discord.py">discord.py</a>.</sup>
     <p>
-        A modern, easy to use, feature-rich, and async ready API wrapper for Discord written in Python.
+        A modern, easy to use, feature-rich, and async ready API wrapper around Discord API written in Python.
         <br><br>
-        This library is a maintained and work-in-progress fork of the popular library, <a href="https://github.com/Rapptz/discord.py">discord.py</a>.
     </p>
 </div>
 
 ## Key features
-* Modern Pythonic API using `async` and `await`.
-* Proper rate limit handling.
+* Modern Pythonic API using `async` / `await`.
+* Proper and sane rate limit handling.
 * Optimised in both speed and memory.
-* Actively maintained
-* Provides 100% coverage of Discord API.
-* User-friendly OOP-based API.
+* Actively maintained, Provides full coverage of Discord API.
+* Easy-to-use object oriented design
 
 ## Installation
 
@@ -73,7 +72,7 @@ async def ping(ctx):
 bot.run('token')
 ```
 
-## Legacy Commands
+### Legacy (Prefixed) Commands
 ```py
 import diskord
 from diskord.ext import commands
