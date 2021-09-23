@@ -46,7 +46,7 @@ AutoShardedBot
 
 .. attributetable:: AutoShardedBot
 
-.. autoclass:: Bot()
+.. autoclass:: AutoShardedBot()
     :members:
 
 Client
