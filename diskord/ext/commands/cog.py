@@ -497,6 +497,14 @@ class Cog(metaclass=CogMeta):
                 if command.parent is None:
                     bot.remove_command(command.name)
 
+            for command in self.__cog_application_commands__:
+                if not isinstance(command, Option):
+                    registered = command.id in bot._connection._application_commands
+                    if registered:
+                        bot.remove_application_command(command.id)
+                    else:
+                        bot.remove_pending_command(command)
+
             for _, method_name in self.__cog_listeners__:
                 bot.remove_listener(getattr(self, method_name))
 
