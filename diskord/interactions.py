@@ -1070,7 +1070,6 @@ class ApplicationCommand:
 
     Attributes
     ----------
-
     callback: Callable
         The callback function for this command.
     name: :class:`str`
