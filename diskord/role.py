@@ -25,6 +25,7 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 from typing import Any, Dict, List, Optional, TypeVar, Union, overload, TYPE_CHECKING
 
+from . import utils
 from .permissions import Permissions
 from .errors import InvalidArgument
 from .colour import Colour
@@ -445,6 +446,12 @@ class Role(Hashable):
 
         if mentionable is not MISSING:
             payload['mentionable'] = mentionable
+
+        if icon is not MISSING:
+            if icon is None:
+                payload['icon'] = icon
+            else:
+                payload['icon'] = utils._bytes_to_base64_data(icon)
 
         data = await self._state.http.edit_role(self.guild.id, self.id, reason=reason, **payload)
         return Role(guild=self.guild, data=data, state=self._state)
