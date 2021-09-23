@@ -130,9 +130,9 @@ class Option:
     """
     def __init__(self, **data):
         try:
-            self._type: OptionType = OptionType.from_datatype(data.get('type'))
+            self.type: OptionType = OptionType.from_datatype(data.get('type'))
         except TypeError:
-            self._type: OptionType = data.get('type')
+            self.type: OptionType = data.get('type')
 
         self.name: str = data.get('name')
         self.description: str = data.get('description')
