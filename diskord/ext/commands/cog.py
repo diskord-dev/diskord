@@ -464,7 +464,7 @@ class Cog(metaclass=CogMeta):
 
         for index, command in enumerate(self.__cog_application_commands__):
             command.cog = self
-            # subcommand and groups inherit option so, we are checking for it for convinience.
+
             try:
                 bot.add_pending_command(command)
             except Exception as e:
@@ -472,6 +472,8 @@ class Cog(metaclass=CogMeta):
                 for to_undo in self.__cog_application_commands__[:index]:
                     bot.remove_pending_command(to_undo)
                 raise e
+
+
 
         # check if we're overriding the default
         if cls.bot_check is not Cog.bot_check:

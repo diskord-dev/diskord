@@ -1344,9 +1344,6 @@ class SlashSubCommandGroup(Option):
 
         Changing this will have no affect as the guild for a sub-command
         depend upon the guilds of parent command.
-    cog: List[:class:`discord.ext.commands.Cog`]
-        The cog this group is defined in. This is just a shorthand for ``cog`` attribute
-        of :attr:`SlashSubCommandGroup.parent`
     """
     def __init__(self, callback: Callable, parent: SlashCommand, **attrs):
         self.callback = callback
@@ -1358,8 +1355,12 @@ class SlashSubCommandGroup(Option):
             description=callback.__doc__ or attrs.get('description'),
             type=OptionType.sub_command_group.value,
         )
-        self.cog = self.parent.cog
         self._from_data = parent._from_data
+
+    @property
+    def cog(self):
+        return self.parent.cog
+
 
     def add_child(self, child: SlashSubCommand, /):
         """
@@ -1486,9 +1487,6 @@ class SlashSubCommand(Option):
 
         Changing this will have no affect as the guild for a sub-command
         depend upon the guilds of parent command.
-    cog: List[:class:`discord.ext.commands.Cog`]
-        The cog this group is defined in. This is just a shorthand for ``cog`` attribute
-        of :attr:`SlashSubCommand.parent`
     """
     def __init__(self, callback: Callable, parent: SlashCommand, **attrs):
         self.callback = callback
@@ -1500,20 +1498,26 @@ class SlashSubCommand(Option):
             type=OptionType.sub_command.value,
         )
 
-        self.cog = self.parent.cog
         self._from_data = parent._from_data
+
+    @property
+    def cog(self):
+        return self.parent.cog
 
     def to_dict(self) -> dict:
         options = self.options
-        if isinstance(self.parent, SlashSubCommandGroup):
-            options.reverse()
+        options.reverse()
 
-        return {
+        dict_ = {
             'name': self.name,
             'description': self.description,
             'type': OptionType.sub_command.value,
             'options': [option.to_dict() for option in options],
         }
+        if dict_['description'] == 'cool2':
+            print(dict_)
+
+        return dict_
 
     def add_option(self, option: Option) -> Option:
         """Adds an option to this slash command.
