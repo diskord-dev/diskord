@@ -170,6 +170,10 @@ class Role(Hashable):
         Indicates if the role can be mentioned by users.
     tags: Optional[:class:`RoleTags`]
         The role tags associated with this role.
+    icon: Optional[:class:`Asset`]
+        The icon asset of this role. This can be ``None`` if role has no icon.
+
+        .. versionadded:: 2.5
     """
 
     __slots__ = (
@@ -183,6 +187,7 @@ class Role(Hashable):
         'hoist',
         'guild',
         'tags',
+        'icon',
         '_state',
     )
 
@@ -243,6 +248,15 @@ class Role(Hashable):
         self.managed: bool = data.get('managed', False)
         self.mentionable: bool = data.get('mentionable', False)
         self.tags: Optional[RoleTags]
+        self.icon: Optional[Asset] = data.get('icon')
+
+        if self.icon:
+            self.icon = Asset._from_icon(
+                self._state,
+                self.id,
+                self.icon,
+                'role',
+                )
 
         try:
             self.tags = RoleTags(data['tags'])

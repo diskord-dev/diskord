@@ -41,7 +41,7 @@ class Role(_RoleOptional):
     permissions: str
     managed: bool
     mentionable: bool
-    icon_hash: str
+    icon: str
 
 
 class RoleTags(TypedDict, total=False):
