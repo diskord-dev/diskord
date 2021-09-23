@@ -286,7 +286,10 @@ class Bot(Client):
 
     # TODO: Add other API methods
 
-    async def sync_application_commands(self, delete_unregistered_commands: bool = False):
+    async def sync_application_commands(self, *,
+        delete_unregistered_commands: bool = False,
+        ignore_guild_register_fail: bool = True,
+        ):
         """|coro|
 
         Updates the internal cache of application commands with the ones that are already
@@ -311,6 +314,12 @@ class Bot(Client):
         delete_unregistered_commands: :class:`bool`
             Whether or not to delete the commands that were sent by API but are not
             found in internal cache. Defaults to ``False``
+
+        ignore_guild_register_fail: :class:`bool`
+            Whether to ignore the error raised if making an application command in a guild
+            failed. If this is set to ``True``, The traceback would be printed if the
+            application command couldn't be upserted in a guild but the commands sync
+            process will not be interrupted. Defaults to ``True``
         """
         _log.info('Synchronizing internal cache commands.')
         commands = await self.http.get_global_commands(self.user.id)
@@ -345,7 +354,15 @@ class Bot(Client):
             command = self._pending_commands[index]
             if command.guild_ids:
                 for guild_id in command.guild_ids:
-                    cmd = await self.http.upsert_guild_command(self.user.id, guild_id, command.to_dict())
+                    try:
+                        cmd = await self.http.upsert_guild_command(self.user.id, guild_id, command.to_dict())
+                    except Forbidden as e:
+                        # the bot is missing application.commands scope so cannot
+                        # make the command in the guild
+                        if ignore_guild_register_fail:
+                            traceback.print_exc()
+                        else:
+                            raise e
             else:
                 cmd = await self.http.upsert_global_command(self.user.id, command.to_dict())
 
