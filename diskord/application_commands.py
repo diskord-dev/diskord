@@ -85,15 +85,22 @@ class OptionChoice:
     ):
         ...
 
-    def __init__(self, **data):
-        self.name: str = data['name']
-        self.value: str = data['value']
+    def __init__(self, *, name: str, value: str):
+        self.name  = name
+        self.value = value
 
     def to_dict(self) -> dict:
         return {
             'name': self.name,
             'value': self.value,
         }
+
+    @classmethod
+    def from_dict(cls, dict_: ApplicationCommandOptionChoicePayload):
+        return cls(
+            name=dict_['name'],
+            value=dict_['value']
+        )
 
     def __repr__(self):
         return f'<OptionChoice name={self.name!r} value={self.value!r}'
@@ -123,9 +130,9 @@ class Option:
     """
     def __init__(self, **data):
         try:
-            self.type: OptionType = OptionType.from_datatype(data.get('type'))
+            self._type: OptionType = OptionType.from_datatype(data.get('type'))
         except TypeError:
-            self.type: OptionType = data.get('type')
+            self._type: OptionType = data.get('type')
 
         self.name: str = data.get('name')
         self.description: str = data.get('description')
@@ -135,7 +142,7 @@ class Option:
         self.arg: str = data.get('arg', self.name)
 
     def __repr__(self):
-        return f'<Option name={self.name!r} description={self.description!r}'
+        return f'<Option name={self.name!r} description={self.description!r}>'
 
     def __str__(self):
         return self.name
@@ -146,21 +153,6 @@ class Option:
             OptionType.sub_command.value,
             OptionType.sub_command_group.value,
         )
-
-    def add_choice(self, choice: OptionChoice) -> OptionChoice:
-        """Adds a choice to current option.
-
-        Parameters
-        -----------
-
-        choice: :class:`OptionChoice`
-            The choice to add.
-        """
-        if not isinstance(choice, OptionChoice):
-            raise TypeError('choice must be an instance of OptionChoice.')
-
-        self.choices.append(choice)
-        return choice
 
     def to_dict(self) -> dict:
         dict_ = {
