@@ -371,6 +371,7 @@ class Role(Hashable):
         color: Union[Colour, int] = MISSING,
         hoist: bool = MISSING,
         mentionable: bool = MISSING,
+        icon: Optional[bytes] = MISSING,
         position: int = MISSING,
         reason: Optional[str] = MISSING,
     ) -> Optional[Role]:
@@ -401,6 +402,10 @@ class Role(Hashable):
             Indicates if the role should be shown separately in the member list.
         mentionable: :class:`bool`
             Indicates if the role should be mentionable by others.
+        icon: Optional[:class:`bytes`]
+            A :term:`py:bytes-like object` representing the icon of the role. Only PNG/JPEG is supported.
+            Could be ``None`` to denote removal of the icon. Role's guild must has ``ROLE_SUBSCRIPTIONS_ENABLED``
+            in :attr:`Guild.features`
         position: :class:`int`
             The new role's position. This must be below your top role's
             position or it will fail.

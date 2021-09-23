@@ -220,6 +220,7 @@ class Guild(Hashable):
         - ``VERIFIED``: Guild is a verified server.
         - ``VIP_REGIONS``: Guild has VIP voice regions.
         - ``WELCOME_SCREEN_ENABLED``: Guild has enabled the welcome screen.
+        - ``ROLE_SUBSCRIPTIONS_ENABLED``: Guild has role subscriptions enabled.
 
     premium_tier: :class:`int`
         The premium tier for this guild. Corresponds to "Nitro Server" in the official UI.
@@ -2946,13 +2947,13 @@ class Guild(Hashable):
 
     async def welcome_screen(self):
         """|coro|
-        
+
         Returns the :class:`WelcomeScreen` of the guild.
-       
+
         The guild must have ``COMMUNITY`` in :attr:`~Guild.features`.
-       
+
         You must have the :attr:`~Permissions.manage_guild` permission in order to get this.
-        
+
         .. versionadded:: 2.0
         Raises
         -------
@@ -2962,8 +2963,8 @@ class Guild(Hashable):
             Retrieving the welcome screen failed somehow.
         NotFound
             The guild doesn't has a welcome screen or community feature is disabled.
-        
-        
+
+
         Returns
         --------
         :class:`WelcomeScreen`
@@ -2985,22 +2986,22 @@ class Guild(Hashable):
 
     @overload
     async def edit_welcome_screen(self) -> None:
-        ...        
-    
-    
+        ...
+
+
     async def edit_welcome_screen(self, **options):
         """|coro|
-        
+
         A shorthand for :attr:`WelcomeScreen.edit` without fetching the welcome screen.
-        
+
         You must have the :attr:`~Permissions.manage_guild` permission in the
         guild to do this.
-        
+
         The guild must have ``COMMUNITY`` in :attr:`Guild.features`
-        
+
         Parameters
         ------------
-        
+
         description: Optional[:class:`str`]
             The new description of welcome screen.
         welcome_channels: Optional[List[:class:`WelcomeChannel`]]
@@ -3011,44 +3012,44 @@ class Guild(Hashable):
             The reason that shows up on audit log.
         Raises
         -------
-        
+
         HTTPException
             Editing the welcome screen failed somehow.
         Forbidden
             You don't have permissions to edit the welcome screen.
         NotFound
             This welcome screen does not exist.
-        
+
         Returns
         --------
-        
+
         :class:`WelcomeScreen`
             The edited welcome screen.
         """
-        
+
         welcome_channels = options.get('welcome_channels', [])
         welcome_channels_data = []
-       
+
         for channel in welcome_channels:
             if not isinstance(channel, WelcomeScreenChannel):
                 raise TypeError('welcome_channels parameter must be a list of WelcomeScreenChannel.')
-                
+
             welcome_channels_data.append(channel.to_dict())
-            
+
         options['welcome_channels'] = welcome_channels_data
 
         if options:
             new = await self._state.http.edit_welcome_screen(self.id, options, reason=options.get('reason'))
             return WelcomeScreen(data=new, guild=self)
-        
+
     async def search_members(self, query: str, *, limit: Optional[int] = 1) -> List[Member]:
         """|coro|
-        
+
         Returns members whose name start with the provided query.
 
         .. note::
             This method is an API call, For general usage, Use :func:`get_member_named` instead.
-        
+
         .. versionadded:: 2.5
 
         Parameters
@@ -3057,7 +3058,7 @@ class Guild(Hashable):
             The query to search for.
         limit: Optional[:class:`int`]
             The limit of results to return. Defaults to ``1``.
-        
+
         Returns
         -------
         List[:class:`Member`]
@@ -3070,11 +3071,11 @@ class Guild(Hashable):
         """
         if not isinstance(limit, int):
             raise TypeError('Expected limit to be an int, Got %s instead.' % limit.__class__.__name__)
-        
+
         if limit > 1000 or limit < 1:
             raise ValueError('limit must not be less then 1 or greater then 1000, Got %s' % str(limit))
 
-        data = await self._state.http.search_members(guild_id=self.id, query=query, limit=limit) 
+        data = await self._state.http.search_members(guild_id=self.id, query=query, limit=limit)
         return [Member(data=member, guild=self, state=self._state) for member in data]
 
 
@@ -3096,17 +3097,17 @@ class Guild(Hashable):
         -------
 
         :class:`ApplicationCommand`
-            The required command. 
+            The required command.
         """
         for command in self._application_commands:
             if command.id == command_id and self.id in command.guild_ids:
                 return command
-    
+
     def remove_application_command(self, command_id: int, /):
         """
         Removes an application command from internal application commands list for this
         guild.
-        
+
         The command for provided ID must belong to this guild.
 
         If any error is raised during command removal, It is silently suppressed.
@@ -3130,16 +3131,16 @@ class Guild(Hashable):
         """|coro|
 
         Fetches an application command for this guild.
-        
+
         .. note::
-            This function is an API call, For general usage, Consider using 
+            This function is an API call, For general usage, Consider using
             :func:`Bot.get_application_command` instead.
-        
+
         Parameters
         ----------
         command_id: :class:`int`
             The ID of the command to fetch.
-        
+
         Returns
         -------
         :class:`ApplicationCommand`
@@ -3153,8 +3154,8 @@ class Guild(Hashable):
             The fetching of command failed.
         """
         data = self._state.http.get_guild_command(
-            command_id=command_id, 
+            command_id=command_id,
             application_id=self._state.user.id,
             guild_id=self.id,
             )
-    
+
