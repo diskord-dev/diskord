@@ -933,6 +933,7 @@ class Option:
         self.required: bool = data.get('required', False)
         self.choices: List[OptionType] = data.get('choices', [])
         self.options: List[Option] = data.get('options', [])
+        self.arg: str = data.get('arg', self.name)
 
     def __repr__(self):
         return f'<Option name={self.name!r} description={self.description!r}'
@@ -1265,7 +1266,8 @@ class ApplicationCommand:
 
             else:
                 value = await self._parse_option(interaction, option)
-                kwargs[option['name']] = value
+                option = self.get_option(option['name'])
+                kwargs[option.arg] = value
 
         if self.cog is not None:
             await self.callback(self.cog, context, **kwargs)
@@ -1595,6 +1597,23 @@ class SlashCommand(ApplicationCommand):
 
         super().__init__(callback, **attrs)
 
+    def get_option(self, name: str) -> Optional[Option]:
+        """Gets an option by it's name.
+
+        This function returns None if the option is not found.
+
+        Parameters
+        ----------
+        name: :class:`str`
+            The name of option
+
+        Returns
+        -------
+        Optional[:class:`Option`]:
+            The required option.
+        """
+        return utils.get(self.options, name=name)
+
 
     def add_option(self, option: Option) -> Option:
         """Adds an option to this slash command.
@@ -1615,6 +1634,22 @@ class SlashCommand(ApplicationCommand):
 
         self.options.append(option)
         return option
+
+    def remove_option(self, name: str, /):
+        """Removes an option from the command by it's name.
+
+        If an error is raised, then it is silently swallowed by this function.
+
+        Parameters
+        ----------
+        name: :class:`str`
+            The name of option.
+        """
+        try:
+            self.options.remove(utils.get(self.options), name=name)
+        except ValueError:
+            return
+
 
     # children management
 
@@ -1658,17 +1693,16 @@ class SlashCommand(ApplicationCommand):
 
         return child
 
-    def remove_child(self, child: Union[str, SlashSubCommand], /):
+    def remove_child(self, name: str, /):
         """Removes a child like sub-command or sub-command group from the command.
 
         Parameters
         ----------
 
-        child: Union[:class:`str`, :class:`SlashSubCommand`]
+        child: :class:`str`
             The child to remove.
         """
-        if isinstance(child, str):
-            child = utils.get(self.children, name=child)
+        child = utils.get(self.children, name=name)
 
         try:
             self.children.remove(child)
