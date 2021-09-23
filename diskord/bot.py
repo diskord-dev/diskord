@@ -153,7 +153,7 @@ class Bot(Client):
         self._pending_commands.append(command)
 
         for opt in command.callback.__annotations__:
-            command.callback.add_option(command.callback.__annotations__[opt])
+            command.add_option(command.callback.__annotations__[opt])
 
         return command
 
@@ -504,35 +504,6 @@ class Bot(Client):
 
     # Command handler
 
-    async def _parse_option(self, interaction: Interaction, option: ApplicationCommandOptionPayload) -> Any:
-        if option['type'] in (
-                OptionType.string.value,
-                OptionType.integer.value,
-                OptionType.boolean.value,
-                OptionType.number.value,
-            ):
-                value = option['value']
-
-        elif option['type'] == OptionType.user.value:
-            if interaction.guild:
-                value = interaction.guild.get_member(int(option['value']))
-            else:
-                value = self.get_user(int(option['value']))
-
-        elif option['type'] == OptionType.channel.value:
-            value = interaction.guild.get_channel(int(option['value']))
-
-        elif option['type'] == OptionType.role.value:
-            value = interaction.guild.get_role(int(option['value']))
-
-        elif option['type'] == OptionType.mentionable.value:
-            value = (
-                interaction.guild.get_member(int(option['value'])) or
-                interaction.guild.get_role(int(option['value']))
-                )
-
-        return value
-
     async def process_application_commands(self, interaction: Interaction) -> Any:
         """|coro|
 
@@ -574,109 +545,11 @@ class Bot(Client):
             _log.info(f'Application command of type {interaction.data["type"]} referencing an unknown command {interaction.data["id"]}, Discarding.')
             return
 
+        context = self.get_application_context(interaction)
         self.dispatch('application_command_run', command)
 
-        options = interaction.data.get('options', [])
-        kwargs = {}
-        context = self.get_application_context(interaction)
-
-        # TODO:
-        # Move the handling of commands handling part to .invoke()
-        # method for each command.
-
-        if interaction.data['type'] == ApplicationCommandType.user.value:
-            if interaction.guild:
-                user = interaction.guild.get_member(interaction.data['target_id'])
-            else:
-                user = self.get_user(interaction.data['target_id'])
-
-            if user is None:
-                resolved = interaction.data['resolved']
-                if interaction.guild:
-                    member_with_user = resolved['members'][interaction.data['target_id']]
-                    member_with_user['user'] = resolved['users'][interaction.data['target_id']]
-
-                    user = Member(
-                        data=member_with_user,
-                        guild=interaction.guild,
-                        state=interaction.guild._state,
-                    )
-                else:
-                    user = User(
-                        state=self._connection,
-                        data=resolved['users'][interaction.data['target_id']]
-                    )
-
-            if command.cog is not None:
-                return await command.callback(command.cog, context, user)
-            else:
-                return await command.callback(context, user)
-
-        if interaction.data['type'] == ApplicationCommandType.message.value:
-            if interaction.guild:
-                message = Message(
-                    state=interaction.guild._state,
-                    channel=interaction.channel,
-                    data=interaction.data['resolved']['messages'][interaction.data['target_id']]
-                )
-            else:
-                message = Message(
-                    state=self._connection,
-                    channel=interaction.user,
-                    data=interaction.data['resolved']['messages'][interaction.data['target_id']],
-                )
-
-            if command.cog is not None:
-                return await command.callback(command.cog, context, message)
-            else:
-                return await command.callback(context, message)
-
-        for option in options:
-            if option['type'] == OptionType.sub_command.value:
-                # We will use the name to get the child because
-                # subcommands do not have any ID. They are essentially
-                # just options of a command. And option names are unique
-
-                sub_options = option.get('options', [])
-                for sub_option in sub_options:
-                    value = await self._parse_option(interaction, sub_option)
-                    kwargs[sub_option['name']] = value
-
-                sub_command = command.get_child(option['name'])
-
-                if sub_command.cog is not None:
-                    return await sub_command.callback(sub_command.cog, context, **kwargs)
-                else:
-                    return await sub_command.callback(context, **kwargs)
-
-            elif option['type'] == OptionType.sub_command_group.value:
-                # In case of sub-command groups interactions, The options array
-                # only has one element which is the subcommand that is being used
-                # so we essentially just have to get the first element of the options
-                # list and lookup the callback function for name of that element to
-                # get the subcommand object.
-
-                subcommand_raw = option['options'][0]
-                group = command.get_child(option['name'])
-                sub_options = subcommand_raw.get('options', [])
-
-                for sub_option in sub_options:
-                    value = await self._parse_option(interaction, sub_option)
-                    kwargs[sub_option['name']] = value
-
-                subcommand = group.get_child(subcommand_raw['name'])
-                if subcommand.cog is not None:
-                    return await subcommand.callback(subcommand.cog, context, **kwargs)
-                else:
-                    return await subcommand.callback(context, **kwargs)
-
-            kwargs[option['name']] = value
-
         try:
-            if command.cog is not None:
-                await command.callback(command.cog, context, **kwargs)
-            else:
-                await command.callback(context, **kwargs)
+            await command.invoke(context)
         except ApplicationCommandError as error:
             self.dispatch('application_command_error', context, error)
         else:

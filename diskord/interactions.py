@@ -974,7 +974,7 @@ class Option:
 
         if self.options:
             dict_['options'] = [option.to_dict() for option in self.options]
-        if not self.is_subcommand():
+        if not self.is_command_or_group():
             dict_['required'] = self.required
 
         return dict_
@@ -1070,7 +1070,7 @@ class ApplicationCommand:
     ----------
 
     callback: Callable
-        The callback for this command.
+        The callback function for this command.
     name: :class:`str`
         The name of the command. Defaults to callback's name.
     description: :class:`str`
@@ -1100,7 +1100,6 @@ class ApplicationCommand:
         self.guild_ids: List[int] = attrs.get('guild_ids', [])
         self.cog = None
 
-
         if self.type in (
             ApplicationCommandType.user.value,
             ApplicationCommandType.message.value,
@@ -1112,6 +1111,167 @@ class ApplicationCommand:
             self.description = ''
 
         self._from_data(attrs)
+
+    async def _parse_option(self, interaction: Interaction, option: ApplicationCommandOptionPayload) -> Any:
+        # This function isn't needed to be a coroutine function but it can be helpful in
+        # future so, yes that's the reason it's an async function.
+
+        if option['type'] in (
+                OptionType.string.value,
+                OptionType.integer.value,
+                OptionType.boolean.value,
+                OptionType.number.value,
+            ):
+                value = option['value']
+
+        elif option['type'] == OptionType.user.value:
+            if interaction.guild:
+                value = interaction.guild.get_member(int(option['value']))
+            else:
+                value = context.bot.get_user(int(option['value']))
+
+        elif option['type'] == OptionType.channel.value:
+            value = interaction.guild.get_channel(int(option['value']))
+
+        elif option['type'] == OptionType.role.value:
+            value = interaction.guild.get_role(int(option['value']))
+
+        elif option['type'] == OptionType.mentionable.value:
+            value = (
+                interaction.guild.get_member(int(option['value'])) or
+                interaction.guild.get_role(int(option['value']))
+                )
+
+        return value
+
+
+    async def invoke(self, context: InteractionContext):
+        """|coro|
+
+        Invokes the application command from provided interaction invocation context.
+
+        Parameters
+        ----------
+
+        context: :class:`InteractionContext`
+            The interaction invocation context.
+        """
+        interaction: Interaction = context.interaction
+
+        if not interaction.data['type'] == self.type:
+            raise TypeError(f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}')
+
+        if self.type == ApplicationCommandType.user.value:
+            if interaction.guild:
+                user = interaction.guild.get_member(int(interaction.data['target_id']))
+            else:
+                user = context.bot.get_user(int(interaction.data['target_id']))
+
+            # below code exists for "just in case" purpose
+            if user is None:
+                resolved = interaction.data['resolved']
+                if interaction.guild:
+                    member_with_user = resolved['members'][interaction.data['target_id']]
+                    member_with_user['user'] = resolved['users'][interaction.data['target_id']]
+                    user = Member(
+                        data=member_with_user,
+                        guild=interaction.guild,
+                        state=interaction.guild._state
+                        )
+                else:
+                    user = User(
+                        state=context.bot._connection,
+                        data=resolved['users'][interaction.data['target_id']]
+                        )
+
+            if self.cog is not None:
+                await self.callback(self.cog, context, user)
+            else:
+                await self.callback(context, user)
+
+            return
+
+        elif self.type == ApplicationCommandType.message.value:
+            data = interaction.data['resolved']['messages'][interaction.data['target_id']]
+            if interaction.guild:
+                message = Message(
+                    state=interaction.guild._state,
+                    channel=interaction.channel,
+                    data=data,
+                )
+            else:
+                message = Message(
+                    state=context.bot._connection,
+                    channel=interaction.user,
+                    data=data,
+                )
+
+            if self.cog is not None:
+                await self.callback(self.cog, context, message)
+            else:
+                await self.callback(context, message)
+
+            return
+
+
+
+        options = interaction.data.get('options', [])
+        kwargs = {}
+
+        for option in options:
+            if option['type'] == OptionType.sub_command.value:
+                # We will use the name to get the child because
+                # subcommands do not have any ID. They are essentially
+                # just options of a command. And option names are unique
+
+                sub_options = option.get('options', [])
+                for sub_option in sub_options:
+                    value = await self._parse_option(interaction, sub_option)
+                    kwargs[sub_option['name']] = value
+
+                subcommand = self.get_child(option['name'])
+
+                if subcommand.cog is not None:
+                    await subcommand.callback(subcommand.cog, context, **kwargs)
+                else:
+                    await subcommand.callback(context, **kwargs)
+
+                return
+
+            elif option['type'] == OptionType.sub_command_group.value:
+                # In case of sub-command groups interactions, The options array
+                # only has one element which is the subcommand that is being used
+                # so we essentially just have to get the first element of the options
+                # list and lookup the callback function for name of that element to
+                # get the subcommand object.
+
+                subcommand_raw = option['options'][0]
+                group = self.get_child(option['name'])
+                sub_options = subcommand_raw.get('options', [])
+
+                for sub_option in sub_options:
+                    value = await self._parse_option(interaction, sub_option)
+                    kwargs[sub_option['name']] = value
+
+                subcommand = group.get_child(subcommand_raw['name'])
+
+                if subcommand.cog is not None:
+                    await subcommand.callback(subcommand.cog, context, **kwargs)
+                else:
+                    await subcommand.callback(context, **kwargs)
+
+                return
+
+            else:
+                value = await self._parse_option(interaction, option)
+                kwargs[option['name']] = value
+
+        if self.cog is not None:
+            await self.callback(self.cog, context, **kwargs)
+        else:
+            await self.callback(context, **kwargs)
+
+
 
     def __repr__(self):
         # More attributes here?
@@ -1130,8 +1290,11 @@ class ApplicationCommand:
         self.guild_id: int = utils._get_as_snowflake(data, 'guild_id')
         self.default_permission: bool = data.get('default_permission')
         self.version: int = utils._get_as_snowflake(data, 'version')
-        self.name = data.get('name')
-        self.description = data.get('description')
+
+        if 'name' in data:
+            self.name = data.get('name')
+        if 'description' in data:
+            self.description = data.get('description')
 
         return self
 
@@ -1181,6 +1344,9 @@ class SlashSubCommandGroup(Option):
 
         Changing this will have no affect as the guild for a sub-command
         depend upon the guilds of parent command.
+    cog: List[:class:`discord.ext.commands.Cog`]
+        The cog this group is defined in. This is just a shorthand for ``cog`` attribute
+        of :attr:`SlashSubCommandGroup.parent`
     """
     def __init__(self, callback: Callable, parent: SlashCommand, **attrs):
         self.callback = callback
@@ -1192,7 +1358,7 @@ class SlashSubCommandGroup(Option):
             description=callback.__doc__ or attrs.get('description'),
             type=OptionType.sub_command_group.value,
         )
-
+        self.cog = self.parent.cog
         self._from_data = parent._from_data
 
     def add_child(self, child: SlashSubCommand, /):
@@ -1320,7 +1486,9 @@ class SlashSubCommand(Option):
 
         Changing this will have no affect as the guild for a sub-command
         depend upon the guilds of parent command.
-
+    cog: List[:class:`discord.ext.commands.Cog`]
+        The cog this group is defined in. This is just a shorthand for ``cog`` attribute
+        of :attr:`SlashSubCommand.parent`
     """
     def __init__(self, callback: Callable, parent: SlashCommand, **attrs):
         self.callback = callback
@@ -1332,6 +1500,7 @@ class SlashSubCommand(Option):
             type=OptionType.sub_command.value,
         )
 
+        self.cog = self.parent.cog
         self._from_data = parent._from_data
 
     def to_dict(self) -> dict:
@@ -1389,6 +1558,7 @@ class SlashCommand(ApplicationCommand):
         self.parent = None
 
         super().__init__(callback, **attrs)
+
 
     def add_option(self, option: Option) -> Option:
         """Adds an option to this slash command.
@@ -1551,6 +1721,7 @@ class UserCommand(ApplicationCommand):
         self.type = ApplicationCommandType.user.value
         super().__init__(callback, **attrs)
 
+
     def to_dict(self) -> dict:
         dict_ = {
             'name': self.name,
@@ -1573,6 +1744,7 @@ class MessageCommand(ApplicationCommand):
     def __init__(self, callback, **attrs):
         self.type = ApplicationCommandType.message.value
         super().__init__(callback, **attrs)
+
 
     def to_dict(self) -> dict:
         dict_ = {
