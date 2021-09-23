@@ -372,7 +372,7 @@ class Bot(Client):
         _log.info('Application commands have been synchronised.')
 
 
-    async def register_application_commands(self):
+    async def register_application_commands(self, *, ignore_guild_register_fail: bool = True):
         """|coro|
 
         Register all the application commands that were added using :func:`Bot.add_pending_command`
@@ -384,6 +384,14 @@ class Bot(Client):
         .. danger::
             This function overwrites all the commands and can lead to unexpected issues,
             Consider using :func:`sync_application_commands`
+
+        Parameters
+        ----------
+        ignore_guild_register_fail: :class:`bool`
+            Whether to ignore the error raised if making an application command in a guild
+            failed. If this is set to ``True``, The traceback would be printed if the
+            application command couldn't be upserted in a guild but the commands registration
+            process will not be interrupted. Defaults to ``True``
         """
         # This needs a refactor as current implementation is kind of hacky and can
         # be unstable.
@@ -417,7 +425,14 @@ class Bot(Client):
                 guilds[guild].append(data)
 
         for guild in guilds:
-            cmds = await self.http.bulk_upsert_guild_commands(self.user.id, guild, guilds[guild])
+            try:
+                cmds = await self.http.bulk_upsert_guild_commands(self.user.id, guild, guilds[guild])
+            except Forbidden:
+                # bot doesn't has application.commands scope
+                if ignore_guild_register_fail:
+                    traceback.print_exc()
+                else:
+                    raise e
             for cmd in cmds:
                 self._connection._application_commands[int(cmd['id'])] = utils.get(self._pending_commands, name=cmd['name'])._from_data(cmd)
 
