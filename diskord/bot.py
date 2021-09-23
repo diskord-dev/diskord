@@ -623,7 +623,7 @@ def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
         nonlocal type_
         type_ = type_ or func.__annotations__.get(name, str)
 
-        sign = inspect.signature(func).parameters.get(name)
+        sign = inspect.signature(func).parameters.get(attrs.get('arg', name))
         if sign is None:
             raise TypeError(f'Parameter for option {name} is missing.')
 
