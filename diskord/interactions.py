@@ -974,6 +974,7 @@ class Option:
 
         if self.options:
             dict_['options'] = [option.to_dict() for option in self.options]
+
         if not self.is_command_or_group():
             dict_['required'] = self.required
 
@@ -1298,8 +1299,68 @@ class ApplicationCommand:
 
         return self
 
+class SlashCommandChildMixin:
+    def get_child(self, name: str, /):
+        """
+        Gets a child of this command i.e a subcommand or subcommand group of this command
+        by the child's name.
 
-class SlashSubCommandGroup(Option):
+        Returns ``None`` if the child is not found.
+
+        Parameters
+        ----------
+        name: :class:`str`
+            The name of the child.
+
+        Returns
+        -------
+        Union[:class:`SlashSubCommand`, :class:`SlashSubGroup`]
+            The required slash subcommand or subcommand group.
+        """
+        return (utils.get(self.children, name=name))
+
+    def add_child(self, child: SlashSubCommand, /):
+        """
+        Adds a child i.e subcommand to the command group.
+
+        This shouldn't generally be used. Instead, :func:`sub_command` decorator
+        should be used.
+
+        Parameters
+        ----------
+
+        child: :class:`SlashSubCommand`
+            The child to add.
+        """
+        self.options.append(child)
+        self.children.append(child)
+
+        for opt in child.callback.__annotations__:
+            child.add_option(child.callback.__annotations__[opt])
+
+        return child
+
+    def remove_child(self, child: Union[str, SlashSubCommand], /):
+        """Removes a child like sub-command or sub-command group from the command.
+
+        Parameters
+        ----------
+
+        child: Union[:class:`str`, :class:`SlashSubCommand`]
+            The child to remove.
+        """
+        if isinstance(child, str):
+            child = utils.get(self.children, name=child)
+
+        try:
+            self.children.remove(child)
+        except ValueError:
+            return
+
+
+
+
+class SlashSubCommandGroup(Option, SlashCommandChildMixin):
     """Represents a subcommand group of a slash command.
 
     A slash subcommand group holds subcommands of that group.
@@ -1362,45 +1423,6 @@ class SlashSubCommandGroup(Option):
         """Optional[:class:`diskord.ext.commands.Cog`]: Returns the cog of the parent. If parent has no cog, Then None is returned."""
         return self.parent.cog
 
-
-    def add_child(self, child: SlashSubCommand, /):
-        """
-        Adds a child i.e subcommand to the command group.
-
-        This shouldn't generally be used. Instead, :func:`sub_command` decorator
-        should be used.
-
-        Parameters
-        ----------
-
-        child: :class:`SlashSubCommand`
-            The child to add.
-        """
-        self.options.append(child)
-        self.children.append(child)
-
-        for opt in child.callback.__annotations__:
-            child.add_option(child.callback.__annotations__[opt])
-
-        return child
-
-    def remove_child(self, child: Union[str, SlashSubCommand], /):
-        """Removes a child like sub-command or sub-command group from the command.
-
-        Parameters
-        ----------
-
-        child: Union[:class:`str`, :class:`SlashSubCommand`]
-            The child to remove.
-        """
-        if isinstance(child, str):
-            child = utils.get(self.children, name=child)
-
-        try:
-            self.children.remove(child)
-        except ValueError:
-            return
-
     def sub_command(self, **attrs):
         """A decorator to register a subcommand in the command group.
 
@@ -1423,25 +1445,6 @@ class SlashSubCommandGroup(Option):
             return self.add_child(SlashSubCommand(func, self, **attrs))
 
         return inner
-
-    def get_child(self, name: str, /):
-        """
-        Gets a child of this command i.e a subcommand or subcommand group of this command
-        by the child's name.
-
-        Returns ``None`` if the child is not found.
-
-        Parameters
-        ----------
-        name: :class:`str`
-            The name of the child.
-
-        Returns
-        -------
-        Union[:class:`SlashSubCommand`, :class:`SlashSubGroup`]
-            The required slash subcommand or subcommand group.
-        """
-        return (utils.get(self.children, name=name))
 
     def to_dict(self) -> dict:
         return {
@@ -1540,7 +1543,7 @@ class SlashSubCommand(Option):
 
 
 
-class SlashCommand(ApplicationCommand):
+class SlashCommand(ApplicationCommand, SlashCommandChildMixin):
     """Represents a slash command.
 
     A slash command is a user input command that a user can use by typing ``/`` in
@@ -1582,44 +1585,6 @@ class SlashCommand(ApplicationCommand):
 
         self.options.append(option)
         return option
-
-    def add_child(self, child: SlashSubCommand, /):
-        """
-        Adds a child to the command.
-
-        This shouldn't generally be used. Instead, :func:`sub_command` decorator
-        should be used.
-
-        Parameters
-        ----------
-
-        child: Union[:class:`SlashSubCommand`, :class:`SlashSubCommandGroup`]
-            The child to add.
-        """
-        subc = self.add_option(child)
-        self.children.append(subc)
-
-        for opt in child.callback.__annotations__:
-            child.add_option(child.callback.__annotations__[opt])
-
-        return subc
-
-    def remove_child(self, child: Union[str, SlashSubCommand, SlashSubCommandGroup], /):
-        """Removes a child like sub-command or sub-command group from the command.
-
-        Parameters
-        ----------
-
-        child: Union[:class:`str`, :class:`SlashSubCommand`, :class:`SlashSubCommandGroup`]
-            The child to remove.
-        """
-        if isinstance(child, str):
-            child = utils.get(self.children, name=child)
-
-        try:
-            self.children.remove(child)
-        except ValueError:
-            return
 
     def sub_command(self, **attrs):
         """A decorator to register a subcommand within a slash command.
@@ -1670,25 +1635,6 @@ class SlashCommand(ApplicationCommand):
             return self.add_child(SlashSubCommandGroup(func, self, **attrs))
 
         return inner
-
-    def get_child(self, name: str, /):
-        """
-        Gets a child of this command i.e a subcommand or subcommand group of this command
-        by the child's name.
-
-        Returns ``None`` if the child is not found.
-
-        Parameters
-        ----------
-        name: :class:`str`
-            The name of the child.
-
-        Returns
-        -------
-        Union[:class:`SlashSubCommand`, :class:`SlashSubGroup`]
-            The required slash subcommand or subcommand group.
-        """
-        return (utils.get(self.children, name=name))
 
     def to_dict(self) -> dict:
         # We're reversing the options list here because the order of how options are
