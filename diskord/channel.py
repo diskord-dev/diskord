@@ -45,7 +45,7 @@ import datetime
 
 import diskord.abc
 from .permissions import PermissionOverwrite, Permissions
-from .enums import ChannelType, StagePrivacyLevel, try_enum, VoiceRegion, VideoQualityMode
+from .enums import ChannelType, StagePrivacyLevel, try_enum, VoiceRegion, VideoQualityMode, NSFWLevel
 from .mixins import Hashable
 from .object import Object
 from . import utils
@@ -233,8 +233,8 @@ class TextChannel(diskord.abc.Messageable, diskord.abc.GuildChannel, Hashable):
         return [thread for thread in self.guild._threads.values() if thread.parent_id == self.id]
 
     def is_nsfw(self) -> bool:
-        """:class:`bool`: Checks if the channel is NSFW."""
-        return self.nsfw
+        """:class:`bool`: Checks if the channel *or the guild of channel* is NSFW."""
+        return self.nsfw or self.guild.nsfw_level == NSFWLevel.age_restricted.value
 
     def is_news(self) -> bool:
         """:class:`bool`: Checks if the channel is a news channel."""
