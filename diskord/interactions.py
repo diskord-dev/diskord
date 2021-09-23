@@ -1516,9 +1516,6 @@ class SlashSubCommand(Option):
             'type': OptionType.sub_command.value,
             'options': [option.to_dict() for option in options],
         }
-        if dict_['description'] == 'cool2':
-            print(dict_)
-
         return dict_
 
     def add_option(self, option: Option) -> Option:
