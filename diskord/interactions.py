@@ -65,6 +65,7 @@ __all__ = (
     'ApplicationCommand',
     'SlashCommand',
     'SlashSubCommand',
+    'SlashSubCommandGroup',
     'UserCommand',
     'MessageCommand',
     'Option',
