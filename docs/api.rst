@@ -3818,6 +3818,17 @@ SlashSubCommand
     :members:
     :inherited-members:
 
+SlashSubCommandGroup
+~~~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: SlashSubCommandGroup
+
+.. autoclass:: SlashSubCommandGroup()
+    :members:
+    :inherited-members:
+
+
+
 UserCommand
 ~~~~~~~~~~~
 
