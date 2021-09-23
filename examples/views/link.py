@@ -1,6 +1,6 @@
-from discord.ext import commands
+from diskord.ext import commands
 
-import discord
+import diskord
 from urllib.parse import quote_plus
 
 class GoogleBot(commands.Bot):

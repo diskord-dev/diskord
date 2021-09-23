@@ -36,11 +36,11 @@ def show_version():
 
     entries.append('- Python v{0.major}.{0.minor}.{0.micro}-{0.releaselevel}'.format(sys.version_info))
     version_info = diskord.version_info
-    entries.append('- diskord.py v{0.major}.{0.minor}.{0.micro}-{0.releaselevel}'.format(version_info))
+    entries.append('- diskord v{0.major}.{0.minor}.{0.micro}-{0.releaselevel}'.format(version_info))
     if version_info.releaselevel != 'final':
-        pkg = pkg_resources.get_distribution('diskord.py')
+        pkg = pkg_resources.get_distribution('diskord')
         if pkg:
-            entries.append(f'    - diskord.py pkg_resources: v{pkg.version}')
+            entries.append(f'    - diskord pkg_resources: v{pkg.version}')
 
     entries.append(f'- aiohttp v{aiohttp.__version__}')
     uname = platform.uname()
@@ -283,7 +283,7 @@ def add_newcog_args(subparser):
     parser.add_argument('--full', help='add all special methods as well', action='store_true')
 
 def parse_args():
-    parser = argparse.ArgumentParser(prog='diskord', description='Tools for helping with diskord.py')
+    parser = argparse.ArgumentParser(prog='diskord', description='Tools for helping with diskord')
     parser.add_argument('-v', '--version', action='store_true', help='shows the library version')
     parser.set_defaults(func=core)
 

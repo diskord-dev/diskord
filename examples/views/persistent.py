@@ -1,5 +1,5 @@
-from discord.ext import commands
-import discord
+from diskord.ext import commands
+import diskord
 
 
 # Define a simple View that persists between bot restarts

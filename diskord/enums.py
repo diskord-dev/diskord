@@ -66,6 +66,8 @@ __all__ = (
     'InteractionType',
     'InteractionResponseType',
     'NSFWLevel',
+    'ApplicationCommandType',
+    'OptionType',
 )
 
 
@@ -634,7 +636,7 @@ class OptionType(Enum, comparable=True):
             return cls.boolean
         elif type_ == float:
             return cls.number
-        
+
         # checking for types from typing
         if get_origin(type_) is Union:
             args = type_.__args__
@@ -649,7 +651,7 @@ class OptionType(Enum, comparable=True):
             return cls.role
         elif type_.__name__  == 'GuildChannel':
             return cls.channel
-        
+
         else:
             raise TypeError('Unknown data type for option.')
 

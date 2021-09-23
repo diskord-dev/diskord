@@ -28,6 +28,7 @@ import diskord.utils
 
 from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, TYPE_CHECKING, Tuple, TypeVar, Type
 
+from diskord import ApplicationCommand
 from ._types import _BaseCommand
 
 if TYPE_CHECKING:
@@ -120,6 +121,7 @@ class CogMeta(type):
         attrs['__cog_description__'] = description
 
         commands = {}
+        application_commands = {}
         listeners = {}
         no_bot_cog = 'Commands or listeners must not start with cog_ or bot_ (in method {0.__name__}.{1})'
 
@@ -139,7 +141,16 @@ class CogMeta(type):
                         raise TypeError(f'Command in method {base}.{elem!r} must not be staticmethod.')
                     if elem.startswith(('cog_', 'bot_')):
                         raise TypeError(no_bot_cog.format(base, elem))
+
                     commands[elem] = value
+                elif isinstance(value, ApplicationCommand):
+                    if is_static_method:
+                        raise TypeError(f'Command in method {base}.{elem!r} must not be staticmethod.')
+                    if elem.startswith(('cog_', 'bot_')):
+                        raise TypeError(no_bot_cog.format(base, elem))
+
+                    application_commands[elem] = value
+
                 elif inspect.iscoroutinefunction(value):
                     try:
                         getattr(value, '__cog_listener__')
@@ -151,6 +162,7 @@ class CogMeta(type):
                         listeners[elem] = value
 
         new_cls.__cog_commands__ = list(commands.values()) # this will be copied in Cog.__new__
+        new_cls.__cog_application_commands__ = list(application_commands.values())
 
         listeners_as_list = []
         for listener in listeners.values():
@@ -186,6 +198,7 @@ class Cog(metaclass=CogMeta):
     __cog_name__: ClassVar[str]
     __cog_settings__: ClassVar[Dict[str, Any]]
     __cog_commands__: ClassVar[List[Command]]
+    __cog_application_commands__: ClassVar[List[ApplicationCommand]]
     __cog_listeners__: ClassVar[List[Tuple[str, str]]]
 
     def __new__(cls: Type[CogT], *args: Any, **kwargs: Any) -> CogT:
@@ -216,6 +229,7 @@ class Cog(metaclass=CogMeta):
                 parent.remove_command(command.name)  # type: ignore
                 parent.add_command(command)  # type: ignore
 
+
         return self
 
     def get_commands(self) -> List[Command]:
@@ -231,6 +245,21 @@ class Cog(metaclass=CogMeta):
                 This does not include subcommands.
         """
         return [c for c in self.__cog_commands__ if c.parent is None]
+
+    def get_application_commands(self) -> List[ApplicationCommand]:
+        r"""
+        Returns
+        -------
+        List[:class:`diskord.ApplicationCommand`]
+            A :class:`list` of :class:`discord.ApplicationCommand` that are
+            defined inside this cog.
+
+            .. note::
+
+                This does not include subcommands and groups.
+        """
+        return [c for c in self.__cog_application_commands__]
+
 
     @property
     def qualified_name(self) -> str:
@@ -433,6 +462,19 @@ class Cog(metaclass=CogMeta):
                             bot.remove_command(to_undo.name)
                     raise e
 
+        for index, command in enumerate(self.__cog_application_commands__):
+            command.cog = self
+
+            try:
+                bot.add_pending_command(command)
+            except Exception as e:
+                # undo our additions
+                for to_undo in self.__cog_application_commands__[:index]:
+                    bot.remove_pending_command(to_undo)
+                raise e
+
+
+
         # check if we're overriding the default
         if cls.bot_check is not Cog.bot_check:
             bot.add_check(self.bot_check)
@@ -456,6 +498,14 @@ class Cog(metaclass=CogMeta):
             for command in self.__cog_commands__:
                 if command.parent is None:
                     bot.remove_command(command.name)
+
+            for command in self.__cog_application_commands__:
+                if not isinstance(command, Option):
+                    registered = command.id in bot._connection._application_commands
+                    if registered:
+                        bot.remove_application_command(command.id)
+                    else:
+                        bot.remove_pending_command(command)
 
             for _, method_name in self.__cog_listeners__:
                 bot.remove_listener(getattr(self, method_name))

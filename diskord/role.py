@@ -25,11 +25,13 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 from typing import Any, Dict, List, Optional, TypeVar, Union, overload, TYPE_CHECKING
 
+from . import utils
 from .permissions import Permissions
 from .errors import InvalidArgument
 from .colour import Colour
 from .mixins import Hashable
 from .utils import snowflake_time, _get_as_snowflake, MISSING
+from .asset import Asset
 
 __all__ = (
     'RoleTags',
@@ -177,6 +179,7 @@ class Role(Hashable):
         'name',
         '_permissions',
         '_colour',
+        '_icon',
         'position',
         'managed',
         'mentionable',
@@ -243,6 +246,7 @@ class Role(Hashable):
         self.managed: bool = data.get('managed', False)
         self.mentionable: bool = data.get('mentionable', False)
         self.tags: Optional[RoleTags]
+        self._icon: Optional[Asset] = data.get('icon')
 
         try:
             self.tags = RoleTags(data['tags'])
@@ -317,6 +321,24 @@ class Role(Hashable):
         role_id = self.id
         return [member for member in all_members if member._roles.has(role_id)]
 
+    @property
+    def icon(self) -> Optional[Asset]:
+        """Optional[:class:`Asset`]: Returns the icon asset of this role. If role has no
+        icon, then ``None`` will be returned.
+
+        .. versionadded:: 2.5
+        """
+        if self._icon is None:
+            return None
+
+        return Asset._from_icon(
+                self._state,
+                self.id,
+                self.icon,
+                'role',
+                )
+
+
     async def _move(self, position: int, reason: Optional[str]) -> None:
         if position <= 0:
             raise InvalidArgument("Cannot move role to position 0 or below")
@@ -349,6 +371,7 @@ class Role(Hashable):
         color: Union[Colour, int] = MISSING,
         hoist: bool = MISSING,
         mentionable: bool = MISSING,
+        icon: Optional[bytes] = MISSING,
         position: int = MISSING,
         reason: Optional[str] = MISSING,
     ) -> Optional[Role]:
@@ -379,6 +402,10 @@ class Role(Hashable):
             Indicates if the role should be shown separately in the member list.
         mentionable: :class:`bool`
             Indicates if the role should be mentionable by others.
+        icon: Optional[:class:`bytes`]
+            A :term:`py:bytes-like object` representing the icon of the role. Only PNG/JPEG is supported.
+            Could be ``None`` to denote removal of the icon. Role's guild must has ``ROLE_SUBSCRIPTIONS_ENABLED``
+            in :attr:`Guild.features`
         position: :class:`int`
             The new role's position. This must be below your top role's
             position or it will fail.
@@ -424,6 +451,12 @@ class Role(Hashable):
 
         if mentionable is not MISSING:
             payload['mentionable'] = mentionable
+
+        if icon is not MISSING:
+            if icon is None:
+                payload['icon'] = icon
+            else:
+                payload['icon'] = utils._bytes_to_base64_data(icon)
 
         data = await self._state.http.edit_role(self.guild.id, self.id, reason=reason, **payload)
         return Role(guild=self.guild, data=data, state=self._state)

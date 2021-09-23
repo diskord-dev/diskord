@@ -269,8 +269,8 @@ class Command(_BaseCommand, Generic[CogT, P, T]):
         which calls converters. If ``False`` then cooldown processing is done
         first and then the converters are called second. Defaults to ``False``.
     extras: :class:`dict`
-        A dict of user provided extras to attach to the Command. 
-        
+        A dict of user provided extras to attach to the Command.
+
         .. note::
             This object may be copied by the library.
 
@@ -344,7 +344,7 @@ class Command(_BaseCommand, Generic[CogT, P, T]):
             cooldown = func.__commands_cooldown__
         except AttributeError:
             cooldown = kwargs.get('cooldown')
-        
+
         if cooldown is None:
             buckets = CooldownMapping(cooldown, BucketType.default)
         elif isinstance(cooldown, CooldownMapping):
@@ -1574,7 +1574,9 @@ def command(
         ]) -> CommandT:
         if isinstance(func, Command):
             raise TypeError('Callback is already a command.')
-        return cls(func, name=name, **attrs)
+
+        cmd = cls(func, name=name, **attrs)
+        return cmd
 
     return decorator
 

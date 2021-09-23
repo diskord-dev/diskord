@@ -862,7 +862,7 @@ class Webhook(BaseWebhook):
 
     .. code-block:: python3
 
-        from discord import Webhook
+        from diskord import Webhook
         import aiohttp
 
         async def foo():

@@ -1,4 +1,4 @@
-import discord
+import diskord
 
 class MyClient(discord.Client):
     async def on_ready(self):

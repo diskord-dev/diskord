@@ -1,4 +1,4 @@
-import discord
+import diskord
 import asyncio
 
 class MyClient(discord.Client):

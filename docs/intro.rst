@@ -99,7 +99,7 @@ A quick example to showcase how events work:
 
 .. code-block:: python3
 
-    import discord
+    import diskord
 
     class MyClient(diskord.Client):
         async def on_ready(self):

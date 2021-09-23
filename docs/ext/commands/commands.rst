@@ -615,7 +615,7 @@ For example, the following code:
 .. code-block:: python3
 
     from diskord.ext import commands
-    import discord
+    import diskord
 
     class BanFlags(commands.FlagConverter):
         member: diskord.Member
@@ -695,7 +695,7 @@ For example, augmenting the example above:
 
     from diskord.ext import commands
     from typing import List
-    import discord
+    import diskord
 
     class BanFlags(commands.FlagConverter):
         members: List[diskord.Member] = commands.flag(name='member')
@@ -725,7 +725,7 @@ allows for "greedy-like" semantics using a variadic tuple:
 
     from diskord.ext import commands
     from typing import Tuple
-    import discord
+    import diskord
 
     class BanFlags(commands.FlagConverter):
         members: Tuple[diskord.Member, ...]

@@ -32,6 +32,7 @@ import aiohttp
 from .state import AutoShardedConnectionState
 from .client import Client
 from .backoff import ExponentialBackoff
+from .bot import Bot
 from .gateway import *
 from .errors import (
     ClientException,
@@ -54,6 +55,7 @@ if TYPE_CHECKING:
 
 __all__ = (
     'AutoShardedClient',
+    'AutoShardedBot',
     'ShardInfo',
 )
 
@@ -544,3 +546,48 @@ class AutoShardedClient(Client):
         .. versionadded:: 1.6
         """
         return any(shard.ws.is_ratelimited() for shard in self.__shards.values())
+
+
+class AutoShardedBot(Bot, AutoShardedClient):
+    """A client similar to :class:`Bot` except it handles the complications
+    of sharding for the user into a more manageable and transparent single
+    process bot.
+
+    When using this client, you will be able to use it as-if it was a regular
+    :class:`Bot` with a single shard when implementation wise internally it
+    is split up into multiple shards. This allows you to not have to deal with
+    IPC or other complicated infrastructure.
+
+    It is recommended to use this client only if you have surpassed at least
+    1000 guilds.
+
+    If no :attr:`.shard_count` is provided, then the library will use the
+    Bot Gateway endpoint call to figure out how many shards to use.
+
+    If a ``shard_ids`` parameter is given, then those shard IDs will be used
+    to launch the internal shards. Note that :attr:`.shard_count` must be provided
+    if this is used. By default, when omitted, the client will launch shards from
+    0 to ``shard_count - 1``.
+
+    Attributes
+    ------------
+    shard_ids: Optional[List[:class:`int`]]
+        An optional list of shard_ids to launch the shards with.
+    """
+    def __init__(self, *args, loop: Optional[asyncio.AbstractEventLoop] = None, **kwargs):
+        kwargs.pop('shard_id', None)
+        self.shard_ids: Optional[List[int]] = kwargs.pop('shard_ids', None)
+        super().__init__(*args, loop=loop, **kwargs)
+
+        if self.shard_ids is not None:
+            if self.shard_count is None:
+                raise ClientException('When passing manual shard_ids, you must provide a shard_count.')
+            elif not isinstance(self.shard_ids, (list, tuple)):
+                raise ClientException('shard_ids parameter must be a list or a tuple.')
+
+        # instead of a single websocket, we have multiple
+        # the key is the shard_id
+        self.__shards = {}
+        self._connection._get_websocket = self._get_websocket
+        self._connection._get_client = lambda: self
+        self.__queue = asyncio.PriorityQueue()

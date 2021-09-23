@@ -1,6 +1,6 @@
-from discord.ext import tasks
+from diskord.ext import tasks
 
-import discord
+import diskord
 
 class MyClient(discord.Client):
     def __init__(self, *args, **kwargs):

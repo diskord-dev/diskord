@@ -1,6 +1,6 @@
 # This example requires the 'members' privileged intents
 
-import discord
+import diskord
 
 class MyClient(discord.Client):
     def __init__(self, *args, **kwargs):
