@@ -1306,6 +1306,7 @@ class SlashSubCommandGroup(Option):
     A slash subcommand group holds subcommands of that group.
 
     Example: ::
+
         @bot.slash_command(description="Edits permission of a role or user.")
         async def permissions(ctx):
             pass
