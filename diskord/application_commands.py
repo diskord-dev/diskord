@@ -269,7 +269,7 @@ class ApplicationCommand:
     description: :class:`str`
         The description of this command. Defaults to the docstring of the callback.
     guild_ids: Union[:class:`tuple`, :class:`list`]
-        The guild this command will be registered in. Defaults to None for global commands.
+        The guild this command will be registered in. Defaults to an empty list for global commands.
     type: :class:`ApplicationCommandType`
         The type of application command.
     id: :class:`int`
@@ -284,13 +284,12 @@ class ApplicationCommand:
         The cog this command is defined in, This will be ``None`` if the command isn't
         defined in any cog.
     """
-
     def __init__(self, callback: Callable, **attrs):
         self.bot = attrs.get('bot')
-        self.callback: Callable = callback
-        self.name: str = attrs.get('name') or callback.__name__
-        self.description: str = attrs.get('description') or self.callback.__doc__
-        self.guild_ids: List[int] = attrs.get('guild_ids', [])
+        self.callback = callback
+        self.name = attrs.get('name') or callback.__name__
+        self.description = attrs.get('description') or self.callback.__doc__
+        self.guild_ids = attrs.get('guild_ids', [])
         self.cog = None
 
         if self.type in (
@@ -304,6 +303,20 @@ class ApplicationCommand:
             self.description = ''
 
         self._from_data(attrs)
+
+    def _from_data(self, data: ApplicationCommandPayload) -> ApplicationCommand:
+        self.id: int = utils._get_as_snowflake(data, 'id')
+        self.application_id: int = utils._get_as_snowflake(data, 'application_id')
+        self.guild_id: int = utils._get_as_snowflake(data, 'guild_id')
+        self.default_permission: bool = data.get('default_permission')
+        self.version: int = utils._get_as_snowflake(data, 'version')
+
+        if 'name' in data:
+            self.name = data.get('name')
+        if 'description' in data:
+            self.description = data.get('description')
+
+        return self
 
     async def _parse_option(self, interaction: Interaction, option: ApplicationCommandOptionPayload) -> Any:
         # This function isn't needed to be a coroutine function but it can be helpful in
@@ -473,24 +486,6 @@ class ApplicationCommand:
 
     def __str__(self):
         return self.name
-
-
-
-    # TODO: Add to dict methods
-
-    def _from_data(self, data: ApplicationCommandPayload) -> ApplicationCommand:
-        self.id: int = utils._get_as_snowflake(data, 'id')
-        self.application_id: int = utils._get_as_snowflake(data, 'application_id')
-        self.guild_id: int = utils._get_as_snowflake(data, 'guild_id')
-        self.default_permission: bool = data.get('default_permission')
-        self.version: int = utils._get_as_snowflake(data, 'version')
-
-        if 'name' in data:
-            self.name = data.get('name')
-        if 'description' in data:
-            self.description = data.get('description')
-
-        return self
 
 class SlashSubCommandGroup(Option):
     """Represents a subcommand group of a slash command.
