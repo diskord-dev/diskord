@@ -1359,6 +1359,7 @@ class SlashSubCommandGroup(Option):
 
     @property
     def cog(self):
+        """Optional[:class:`diskord.ext.commands.Cog`]: Returns the cog of the parent. If parent has no cog, Then None is returned."""
         return self.parent.cog
 
 
@@ -1502,6 +1503,7 @@ class SlashSubCommand(Option):
 
     @property
     def cog(self):
+        """Optional[:class:`diskord.ext.commands.Cog`]: Returns the cog of the parent. If parent has no cog, Then None is returned."""
         return self.parent.cog
 
     def to_dict(self) -> dict:
