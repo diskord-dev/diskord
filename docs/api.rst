@@ -41,6 +41,14 @@ Bot
 .. autoclass:: Bot()
     :members:
 
+AutoShardedBot
+~~~~~~~~~~~~~~
+
+.. attributetable:: AutoShardedBot
+
+.. autoclass:: Bot()
+    :members:
+
 Client
 ~~~~~~~
 
@@ -637,7 +645,7 @@ to handle it, which defaults to print a traceback and ignoring the exception.
     :type interaction: :class:`Interaction`
 
 .. function:: on_application_command_run(command)
-    
+
     Called when an application command is ran.
 
     This is called regardless of whether command is successfully invoked or not.
@@ -663,19 +671,19 @@ to handle it, which defaults to print a traceback and ignoring the exception.
     This is a really helpful event and acts as an error handler for your application
     commands.
 
-    You can create your own exceptions that subclass :class:`ApplicationCommandError` that 
+    You can create your own exceptions that subclass :class:`ApplicationCommandError` that
     you can raise in your commands and handle them within this event.
 
     Usage: ::
 
         class UserBlacklisted(diskord.ApplicationCommandError):
             pass
-        
+
         @bot.command()
         async def test(ctx):
             if ctx.author.id == 123456789:
                 raise UserBlacklisted()
-            
+
         @bot.event
         async def on_application_command_error(ctx, error):
             if isinstance(error, ApplicationCommandError):
@@ -791,7 +799,7 @@ to handle it, which defaults to print a traceback and ignoring the exception.
 
 .. function:: on_thread_delete(thread)
 
-    Called whenever a thread is deleted. This will not be called if the deleted 
+    Called whenever a thread is deleted. This will not be called if the deleted
     thread is not found in the internal cache. Use :func:`on_raw_thread_delete` instead.
 
     .. note::
@@ -813,7 +821,7 @@ to handle it, which defaults to print a traceback and ignoring the exception.
     regardless of the state of internal cache.
 
     .. versionadded:: 2.5
-    
+
     :param payload: The event payload.
     :type payload: :class:`RawThreadDeleteEvent`
 
@@ -2709,19 +2717,19 @@ of :class:`enum.Enum`.
         .. describe:: x <= y
 
             Checks if a command types is lower or equal to another.
-    
+
     .. attribute:: chat_input
 
         The option is a chat input "aka" a slash command.
-    
+
     .. attribute:: user
 
         The option is a user command.
-    
+
     .. attribute:: message
 
         The option is a message command.
-    
+
     .. attribute:: slash_command
 
         The option is a chat input "aka" a slash command.
@@ -2769,31 +2777,31 @@ of :class:`enum.Enum`.
     .. attribute:: integer
 
         The option is an integer.
-    
+
     .. attribute:: boolean
 
         The option is a boolean.
-    
+
     .. attribute:: user
 
         The option is a discord user.
-    
+
     .. attribute:: channel
 
         The option is a guild channel.
-    
+
     .. attribute:: role
 
         The option is a guild role.
-    
+
     .. attribute:: mentionable
 
         The option is a role or user.
-    
+
     .. attribute:: number
 
         The option is a floating option number.
-    
+
 
 
 Async Iterator
