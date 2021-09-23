@@ -472,7 +472,7 @@ class Bot(Client):
         Usage: ::
 
             @bot.user_command()
-            async def test(ctx):
+            async def test(ctx, user):
                 await ctx.send('Hello world')
         """
         def inner(func: Callable):
@@ -490,7 +490,7 @@ class Bot(Client):
         Usage: ::
 
             @bot.message_command()
-            async def test(ctx):
+            async def test(ctx, message):
                 await ctx.send('Hello world')
         """
         def inner(func: Callable):
@@ -775,7 +775,7 @@ def slash_command(**options) -> SlashCommand:
 
     Usage: ::
 
-        @bot.slash_command(description='My cool slash command.')
+        @diskord.slash_command(description='My cool slash command.')
         async def test(ctx):
             await ctx.send('Hello world')
     """
@@ -790,12 +790,12 @@ def slash_command(**options) -> SlashCommand:
     return inner
 
 def user_command(**options) -> SlashCommand:
-    """A decorator-based interface to add user commands to the bot.
+    """A decorator that converts a function to :class:`UserCommand`
 
     Usage: ::
 
-        @bot.user_command()
-        async def test(ctx):
+        @diskord.user_command()
+        async def test(ctx, user):
             await ctx.send('Hello world')
     """
     def inner(func: Callable):
@@ -808,12 +808,12 @@ def user_command(**options) -> SlashCommand:
     return inner
 
 def message_command(**options) -> SlashCommand:
-    """A decorator-based interface to add message commands to the bot.
+    """A decorator that converts a function to :class:`MessageCommand`
 
     Usage: ::
 
-        @bot.message_command()
-        async def test(ctx):
+        @diskord.message_command()
+        async def test(ctx, message):
             await ctx.send('Hello world')
     """
     def inner(func: Callable):
