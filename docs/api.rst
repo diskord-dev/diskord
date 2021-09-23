@@ -40,6 +40,7 @@ Bot
 
 .. autoclass:: Bot()
     :members:
+    :inherited-members:
 
 AutoShardedBot
 ~~~~~~~~~~~~~~
@@ -3789,6 +3790,7 @@ SlashCommand
 
 .. autoclass:: SlashCommand()
     :members:
+    :inherited-members:
 
 Option
 ~~~~~~
@@ -3813,6 +3815,7 @@ SlashSubCommand
 
 .. autoclass:: SlashSubCommand()
     :members:
+    :inherited-members:
 
 UserCommand
 ~~~~~~~~~~~
@@ -3821,6 +3824,7 @@ UserCommand
 
 .. autoclass:: UserCommand()
     :members:
+    :inherited-members:
 
 MessageCommand
 ~~~~~~~~~~~~~~
@@ -3829,6 +3833,7 @@ MessageCommand
 
 .. autoclass:: MessageCommand()
     :members:
+    :inherited-members:
 
 
 
