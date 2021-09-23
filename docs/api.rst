@@ -645,7 +645,7 @@ to handle it, which defaults to print a traceback and ignoring the exception.
     :param interaction: The interaction data.
     :type interaction: :class:`Interaction`
 
-.. function:: on_application_command_run(command)
+.. function:: on_application_command_run(ctx)
 
     Called when an application command is ran.
 
@@ -653,17 +653,17 @@ to handle it, which defaults to print a traceback and ignoring the exception.
 
     .. versionadded:: 2.5
 
-    :param command: The command that was run.
-    :type command: :class:`ApplicationCommand`
+    :param ctx: The invocation context of the application command.
+    :type ctx: :class:`InteractionContext`
 
-.. function:: on_application_command_completion(command)
+.. function:: on_application_command_completion(ctx)
 
     Called when an application command is successfully invoked.
 
     .. versionadded:: 2.5
 
-    :param command: The command that was invoked.
-    :type command: :class:`ApplicationCommand`
+    :param ctx: The invocation context of the application command.
+    :type ctx: :class:`InteractionContext`
 
 .. function:: on_application_command_error(ctx, error)
 

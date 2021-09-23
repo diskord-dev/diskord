@@ -546,14 +546,14 @@ class Bot(Client):
             return
 
         context = self.get_application_context(interaction)
-        self.dispatch('application_command_run', command)
+        self.dispatch('application_command_run', context)
 
         try:
             await command.invoke(context)
         except ApplicationCommandError as error:
             self.dispatch('application_command_error', context, error)
         else:
-            self.dispatch('application_command_completion', command)
+            self.dispatch('application_command_completion', context)
 
     def get_application_context(self, interaction: Interaction, *, cls: InteractionContext = None) -> InteractionContext:
         """
