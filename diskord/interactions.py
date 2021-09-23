@@ -1299,7 +1299,7 @@ class ApplicationCommand:
 
         return self
 
-class SlashSubCommandGroup(Option, SlashCommandChildMixin):
+class SlashSubCommandGroup(Option):
     """Represents a subcommand group of a slash command.
 
     A slash subcommand group holds subcommands of that group.
@@ -1556,7 +1556,7 @@ class SlashSubCommand(Option):
 
 
 
-class SlashCommand(ApplicationCommand, SlashCommandChildMixin):
+class SlashCommand(ApplicationCommand):
     """Represents a slash command.
 
     A slash command is a user input command that a user can use by typing ``/`` in
