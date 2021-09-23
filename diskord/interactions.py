@@ -1410,13 +1410,17 @@ class SlashSubCommandGroup(Option, SlashCommandChildMixin):
         self.callback = callback
         self.parent = parent
         self.children = []
-        self.guild_ids = parent.guild_ids
         super().__init__(
             name=callback.__name__ or attrs.get('name'),
             description=callback.__doc__ or attrs.get('description'),
             type=OptionType.sub_command_group.value,
         )
         self._from_data = parent._from_data
+
+    @property
+    def guild_ids(self) -> List[int]:
+        """List[:class:`int`]: Returns the list of guild IDs in which the parent command is registered."""
+        return self.parent.guild_ids
 
     @property
     def cog(self):
@@ -1495,7 +1499,6 @@ class SlashSubCommand(Option):
     def __init__(self, callback: Callable, parent: SlashCommand, **attrs):
         self.callback = callback
         self.parent = parent
-        self.guild_ids = parent.guild_ids
         super().__init__(
             name=callback.__name__ or attrs.get('name'),
             description=callback.__doc__ or attrs.get('description'),
@@ -1503,6 +1506,11 @@ class SlashSubCommand(Option):
         )
 
         self._from_data = parent._from_data
+
+    @property
+    def guild_ids(self) -> List[int]:
+        """List[:class:`int`]: Returns the list of guild IDs in which the parent command is registered."""
+        return self.parent.guild_ids
 
     @property
     def cog(self):
