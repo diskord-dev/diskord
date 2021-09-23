@@ -72,6 +72,11 @@ class Bot(Client):
     to use this class instead of :class:`Client` if you aim to use application commands
     like slash commands, user & message commands etc.
 
+    All the parameters from :class:`Client` can be passed in this class and
+    all attributes and methods are valid too.
+
+    These parameters are those that can only be passed this class.
+
     Parameters
     ----------
 

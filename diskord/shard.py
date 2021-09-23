@@ -32,6 +32,7 @@ import aiohttp
 from .state import AutoShardedConnectionState
 from .client import Client
 from .backoff import ExponentialBackoff
+from .bot import Bot
 from .gateway import *
 from .errors import (
     ClientException,
@@ -54,6 +55,7 @@ if TYPE_CHECKING:
 
 __all__ = (
     'AutoShardedClient',
+    'AutoShardedBot',
     'ShardInfo',
 )
 
@@ -544,3 +546,7 @@ class AutoShardedClient(Client):
         .. versionadded:: 1.6
         """
         return any(shard.ws.is_ratelimited() for shard in self.__shards.values())
+
+
+class AutoShardedBot(Bot, AutoShardedClient):
+    pass
