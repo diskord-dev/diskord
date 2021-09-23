@@ -3782,6 +3782,7 @@ ApplicationCommand
 
 .. autoclass:: ApplicationCommand()
     :members:
+    :inherited-members:
 
 SlashCommand
 ~~~~~~~~~~~~
