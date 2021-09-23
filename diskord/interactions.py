@@ -939,9 +939,12 @@ class Option:
     def __str__(self):
         return self.name
 
-    def is_subcommand(self):
-        """:class:`bool`: Indicates whether this option is a subcommand."""
-        return hasattr(self, 'callback') and callable(self.callback)
+    def is_command_or_group(self):
+        """:class:`bool`: Indicates whether this option is a subcommand or subgroup."""
+        return self.type in (
+            OptionType.sub_command.value,
+            OptionType.sub_command_group.value,
+        )
 
     def add_choice(self, choice: OptionChoice) -> OptionChoice:
         """Adds a choice to current option.
