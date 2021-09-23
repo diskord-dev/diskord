@@ -1105,8 +1105,8 @@ class Bot(BotBase, diskord.Bot):
     """
     pass
 
-class AutoShardedBot(BotBase, diskord.AutoShardedClient):
+class AutoShardedBot(BotBase, diskord.AutoShardedBot):
     """This is similar to :class:`.Bot` except that it is inherited from
-    :class:`diskord.AutoShardedClient` instead.
+    :class:`diskord.AutoShardedBot` instead.
     """
     pass
