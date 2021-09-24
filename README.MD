@@ -14,12 +14,11 @@
 </div>
 
 ## Key features
-* Modern Pythonic API using `async` and `await`.
-* Proper rate limit handling.
+* Modern Pythonic API using `async` / `await`.
+* Proper and sane rate limit handling.
 * Optimised in both speed and memory.
-* Actively maintained
-* Provides 100% coverage of Discord API.
-* User-friendly OOP-based API.
+* Actively maintained, Provides full coverage of Discord API.
+* Easy-to-use object oriented design
 
 ## Installation
 
