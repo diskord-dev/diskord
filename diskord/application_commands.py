@@ -76,8 +76,6 @@ class OptionChoice:
         The name of choice. Will be shown on command explorer.
     value: :class:`str`
         A user-set value of the choice. Will be passed in the command's callback.
-    option: :class:`Option`
-        The parent option of this choice.
     """
     @overload
     def __init__(self, *,
@@ -90,7 +88,13 @@ class OptionChoice:
         self.name  = name
         self.value = value
 
-        self.option: Option = None # type: ignore
+        self._option: Option = None # type: ignore
+
+    @property
+    def option(self) -> Option:
+        """:class:`Option`: The parent option of this choice."""
+        return self._option
+
 
     def to_dict(self) -> dict:
         return {
@@ -251,7 +255,7 @@ class Option:
             The added choice.
         """
         choice = OptionChoice(**attrs)
-        choice.option = self
+        choice._option = self
         self._choices.insert(index, choice)
         return choice
 
@@ -268,7 +272,7 @@ class Option:
         :class:`OptionChoice`
             The appended choice.
         """
-        choice.option = self
+        choice._option = self
         self._choices.append(choice)
         return choice
 
@@ -332,7 +336,7 @@ class Option:
             The added choice.
         """
         option = Option(**attrs)
-        option.parent = self
+        option._parent = self
         self._options.insert(index, option)
         return option
 
@@ -349,7 +353,7 @@ class Option:
         :class:`Option`
             The appended option.
         """
-        option.parent = self
+        option._parent = self
         self._options.append(option)
         return option
 
@@ -837,7 +841,6 @@ class SlashCommandChild(Option):
     :class:`SlashSubCommand`.
     """
     def __init__(self, callback: Callable,
-        parent: SlashCommand,
         type: SlashChildType, *,
         name: str = None,
         description: str = None,
@@ -849,7 +852,7 @@ class SlashCommandChild(Option):
         )
         self._type = OptionType.sub_command_group.value
         self._callback = callback
-        self._parent = parent
+        self._parent = None
 
     @property
     def guild_ids(self) -> List[int]:
@@ -909,12 +912,11 @@ class SlashSubCommandGroup(SlashCommandChild):
     can be added into a group.
 
     *This class inherits :class:`SlashCommandChild` so all attributes valid there are
-    also valid in this class.
+    also valid in this class.*
     """
-    def __init__(self, callback: Callable, parent: SlashCommand, **attrs):
+    def __init__(self, callback: Callable, **attrs):
         super().__init__(
             callback,
-            parent,
             OptionType.sub_command_group.value,
             **attrs
         )
@@ -1020,7 +1022,8 @@ class SlashSubCommandGroup(SlashCommandChild):
 class SlashSubCommand(SlashCommandChild):
     """Represents a subcommand of a slash command.
 
-    This can be registered using :func:`SlashCommand.sub_command` decorator.
+    This can be registered using :func:`SlashCommand.sub_command` or
+    :func:`SlashSubCommandGroup.sub_command` decorator.
 
     Example: ::
 
@@ -1034,95 +1037,94 @@ class SlashSubCommand(SlashCommandChild):
 
     The usage of above command would be like ``/git push``.
 
-    Attributes
-    ----------
-
-    name: :class:`str`
-        The name of sub-command.
-    description: :class:`str`
-        The description of sub-command.
-    options: List[:class:`Option`]
-        The options of sub-command.
-    callback: Callable
-        The callback for this sub-command.
-    parent: :class:`SlashCommand`
-        The parent command for this sub-command.
-    guild_ids: List[:class:`int`]
-        A short-hand for :attr:`parent.guild_ids`
-
-        Changing this will have no affect as the guild for a sub-command
-        depend upon the guilds of parent command.
+    *This class inherits :class:`SlashCommandChild` so all attributes valid there are
+    also valid in this class.*
     """
-    def __init__(self, callback: Callable, parent: SlashCommand, **attrs):
-        self.callback = callback
-        self.parent = parent
+    def __init__(self, callback: Callable, **attrs):
         super().__init__(
-            name=callback.__name__ or attrs.get('name'),
-            description=callback.__doc__ or attrs.get('description'),
-            type=OptionType.sub_command.value,
+            callback,
+            OptionType.sub_command_group.value,
+            **attrs
         )
-
+        self._parent = None
         self._from_data = parent._from_data
 
-    # parent attributes
+    # Option management
 
-    @property
-    def guild_ids(self) -> List[int]:
-        """List[:class:`int`]: Returns the list of guild IDs in which the parent command is registered."""
-        return self.parent.guild_ids
-
-    @property
-    def cog(self):
-        """Optional[:class:`diskord.ext.commands.Cog`]: Returns the cog of the parent. If parent has no cog, Then None is returned."""
-        return self.parent.cog
-
-    def to_dict(self) -> dict:
-        dict_ = {
-            'name': self.name,
-            'description': self.description,
-            'type': OptionType.sub_command.value,
-            'options': [option.to_dict() for option in self.options],
-        }
-        return dict_
-
-    def get_option(self, name: str) -> Optional[Option]:
-        """Gets an option by it's name.
-
-        This function returns None if the option is not found.
+    def get_option(self, **attrs) -> Optional[Option]:
+        """Gets an option that matches the provided traits.
 
         Parameters
         ----------
-        name: :class:`str`
-            The name of option
+        **attrs:
+            The attributes of the :class:`Option`.
 
         Returns
         -------
-        Optional[:class:`Option`]:
-            The required option.
+        Optional[:class:`Option`]
+            The option that matched the traits. ``None`` if not found.
         """
-        return utils.get(self.options, name=name)
+        return utils.get(self._options, **attrs)
 
-    def add_option(self, option: Option) -> Option:
-        """Adds an option to this slash command.
+    def add_option(self, *, index: int = -1, **attrs) -> Option:
+        """Adds an option to command.
+
+        To append an option, Use :func:`SlashSubCommand.append_option`.
 
         Parameters
         ----------
-        option: :class:`Option`
-            The option to add.
+        index: :class:`int`
+            The index to insert at. Defaults to ``-1`` aka end of options list.
+        **attrs:
+            The attributes of the :class:`Option`.
 
         Returns
         -------
         :class:`Option`
             The added option.
-
         """
-        if not isinstance(option, Option):
-            raise TypeError('option must be an instance of Option class.')
-
-        self.options.append(option)
+        option = Option(**attrs)
+        option._parent = self
+        self._options.insert(index, option)
         return option
 
+    def append_option(self, option: Option) -> Option:
+        """Appends an option to end of options list.
 
+        Parameters
+        ----------
+        option: :class:`Option`
+            The option to append.
+
+        Returns
+        -------
+        :class:`Option`
+            The appended option.
+        """
+        option._parent = self
+        self._options.append(option)
+        return option
+
+    def remove_option(self, **attrs) -> Optional[Option]:
+        """Removes the option that matches the provided traits.
+
+        If option is not found, ``None`` would be returned.
+
+        Parameters
+        ----------
+        **attrs:
+            The attributes of the :class:`Option`.
+
+        Returns
+        -------
+        Optional[:class:`Option`]
+            The removed option. ``None`` if not found.
+        """
+        option = utils.get(self._options, **attrs)
+        if option:
+            self._options.remove(option)
+
+        return option
 
 class SlashCommand(ApplicationCommand):
     """Represents a slash command.
@@ -1188,13 +1190,13 @@ class SlashCommand(ApplicationCommand):
 
         Returns
         -------
-        Optional[:class:`OptionChoice`]
+        Optional[:class:`Option`]
             The option that matched the traits. ``None`` if not found.
         """
         return utils.get(self._options, **attrs)
 
     def add_option(self, *, index: int = -1, **attrs) -> Option:
-        """Adds a sub-option to option.
+        """Adds an option to command.
 
         To append an option, Use :func:`Option.append_option`.
 
@@ -1211,12 +1213,12 @@ class SlashCommand(ApplicationCommand):
             The added choice.
         """
         option = Option(**attrs)
-        option.parent = self
+        option._parent = self
         self._options.insert(index, option)
         return option
 
     def append_option(self, option: Option) -> Option:
-        """Appends a sub-option to end of sub-options list.
+        """Appends an option to end of options list.
 
         Parameters
         ----------
@@ -1228,12 +1230,12 @@ class SlashCommand(ApplicationCommand):
         :class:`Option`
             The appended option.
         """
-        option.parent = self
+        option._parent = self
         self._options.append(option)
         return option
 
     def remove_option(self, **attrs) -> Optional[Option]:
-        """Removes the sub-option that matches the provided traits.
+        """Removes the option that matches the provided traits.
 
         If option is not found, ``None`` would be returned.
 
