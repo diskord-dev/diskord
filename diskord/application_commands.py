@@ -36,6 +36,8 @@ from typing import (
     overload,
     Literal,
 )
+import inspect
+import functools
 
 from . import utils
 from .enums import (
@@ -66,7 +68,41 @@ __all__ = (
     'MessageCommand',
     'Option',
     'OptionChoice',
+    'slash_option',
+    'slash_command',
+    'user_command',
+    'message_command'
 )
+
+def unwrap_function(function: Callable[..., Any]) -> Callable[..., Any]:
+    partial = functools.partial
+    while True:
+        if hasattr(function, '__wrapped__'):
+            function = function.__wrapped__
+        elif isinstance(function, partial):
+            function = function.func
+        else:
+            return function
+
+def get_signature_parameters(function: Callable[..., Any], globalns: Dict[str, Any]) -> Dict[str, inspect.Parameter]:
+    signature = inspect.signature(function)
+    params = {}
+    cache: Dict[str, Any] = {}
+    eval_annotation = utils.evaluate_annotation
+    for name, parameter in signature.parameters.items():
+        annotation = parameter.annotation
+        if annotation is parameter.empty:
+            params[name] = parameter
+            continue
+        if annotation is None:
+            params[name] = parameter.replace(annotation=type(None))
+            continue
+
+        annotation = eval_annotation(annotation, globalns, globalns, cache)
+        params[name] = parameter.replace(annotation=annotation)
+
+    return params
+
 
 class OptionChoice:
     """Represents an option choice for an application command's option.
@@ -679,7 +715,7 @@ class ApplicationCommand:
             if interaction.guild:
                 value = interaction.guild.get_member(int(option['value']))
             else:
-                value = context.bot.get_user(int(option['value']))
+                value = context.client.get_user(int(option['value']))
 
         elif option['type'] == OptionType.channel.value:
             value = interaction.guild.get_channel(int(option['value']))
@@ -716,7 +752,7 @@ class ApplicationCommand:
             if interaction.guild:
                 user = interaction.guild.get_member(int(interaction.data['target_id']))
             else:
-                user = context.bot.get_user(int(interaction.data['target_id']))
+                user = context.client.get_user(int(interaction.data['target_id']))
 
             # below code exists for "just in case" purpose
             if user is None:
@@ -731,7 +767,7 @@ class ApplicationCommand:
                         )
                 else:
                     user = User(
-                        state=context.bot._connection,
+                        state=context.client._connection,
                         data=resolved['users'][interaction.data['target_id']]
                         )
 
@@ -752,7 +788,7 @@ class ApplicationCommand:
                 )
             else:
                 message = Message(
-                    state=context.bot._connection,
+                    state=context.client._connection,
                     channel=interaction.user,
                     data=data,
                 )
@@ -1434,3 +1470,107 @@ class MessageCommand(ApplicationCommand):
     def __init__(self, callback, **attrs):
         self._type = ApplicationCommandType.message
         super().__init__(callback, **attrs)
+
+def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
+    """A decorator-based interface to add options to a slash command.
+
+    Usage: ::
+
+        @bot.slash_command(description="Highfive a member!")
+        @diskord.slash_option('member', description='The member to high-five.')
+        @diskord.slash_option('reason', description='Reason to high-five')
+
+        async def highfive(ctx, member: diskord.Member, reason = 'No reason!'):
+            await ctx.send(f'{ctx.author.name} high-fived {member.name} for {reason}')
+
+    .. warning::
+        The callback function must contain the argument and properly annotated or TypeError
+        will be raised.
+    """
+    def inner(func):
+        nonlocal type_
+        type_ = type_ or func.__annotations__.get(name, str)
+
+        sign = inspect.signature(func).parameters.get(attrs.get('arg', name))
+        if sign is None:
+            raise TypeError(f'Parameter for option {name} is missing.')
+
+        required = attrs.get('required')
+        if required is None:
+            required = sign.default is inspect._empty
+
+        if not hasattr(func, '__application_command_params__'):
+            unwrap = unwrap_function(func)
+            try:
+                globalns = unwrap.__globals__
+            except AttributeError:
+                globalns = {}
+
+            func.__application_command_params__ = get_signature_parameters(func, globalns)
+
+        params = func.__application_command_params__
+
+        func.__annotations__[attrs.get('arg', name)] = Option(
+            name=name,
+            type=params[attrs.get('arg', name)].annotation,
+            required=required,
+            **attrs
+            )
+        return func
+
+    return inner
+
+def slash_command(**options) -> SlashCommand:
+    """A decorator that converts a function to :class:`SlashCommand`
+
+    Usage: ::
+
+        @diskord.slash_command(description='My cool slash command.')
+        async def test(ctx):
+            await ctx.send('Hello world')
+    """
+    def inner(func: Callable):
+        if not inspect.iscoroutinefunction(func):
+            raise TypeError('Callback function must be a coroutine.')
+
+        options['name'] = options.get('name') or func.__name__
+
+        return SlashCommand(func, **options)
+
+    return inner
+
+def user_command(**options) -> SlashCommand:
+    """A decorator that converts a function to :class:`UserCommand`
+
+    Usage: ::
+
+        @diskord.user_command()
+        async def test(ctx, user):
+            await ctx.send('Hello world')
+    """
+    def inner(func: Callable):
+        if not inspect.iscoroutinefunction(func):
+            raise TypeError('Callback function must be a coroutine.')
+        options['name'] = options.get('name') or func.__name__
+
+        return UserCommand(func, **options)
+
+    return inner
+
+def message_command(**options) -> SlashCommand:
+    """A decorator that converts a function to :class:`MessageCommand`
+
+    Usage: ::
+
+        @diskord.message_command()
+        async def test(ctx, message):
+            await ctx.send('Hello world')
+    """
+    def inner(func: Callable):
+        if not inspect.iscoroutinefunction(func):
+            raise TypeError('Callback function must be a coroutine.')
+        options['name'] = options.get('name') or func.__name__
+
+        return MessageCommand(func, **options)
+
+    return inner
