@@ -429,13 +429,14 @@ class ApplicationCommand:
                 # We will use the name to get the child because
                 # subcommands do not have any ID. They are essentially
                 # just options of a command. And option names are unique
-
+                subcommand = self.get_child(option['name'])
                 sub_options = option.get('options', [])
+
                 for sub_option in sub_options:
                     value = await self._parse_option(interaction, sub_option)
-                    kwargs[sub_option['name']] = value
+                    resolved = subcommand.get_option(sub_option['name'])
+                    kwargs[resolved.arg] = value
 
-                subcommand = self.get_child(option['name'])
 
                 if subcommand.cog is not None:
                     await subcommand.callback(subcommand.cog, context, **kwargs)
@@ -454,12 +455,13 @@ class ApplicationCommand:
                 subcommand_raw = option['options'][0]
                 group = self.get_child(option['name'])
                 sub_options = subcommand_raw.get('options', [])
+                subcommand = group.get_child(subcommand_raw['name'])
 
                 for sub_option in sub_options:
                     value = await self._parse_option(interaction, sub_option)
-                    kwargs[sub_option['name']] = value
+                    resolved = subcommand.get_option(sub_option['name'])
+                    kwargs[resolved.arg] = value
 
-                subcommand = group.get_child(subcommand_raw['name'])
 
                 if subcommand.cog is not None:
                     await subcommand.callback(subcommand.cog, context, **kwargs)
@@ -722,6 +724,23 @@ class SlashSubCommand(Option):
             'options': [option.to_dict() for option in options],
         }
         return dict_
+
+    def get_option(self, name: str) -> Optional[Option]:
+        """Gets an option by it's name.
+
+        This function returns None if the option is not found.
+
+        Parameters
+        ----------
+        name: :class:`str`
+            The name of option
+
+        Returns
+        -------
+        Optional[:class:`Option`]:
+            The required option.
+        """
+        return utils.get(self.options, name=name)
 
     def add_option(self, option: Option) -> Option:
         """Adds an option to this slash command.
