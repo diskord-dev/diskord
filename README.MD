@@ -63,13 +63,13 @@ Here are some quick examples to give you a quickstart and show off the basic fea
 ```py
 import diskord
 
-bot = diskord.Bot()
+client = diskord.Client()
 
-@bot.slash_command('ping', description='Ping-Pong!')
+@client.slash_command('ping', description='Ping-Pong!')
 async def ping(ctx):
     await ctx.send('Pong!')
 
-bot.run('token')
+client.run('token')
 ```
 
 ### Legacy (Prefixed) Commands

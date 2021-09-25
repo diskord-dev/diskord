@@ -1033,7 +1033,7 @@ class BotBase(GroupMixin):
     async def on_message(self, message):
         await self.process_commands(message)
 
-class Bot(BotBase, diskord.Bot):
+class Bot(BotBase, diskord.Client):
     """Represents a diskord bot.
 
     This class is a subclass of :class:`diskord.Client` and as a result
@@ -1105,7 +1105,7 @@ class Bot(BotBase, diskord.Bot):
     """
     pass
 
-class AutoShardedBot(BotBase, diskord.AutoShardedBot):
+class AutoShardedBot(BotBase, diskord.AutoShardedClient):
     """This is similar to :class:`.Bot` except that it is inherited from
     :class:`diskord.AutoShardedBot` instead.
     """
