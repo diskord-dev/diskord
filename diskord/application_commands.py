@@ -36,6 +36,7 @@ from typing import (
     overload,
     Literal,
 )
+import inspect
 
 from . import utils
 from .enums import (
@@ -66,6 +67,10 @@ __all__ = (
     'MessageCommand',
     'Option',
     'OptionChoice',
+    'slash_option',
+    'slash_command',
+    'user_command',
+    'message_command'
 )
 
 class OptionChoice:
@@ -1481,5 +1486,60 @@ def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
             **attrs
             )
         return func
+
+    return inner
+
+def slash_command(**options) -> SlashCommand:
+    """A decorator that converts a function to :class:`SlashCommand`
+
+    Usage: ::
+
+        @diskord.slash_command(description='My cool slash command.')
+        async def test(ctx):
+            await ctx.send('Hello world')
+    """
+    def inner(func: Callable):
+        if not inspect.iscoroutinefunction(func):
+            raise TypeError('Callback function must be a coroutine.')
+
+        options['name'] = options.get('name') or func.__name__
+
+        return SlashCommand(func, **options)
+
+    return inner
+
+def user_command(**options) -> SlashCommand:
+    """A decorator that converts a function to :class:`UserCommand`
+
+    Usage: ::
+
+        @diskord.user_command()
+        async def test(ctx, user):
+            await ctx.send('Hello world')
+    """
+    def inner(func: Callable):
+        if not inspect.iscoroutinefunction(func):
+            raise TypeError('Callback function must be a coroutine.')
+        options['name'] = options.get('name') or func.__name__
+
+        return UserCommand(func, **options)
+
+    return inner
+
+def message_command(**options) -> SlashCommand:
+    """A decorator that converts a function to :class:`MessageCommand`
+
+    Usage: ::
+
+        @diskord.message_command()
+        async def test(ctx, message):
+            await ctx.send('Hello world')
+    """
+    def inner(func: Callable):
+        if not inspect.iscoroutinefunction(func):
+            raise TypeError('Callback function must be a coroutine.')
+        options['name'] = options.get('name') or func.__name__
+
+        return MessageCommand(func, **options)
 
     return inner
