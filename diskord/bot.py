@@ -668,21 +668,23 @@ def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
         if required is None:
             required = sign.default is inspect._empty
 
+        if not hasattr(func, '__application_command_params__'):
+            unwrap = unwrap_function(func)
+            try:
+                globalns = unwrap.__globals__
+            except AttributeError:
+                globalns = {}
 
-        unwrap = unwrap_function(func)
-        try:
-            globalns = unwrap.__globals__
-        except AttributeError:
-            globalns = {}
+            func.__application_command_params__ = get_signature_parameters(func, globalns)
 
-        params = get_signature_parameters(func, globalns)
+        params = func.__application_command_params__
+
         func.__annotations__[attrs.get('arg', name)] = Option(
             name=name,
             type=params[attrs.get('arg', name)].annotation,
             required=required,
             **attrs
             )
-        print(func.__annotations__)
         return func
 
     return inner
