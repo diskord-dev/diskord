@@ -854,7 +854,7 @@ class ApplicationCommand:
 
             else:
                 value = await self._parse_option(interaction, option)
-                option = self.get_option(option['name'])
+                option = self.get_option(name=option['name'])
                 kwargs[option.arg] = value
 
         if self.cog is not None:
