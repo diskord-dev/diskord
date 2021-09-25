@@ -59,6 +59,7 @@ if TYPE_CHECKING:
 __all__ = (
     'ApplicationCommand',
     'SlashCommand',
+    'SlashCommandChild',
     'SlashSubCommand',
     'SlashSubCommandGroup',
     'UserCommand',
