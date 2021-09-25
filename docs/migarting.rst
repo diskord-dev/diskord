@@ -1,6 +1,7 @@
 :orphan:
 
 .. _discord-intro:
+.. currentmodule:: diskord
 .. versionadded:: 2.0
 
 Migrating to v2.x
