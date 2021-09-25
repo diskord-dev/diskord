@@ -823,8 +823,62 @@ class ApplicationCommand:
     def __str__(self):
         return self.name
 
+SlashChildType = Union[SlashSubCommand, SlashSubCommandGroup]
+
 class SlashCommandChild(Option):
-    pass
+    """
+    Base class for slash commands children like :class:`SlashSubCommandGroup` and
+    :class:`SlashSubCommand`.
+
+    This class subclasses :class:`Option` so all attributes of option class are valid here.
+
+    This class is not meant to be used in general and is here for documentation-purposes only.
+    For general use, Use the subclasses of this class like  :class:`SlashSubCommandGroup` and
+    :class:`SlashSubCommand`.
+    """
+    def __init__(self, callback: Callable,
+        parent: SlashCommand,
+        type: SlashChildType, *,
+        name: str = None,
+        description: str = None,
+    ):
+        super().__init__(
+            name=name or callback.__name__,
+            description=description or callback.__doc__ or 'No description.',
+            type=type
+        )
+        self._type = OptionType.sub_command_group.value
+        self._callback = callback
+        self._parent = parent
+
+    @property
+    def guild_ids(self) -> List[int]:
+        """List[:class:`int`]: Returns the list of guild IDs in which the parent command is registered."""
+        return self.parent.guild_ids
+
+    @property
+    def cog(self):
+        """Optional[:class:`diskord.ext.commands.Cog`]: Returns the cog of the parent. If parent has no cog, Then None is returned."""
+        return self.parent.cog
+
+    @property
+    def parent(self) -> SlashCommand:
+        """:class:`SlashCommand`: The parent command of this child command."""
+        return self._parent
+
+    @property
+    def callback(self) -> SlashCommand:
+        """Callable: The callback function for this child."""
+        return self._callback
+
+    def to_dict(self) -> dict:
+        return {
+            'name': self._name,
+            'description': self._description,
+            'type': self._type,
+            'options': [option.to_dict() for option in self._options],
+        }
+
 
 class SlashSubCommandGroup(SlashCommandChild):
     """Represents a subcommand group of a slash command.
@@ -854,115 +908,90 @@ class SlashSubCommandGroup(SlashCommandChild):
     More command groups can be added in a slash command and similarly, more commands
     can be added into a group.
 
-    Attributes
-    ----------
-
-    name: :class:`str`
-        The name of command group.
-    description: :class:`str`
-        The description of command group.
-    callback: Callable
-        The callback for this command group.
-    parent: :class:`SlashCommand`
-        The parent command for this group.
-    children: List[:class:`SlashSubCommand`]
-        The list of commands this subcommand group holds.
-    guild_ids: List[:class:`int`]
-        A short-hand for :attr:`parent.guild_ids`
-
-        Changing this will have no affect as the guild for a sub-command
-        depend upon the guilds of parent command.
+    *This class inherits :class:`SlashCommandChild` so all attributes valid there are
+    also valid in this class.
     """
     def __init__(self, callback: Callable, parent: SlashCommand, **attrs):
-        self.callback = callback
-        self.parent = parent
-        self.children = []
         super().__init__(
-            name=callback.__name__ or attrs.get('name'),
-            description=callback.__doc__ or attrs.get('description'),
-            type=OptionType.sub_command_group.value,
+            callback,
+            parent,
+            OptionType.sub_command_group.value,
+            **attrs
         )
+        self._children = []
         self._from_data = parent._from_data
 
     # parent attributes
 
     @property
-    def guild_ids(self) -> List[int]:
-        """List[:class:`int`]: Returns the list of guild IDs in which the parent command is registered."""
-        return self.parent.guild_ids
-
-    @property
-    def cog(self):
-        """Optional[:class:`diskord.ext.commands.Cog`]: Returns the cog of the parent. If parent has no cog, Then None is returned."""
-        return self.parent.cog
+    def children(self) -> List[SlashSubCommand]:
+        """List[:class:`SlashSubCommand`]: The list of sub-commands this group has."""
+        return self._children
 
     # children management
 
-    def get_child(self, name: str, /):
-        """
-        Gets a child of this command i.e a subcommand or subcommand group of this command
-        by the child's name.
-
-        Returns ``None`` if the child is not found.
+    def get_child(self, **attrs) -> Optional[SlashCommandChild]:
+        """Gets a child that matches the provided traits.
 
         Parameters
         ----------
-        name: :class:`str`
-            The name of the child.
+        **attrs:
+            The attributes of the child.
 
         Returns
         -------
-        Union[:class:`SlashSubCommand`, :class:`SlashSubGroup`]
-            The required slash subcommand or subcommand group.
+        Optional[:class:`SlashCommandChild`]
+            The option that matched the traits. ``None`` if not found.
         """
-        return (utils.get(self.children, name=name))
+        return utils.get(self._children, **attrs)
 
-    def add_child(self, child: SlashSubCommand, /):
-        """
-        Adds a child i.e subcommand to the command group.
+    def add_child(self, child: SlashCommandChild) -> SlashSubCommand:
+        """Adds a child to this command.
 
-        This shouldn't generally be used. Instead, :func:`sub_command` decorator
-        should be used.
+        This is just a lower-level of :func:`SlashSubCommandGroup.sub_command` decorator.
+        For general usage, Consider using it instead.
 
         Parameters
         ----------
+        child: :class:`SlashCommandChild`
+            The child to append.
 
-        child: :class:`SlashSubCommand`
-            The child to add.
+        Returns
+        -------
+        :class:`SlashCommandChild`
+            The appended child.
         """
-        self.options.append(child)
-        self.children.append(child)
-
-        for opt in child.callback.__annotations__.values():
-            if isinstance(opt, Option):
-                child.add_option(opt)
-
-
+        child.parent = self
+        self._options.append(child)
+        self._children.append(child)
         return child
 
-    def remove_child(self, child: Union[str, SlashSubCommand], /):
-        """Removes a child like sub-command or sub-command group from the command.
+    def remove_child(self, **attrs) -> Optional[SlashCommandChild]:
+        """Removes a child from command that matches the provided traits.
+
+        If child is not found, ``None`` would be returned.
 
         Parameters
         ----------
+        **attrs:
+            The attributes of the child.
 
-        child: Union[:class:`str`, :class:`SlashSubCommand`]
-            The child to remove.
+        Returns
+        -------
+        Optional[:class:`SlashCommandChild`]
+            The removed child. ``None`` if not found.
         """
-        if isinstance(child, str):
-            child = utils.get(self.children, name=child)
+        child = utils.get(self._children, **attrs)
+        if child:
+            self._children.remove(child)
 
-        try:
-            self.children.remove(child)
-        except ValueError:
-            return
+        return child
 
 
     # decorators
 
     def sub_command(self, **attrs):
         """A decorator to register a subcommand in the command group.
-
 
         Usage: ::
 
@@ -977,21 +1006,16 @@ class SlashSubCommandGroup(SlashCommandChild):
             @group.sub_command(description='This is a cool command inside a command group.')
             async def subcommand(ctx):
                 await ctx.send('Hello world!')
+
+        Parameters
+        ----------
+        **attrs:
+            The parameters of :class:`SlashSubCommand`
         """
         def inner(func: Callable):
-            return self.add_child(SlashSubCommand(func, self, **attrs))
+            return self.add_child(SlashSubCommand(func, **attrs))
 
         return inner
-
-    def to_dict(self) -> dict:
-        return {
-            'name': self.name,
-            'description': self.description,
-            'type': OptionType.sub_command_group.value,
-            'options': [option.to_dict() for option in self.options],
-        }
-
-
 
 class SlashSubCommand(SlashCommandChild):
     """Represents a subcommand of a slash command.
@@ -1260,6 +1284,7 @@ class SlashCommand(ApplicationCommand):
             The appended child.
         """
         child.parent = self
+        self._options.append(child)
         self._children.append(child)
         return child
 

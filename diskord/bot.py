@@ -186,7 +186,7 @@ class Bot(Client):
 
         for opt in command.callback.__annotations__.values():
             if isinstance(opt, Option):
-                command.add_option(opt)
+                command.append_option(opt)
 
         return command
 
