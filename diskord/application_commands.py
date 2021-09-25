@@ -34,6 +34,7 @@ from typing import (
     Union,
     Callable,
     overload,
+    Literal,
 )
 
 from . import utils
@@ -172,16 +173,16 @@ class Option:
         self._parent: Union[ApplicationCommand, Option] = None # type: ignore
 
     def __repr__(self):
-        return f'<Option name={self.name!r} description={self.description!r}>'
+        return f'<Option name={self._name!r} description={self._description!r}>'
 
     def __str__(self):
-        return self.name
+        return self._name
 
     # properties
     @property
     def name(self) -> str:
         """:class:`str`: The name of option."""
-        self._name
+        return self._name
 
     @property
     def description(self) -> str:
@@ -215,6 +216,11 @@ class Option:
     def options(self) -> List[Option]:
         """List[:class:`Option`]: The list of sub-options of this option."""
         return self._options
+
+    @property
+    def arg(self) -> str:
+        """:class:`str`: Returns the name of argument that represents this option in callback function."""
+        return self._arg
 
     # Choices management
 
@@ -380,7 +386,7 @@ class Option:
 
     def is_command_or_group(self):
         """:class:`bool`: Indicates whether this option is a subcommand or subgroup."""
-        return self._type in (
+        return self._type.value in (
             OptionType.sub_command.value,
             OptionType.sub_command_group.value,
         )
@@ -390,14 +396,9 @@ class Option:
             'type': self._type.value,
             'name': self._name,
             'description': self._description,
-            'choices': [],
-            'options': [],
+            'choices': [choice.to_dict() for choice in self._choices],
+            'options': [option.to_dict() for option in self._options],
         }
-        if self.choices:
-            dict_['choices'] = [choice.to_dict() for choice in self._choices]
-
-        if self.options:
-            dict_['options'] = [option.to_dict() for option in self._options]
 
         if not self.is_command_or_group():
             # Discord API doesn't allow passing required in the payload of
@@ -515,10 +516,10 @@ class ApplicationCommand:
     """
     def __init__(self, callback: Callable, **attrs: Any):
         self._callback = callback
-        self._name = attrs.get('name') or callback.__name__
-        self._description = attrs.get('description', self.__doc__) or 'No description'
+        self._name = attrs.get('name') or getattr(callback, '__name__', None)
+        self._description = attrs.get('description', callback.__doc__) or 'No description'
         self._guild_ids   = attrs.get('guild_ids', [])
-        self._default_permission = data.get('default_permission')
+        self._default_permission = attrs.get('default_permission')
 
         self._cog = None
         self._id  = None
@@ -549,11 +550,11 @@ class ApplicationCommand:
         self._version: int = utils._get_as_snowflake(data, 'version')
 
         if 'name' in data:
-            self.name = data.get('name')
+            self._name = data.get('name')
         if 'description' in data:
-            self.description = data.get('description')
+            self._description = data.get('description')
         if 'default_permission' in data:
-            self.default_permission = data.get('default_permission')
+            self._default_permission = data.get('default_permission')
 
         return self
 
@@ -580,6 +581,11 @@ class ApplicationCommand:
         for attr in attrs:
             if f'_{attr}' in self.__dict__ and attr in forbidden_keys:
                 setattr(self, f'_{attr}', attrs[attr])
+
+    @property
+    def callback(self) -> Callable:
+        """Callable[..., Any]: Returns the command's callback function."""
+        return self._callback
 
     @property
     def name(self) -> str:
@@ -702,7 +708,7 @@ class ApplicationCommand:
         """
         interaction: Interaction = context.interaction
 
-        if not interaction.data['type'] == self.type:
+        if not interaction.data['type'] == self.type.value:
             raise TypeError(f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}')
 
         if self.type == ApplicationCommandType.user.value:
@@ -767,12 +773,13 @@ class ApplicationCommand:
                 # We will use the name to get the child because
                 # subcommands do not have any ID. They are essentially
                 # just options of a command. And option names are unique
-                subcommand = self.get_child(option['name'])
+
+                subcommand = self.get_child(name=option['name'])
                 sub_options = option.get('options', [])
 
                 for sub_option in sub_options:
                     value = await self._parse_option(interaction, sub_option)
-                    resolved = subcommand.get_option(sub_option['name'])
+                    resolved = subcommand.get_option(name=sub_option['name'])
                     kwargs[resolved.arg] = value
 
 
@@ -791,13 +798,13 @@ class ApplicationCommand:
                 # get the subcommand object.
 
                 subcommand_raw = option['options'][0]
-                group = self.get_child(option['name'])
+                group = self.get_child(name=option['name'])
                 sub_options = subcommand_raw.get('options', [])
-                subcommand = group.get_child(subcommand_raw['name'])
+                subcommand = group.get_child(name=subcommand_raw['name'])
 
                 for sub_option in sub_options:
                     value = await self._parse_option(interaction, sub_option)
-                    resolved = subcommand.get_option(sub_option['name'])
+                    resolved = subcommand.get_option(name=sub_option['name'])
                     kwargs[resolved.arg] = value
 
 
@@ -827,8 +834,6 @@ class ApplicationCommand:
     def __str__(self):
         return self.name
 
-SlashChildType = Union[SlashSubCommand, SlashSubCommandGroup]
-
 class SlashCommandChild(Option):
     """
     Base class for slash commands children like :class:`SlashSubCommandGroup` and
@@ -848,9 +853,8 @@ class SlashCommandChild(Option):
         super().__init__(
             name=name or callback.__name__,
             description=description or callback.__doc__ or 'No description.',
-            type=type
+            type=type,
         )
-        self._type = OptionType.sub_command_group.value
         self._callback = callback
         self._parent = None
 
@@ -878,7 +882,7 @@ class SlashCommandChild(Option):
         return {
             'name': self._name,
             'description': self._description,
-            'type': self._type,
+            'type': self._type.value,
             'options': [option.to_dict() for option in self._options],
         }
 
@@ -917,11 +921,10 @@ class SlashSubCommandGroup(SlashCommandChild):
     def __init__(self, callback: Callable, **attrs):
         super().__init__(
             callback,
-            OptionType.sub_command_group.value,
+            OptionType.sub_command_group,
             **attrs
         )
         self._children = []
-        self._from_data = parent._from_data
 
     # parent attributes
 
@@ -963,9 +966,14 @@ class SlashSubCommandGroup(SlashCommandChild):
         :class:`SlashCommandChild`
             The appended child.
         """
-        child.parent = self
+        child._parent = self
         self._options.append(child)
         self._children.append(child)
+
+        for opt in child.callback.__annotations__.values():
+            if isinstance(opt, Option):
+                child.append_option(opt)
+
         return child
 
     def remove_child(self, **attrs) -> Optional[SlashCommandChild]:
@@ -1043,11 +1051,10 @@ class SlashSubCommand(SlashCommandChild):
     def __init__(self, callback: Callable, **attrs):
         super().__init__(
             callback,
-            OptionType.sub_command_group.value,
+            OptionType.sub_command.value,
             **attrs
         )
         self._parent = None
-        self._from_data = parent._from_data
 
     # Option management
 
@@ -1126,6 +1133,12 @@ class SlashSubCommand(SlashCommandChild):
 
         return option
 
+SlashChildType = Union[
+    Literal[OptionType.sub_command.value],
+    Literal[OptionType.sub_command_group.value]
+    ]
+
+
 class SlashCommand(ApplicationCommand):
     """Represents a slash command.
 
@@ -1152,7 +1165,7 @@ class SlashCommand(ApplicationCommand):
         The children of this commands i.e sub-commands and sub-command groups.
     """
     def __init__(self, callback, **attrs):
-        self._type: ApplicationType = ApplicationCommandType.slash.value
+        self._type: ApplicationType = ApplicationCommandType.slash
         self._options: List[Option] = []
         self._children: List[SlashCommandChild] = []
 
@@ -1285,9 +1298,14 @@ class SlashCommand(ApplicationCommand):
         :class:`SlashCommandChild`
             The appended child.
         """
-        child.parent = self
+        child._parent = self
         self._options.append(child)
         self._children.append(child)
+
+        for opt in child.callback.__annotations__.values():
+            if isinstance(opt, Option):
+                child.append_option(opt)
+
         return child
 
     def remove_child(self, **attrs) -> Optional[SlashCommandChild]:
@@ -1337,7 +1355,7 @@ class SlashCommand(ApplicationCommand):
         Options and other features can be added to the subcommands.
         """
         def inner(func: Callable):
-            return self.add_child(SlashSubCommand(func, self, **attrs))
+            return self.add_child(SlashSubCommand(func, **attrs))
 
         return inner
 
@@ -1360,14 +1378,14 @@ class SlashCommand(ApplicationCommand):
                 await ctx.send('Hello world!')
         """
         def inner(func: Callable):
-            return self.add_child(SlashSubCommandGroup(func, self, **attrs))
+            return self.add_child(SlashSubCommandGroup(func, **attrs))
 
         return inner
 
     def to_dict(self) -> dict:
         dict_ = {
             'name': self._name,
-            'type': self._type,
+            'type': self._type.value,
             'options': [option.to_dict() for option in self._options],
             'description': self._description,
         }
@@ -1382,7 +1400,7 @@ class ContextMenuCommand(ApplicationCommand):
         return {
             'name': self._name,
             'description': self._description,
-            'type': self._type,
+            'type': self._type.value,
         }
 
 
@@ -1398,7 +1416,7 @@ class UserCommand(ApplicationCommand):
     In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.user`
     """
     def __init__(self, callback, **attrs):
-        self._type = ApplicationCommandType.user.value
+        self._type = ApplicationCommandType.user
         super().__init__(callback, **attrs)
 
 class MessageCommand(ApplicationCommand):
@@ -1413,5 +1431,5 @@ class MessageCommand(ApplicationCommand):
     In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.message`
     """
     def __init__(self, callback, **attrs):
-        self._type = ApplicationCommandType.message.value
+        self._type = ApplicationCommandType.message
         super().__init__(callback, **attrs)

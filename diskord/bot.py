@@ -313,11 +313,11 @@ class Bot(Client):
         else:
             command = await self.http.get_global_command(self.user.id, command_id)
 
-        resolved = ApplicationCommand(None, self)._from_data(command) # type: ignore
+        resolved = ApplicationCommand(None)._from_data(command) # type: ignore
         cached = self.get_application_command(int(command['id']))
         if cached:
-            resolved.guild_ids = cached.guild_ids
-            resolved.callback  = cached.callback
+            resolved._guild_ids = cached.guild_ids
+            resolved._callback  = cached.callback
 
         return resolved
 
