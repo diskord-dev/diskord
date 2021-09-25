@@ -32,6 +32,7 @@ from typing import (
 )
 import inspect
 import logging
+import functools
 
 from . import utils
 from .interactions import InteractionContext
@@ -48,7 +49,7 @@ from .enums import (
     ApplicationCommandType,
     OptionType,
     )
-from .errors import ApplicationCommandError
+from .errors import ApplicationCommandError, Forbidden
 from .member import Member
 from .user import User
 from .message import Message
@@ -59,6 +60,37 @@ if TYPE_CHECKING:
 
 _log = logging.getLogger(__name__)
 MISSING = utils.MISSING
+
+# internal helpers
+
+def unwrap_function(function: Callable[..., Any]) -> Callable[..., Any]:
+    partial = functools.partial
+    while True:
+        if hasattr(function, '__wrapped__'):
+            function = function.__wrapped__
+        elif isinstance(function, partial):
+            function = function.func
+        else:
+            return function
+
+def get_signature_parameters(function: Callable[..., Any], globalns: Dict[str, Any]) -> Dict[str, inspect.Parameter]:
+    signature = inspect.signature(function)
+    params = {}
+    cache: Dict[str, Any] = {}
+    eval_annotation = utils.evaluate_annotation
+    for name, parameter in signature.parameters.items():
+        annotation = parameter.annotation
+        if annotation is parameter.empty:
+            params[name] = parameter
+            continue
+        if annotation is None:
+            params[name] = parameter.replace(annotation=type(None))
+            continue
+
+        annotation = eval_annotation(annotation, globalns, globalns, cache)
+        params[name] = parameter.replace(annotation=annotation)
+
+    return params
 
 
 class Bot(Client):
@@ -152,8 +184,13 @@ class Bot(Client):
         command.bot = self
         self._pending_commands.append(command)
 
-        for opt in command.callback.__annotations__:
-            command.add_option(command.callback.__annotations__[opt])
+        unwrap = unwrap_function(command.callback)
+        globalns = getattr(unwrap, '__globals__', {})
+        params = get_signature_parameters(command.callback, globalns)
+
+        for opt in params:
+            if not params[opt].annotation is inspect._empty:
+                command.add_option(params[opt].annotation)
 
         return command
 
@@ -631,12 +668,21 @@ def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
         if required is None:
             required = sign.default is inspect._empty
 
-        func.__annotations__[name] = Option(
+
+        unwrap = unwrap_function(func)
+        try:
+            globalns = unwrap.__globals__
+        except AttributeError:
+            globalns = {}
+
+        params = get_signature_parameters(func, globalns)
+        func.__annotations__[attrs.get('arg', name)] = Option(
             name=name,
-            type=type_,
+            type=params[attrs.get('arg', name)].annotation,
             required=required,
             **attrs
             )
+        print(func.__annotations__)
         return func
 
     return inner
