@@ -57,6 +57,7 @@ __all__ = (
     'RawReactionClearEmojiEvent',
     'RawIntegrationDeleteEvent',
     'RawThreadDeleteEvent',
+    'RawTypingEvent',
 )
 
 
@@ -333,11 +334,10 @@ class RawTypingEvent(_RawReprMixin):
         The time when the typing was started.
     """
     __slots__ = ('user_id', 'channel_id', 'started_at')
-    
+
     def __init__(self, data: TypingEvent):
         self.user_id: int = _get_as_snowflake(data, 'user_id')
         self.channel_id: int = _get_as_snowflake(data, 'channel_id')
         self.started_at: datetime.datetime = datetime.datetime.fromtimestamp(
             data.get('timestamp'), tz=datetime.timezone.utc
             )
-        
