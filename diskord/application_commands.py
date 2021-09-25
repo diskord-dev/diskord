@@ -69,14 +69,15 @@ __all__ = (
 class OptionChoice:
     """Represents an option choice for an application command's option.
 
-
     Attributes
     ----------
 
     name: :class:`str`
-        The name of choice.
+        The name of choice. Will be shown on command explorer.
     value: :class:`str`
-        The value of the choice.
+        A user-set value of the choice. Will be passed in the command's callback.
+    option: :class:`Option`
+        The parent option of this choice.
     """
     @overload
     def __init__(self, *,
@@ -88,6 +89,8 @@ class OptionChoice:
     def __init__(self, *, name: str, value: str):
         self.name  = name
         self.value = value
+
+        self.option: Option = None # type: ignore
 
     def to_dict(self) -> dict:
         return {
@@ -112,34 +115,57 @@ class OptionChoice:
 class Option:
     """Represents an option for an application slash command.
 
-    Attributes
-    ----------
+    This class is generally not initialized manually, Instead :func:`.option` decorator
+    interface is used.
 
-    type: :class:`OptionType`
-        The type of the option.
+    .. info::
+        All parameters except ``name`` and ``description`` are optional.
+
+    Parameters
+    ----------
     name: :class:`str`
         The name of option.
     description: :class:`str`
-        The description of option.
+        The description of option. Defaults to ``No description``
+    type: :class:`OptionType`
+        The type of the option. Defaults to :attr:`OptionType.string`
+        While using :func:`.option` decorator, This is determined by type or annotation
+        of relevant argument of parent command callback function.
     required: :class:`bool`
-        Whether this option is required or not.
+        Whether this option is required or not. Defaults to ``True``
+        While using :func:`.option` decorator, This is determined by the argument
+        of parent command callback function.
+    arg: :class:`str`
+        The argument name which represents this option in callback function.
     choices: List[:class:`OptionChoice`]
         The list of choices this option has.
-    options: List[:class:`Option`]
-        The options if the type is a subcommand or subcommand group.
-    """
-    def __init__(self, **data):
-        try:
-            self.type: OptionType = OptionType.from_datatype(data.get('type'))
-        except TypeError:
-            self.type: OptionType = data.get('type')
 
-        self.name: str = data.get('name')
-        self.description: str = data.get('description')
-        self.required: bool = data.get('required', False)
-        self.choices: List[OptionType] = data.get('choices', [])
-        self.options: List[Option] = data.get('options', [])
-        self.arg: str = data.get('arg', self.name)
+    """
+    def __init__(self, *,
+        name: str,
+        description: str = None,
+        type: OptionType = str,
+        choices: List[OptionChoice] = None,
+        required: bool = True,
+        arg: str = None,
+    ):
+        try:
+            self._type: OptionType = OptionType.from_datatype(type)
+        except TypeError:
+            self._type: OptionType = type
+
+        self._name = name
+        self._description = description or "No description"
+        self._required = required
+        self._arg = arg or self.name
+
+        self._choices: List[OptionChoice] = choices
+        if self._choices is None:
+            self._choices = []
+
+        self._options: List[Option] = []
+
+        self._parent: Union[ApplicationCommand, Option] = None # type: ignore
 
     def __repr__(self):
         return f'<Option name={self.name!r} description={self.description!r}>'
@@ -147,29 +173,232 @@ class Option:
     def __str__(self):
         return self.name
 
+    # properties
+    @property
+    def name(self) -> str:
+        """:class:`str`: The name of option."""
+        self._name
+
+    @property
+    def description(self) -> str:
+        """:class:`str`: The description of option."""
+        return self._description
+
+    @property
+    def type(self) -> OptionType:
+        """:class:`OptionType`: The :class:`OptionType` of the option."""
+        return self._type
+
+    @property
+    def required(self) -> bool:
+        """:class:`bool`: Whether the option is required or not."""
+        return self._required
+
+    @property
+    def parent(self) -> Union[ApplicationCommand, Option]:
+        """
+        Union[:class:`ApplicationCommand`, :class:`Option`]: The parent of
+        this option i.e the command or sub-command.
+        """
+        return self._parent
+
+    @property
+    def choices(self) -> List[OptionChoice]:
+        """List[:class:`OptionChoice`]: The list of choices of this option."""
+        return self._choices
+
+    @property
+    def options(self) -> List[Option]:
+        """List[:class:`Option`]: The list of sub-options of this option."""
+        return self._options
+
+    # Choices management
+
+    def get_choice(self, **attrs) -> Optional[OptionChoice]:
+        """Gets a choice that matches the provided traits.
+
+        Parameters
+        ----------
+        name: :class:`str`
+            The name of choice.
+        value: :class:`str`
+            The value of choice.
+
+        Returns
+        -------
+        Optional[:class:`OptionChoice`]
+            The removed choice. ``None`` if not found.
+        """
+        return utils.get(self._choices, **attrs)
+
+    def add_choice(self, *, index: int = -1, **attrs) -> OptionChoice:
+        """Adds a choice to option.
+
+        To append a choice, Use :func:`Option.append_choice`.
+
+        Parameters
+        ----------
+        name: :class:`str`
+            The name of choice. Will be shown on command explorer.
+        value: :class:`str`
+            A user-set value of the choice. Will be passed in the command's callback.
+        index: :class:`int`
+            The position to insert the choice at.
+
+        Returns
+        -------
+        :class:`OptionChoice`
+            The added choice.
+        """
+        choice = OptionChoice(**attrs)
+        choice.option = self
+        self._choices.insert(index, choice)
+        return choice
+
+    def append_choice(self, choice: OptionChoice) -> OptionChoice:
+        """Appends a choice to option's choice.
+
+        Parameters
+        ----------
+        choice: :class:`OptionChoice`
+            The choice to append.
+
+        Returns
+        -------
+        :class:`OptionChoice`
+            The appended choice.
+        """
+        choice.option = self
+        self._choices.append(choice)
+        return choice
+
+    def remove_choice(self, **attrs) -> Optional[OptionChoice]:
+        """Removes the choice that matches the provided traits.
+
+        At least one of ``name`` or ``value`` parameter must be provided.
+
+        If choice is not found, ``None`` would be returned.
+
+        Parameters
+        ----------
+        name: :class:`str`
+            The name of choice.
+        value: :class:`str`
+            The value of choice.
+
+        Returns
+        -------
+        Optional[:class:`OptionChoice`]
+            The removed choice. ``None`` if not found.
+        """
+        choice = utils.get(self._choices, **attrs)
+        if choice:
+            self._choices.remove(choice)
+
+        return choice
+
+    # Options management
+
+    def get_option(self, **attrs) -> Optional[Option]:
+        """Gets an option that matches the provided traits.
+
+        Parameters
+        ----------
+        **attrs:
+            The attributes of the :class:`Option`.
+
+        Returns
+        -------
+        Optional[:class:`OptionChoice`]
+            The option that matched the traits. ``None`` if not found.
+        """
+        return utils.get(self._options, **attrs)
+
+    def add_option(self, *, index: int = -1, **attrs) -> Option:
+        """Adds a sub-option to option.
+
+        To append an option, Use :func:`Option.append_option`.
+
+        Parameters
+        ----------
+        index: :class:`int`
+            The index to insert at. Defaults to ``-1`` aka end of options list.
+        **attrs:
+            The attributes of the :class:`Option`.
+
+        Returns
+        -------
+        :class:`Option`
+            The added choice.
+        """
+        option = Option(**attrs)
+        option.parent = self
+        self._options.insert(index, option)
+        return option
+
+    def append_option(self, option: Option) -> Option:
+        """Appends a sub-option to end of sub-options list.
+
+        Parameters
+        ----------
+        option: :class:`Option`
+            The option to append.
+
+        Returns
+        -------
+        :class:`Option`
+            The appended option.
+        """
+        option.parent = self
+        self._options.append(option)
+        return option
+
+    def remove_option(self, **attrs) -> Optional[Option]:
+        """Removes the sub-option that matches the provided traits.
+
+        If option is not found, ``None`` would be returned.
+
+        Parameters
+        ----------
+        **attrs:
+            The attributes of the :class:`Option`.
+
+        Returns
+        -------
+        Optional[:class:`Option`]
+            The removed choice. ``None`` if not found.
+        """
+        option = utils.get(self._options, **attrs)
+        if option:
+            self._options.remove(option)
+
+        return option
+
     def is_command_or_group(self):
         """:class:`bool`: Indicates whether this option is a subcommand or subgroup."""
-        return self.type in (
+        return self._type in (
             OptionType.sub_command.value,
             OptionType.sub_command_group.value,
         )
 
     def to_dict(self) -> dict:
         dict_ = {
-            'type': self.type.value,
-            'name': self.name,
-            'description': self.description,
+            'type': self._type.value,
+            'name': self._name,
+            'description': self._description,
             'choices': [],
             'options': [],
         }
         if self.choices:
-            dict_['choices'] = [choice.to_dict() for choice in self.choices]
+            dict_['choices'] = [choice.to_dict() for choice in self._choices]
 
         if self.options:
-            dict_['options'] = [option.to_dict() for option in self.options]
+            dict_['options'] = [option.to_dict() for option in self._options]
 
         if not self.is_command_or_group():
-            dict_['required'] = self.required
+            # Discord API doesn't allow passing required in the payload of
+            # options that have type of 1 or 2.
+            dict_['required'] = self._required
 
         return dict_
 
@@ -260,63 +489,168 @@ class ApplicationCommand:
     """Represents an application command. This is base class for all application commands like
     slash commands, user commands etc.
 
-    Attributes
+    Parameters
     ----------
     callback: Callable
         The callback function for this command.
     name: :class:`str`
         The name of the command. Defaults to callback's name.
     description: :class:`str`
-        The description of this command. Defaults to the docstring of the callback.
-    guild_ids: Union[:class:`tuple`, :class:`list`]
-        The guild this command will be registered in. Defaults to an empty list for global commands.
-    type: :class:`ApplicationCommandType`
-        The type of application command.
-    id: :class:`int`
-        The ID of the command. This can be ``None``.
-    application_id: :class:`int`
-        The ID of the application command belongs to. This can be ``None``.
-    default_permission: :class:`bool`
-        Whether the command will be enabled by default or not when added to a guild.
-    version: :class:`int`
-        The version of command. Can be ``None``
-    cog: :class:`diskord.ext.commands.Cog`
-        The cog this command is defined in, This will be ``None`` if the command isn't
-        defined in any cog.
-    """
-    def __init__(self, callback: Callable, **attrs):
-        self.bot = attrs.get('bot')
-        self.callback = callback
-        self.name = attrs.get('name') or callback.__name__
-        self.description = attrs.get('description') or self.callback.__doc__
-        self.guild_ids = attrs.get('guild_ids', [])
-        self.cog = None
+        The description of this command. Defaults to the docstring of the callback if found.
+        otherwise defaults to ``"No description"``
 
-        if self.type in (
+        .. note::
+            Due to Discord's Limitation, In the case of :class:`MessageCommand` and
+            :class:`UserCommand`, This attribute is always an empty string.
+    guild_ids: List[:class:`int`]
+        The guild this command will be registered in. Defaults to an empty list for
+        global command.
+    default_permission: :class:`bool`
+        Whether the command will be enabled by default or not.
+        If this is set to ``False`` no one can use this command, Not even guild adminstators.
+    """
+    def __init__(self, callback: Callable, **attrs: Any):
+        self._callback = callback
+        self._name = attrs.get('name') or callback.__name__
+        self._description = attrs.get('description', self.__doc__) or 'No description'
+        self._guild_ids   = attrs.get('guild_ids', [])
+        self._default_permission = data.get('default_permission')
+
+        self._cog = None
+        self._id  = None
+        self._application_id = None
+        self._version = None
+        self._bot = None
+
+
+        if self._type in (
             ApplicationCommandType.user.value,
             ApplicationCommandType.message.value,
         ):
             # Message and User Commands do not have any description.
-            # Ref: https://discord.com/developers/docs/interactions/application-commands#user-commands
-            # Ref: https://discord.com/developers/docs/interactions/application-commands#message-commands
+            # Ref:
+            # https://discord.com/developers/docs/interactions/application-commands#user-commands
+            # https://discord.com/developers/docs/interactions/application-commands#message-commands
 
             self.description = ''
 
-        self._from_data(attrs)
+    def is_global_command(self) -> bool:
+        """:class:`bool`: Whether the command is global command or not."""
+        return bool(self._guild_ids)
 
     def _from_data(self, data: ApplicationCommandPayload) -> ApplicationCommand:
-        self.id: int = utils._get_as_snowflake(data, 'id')
-        self.application_id: int = utils._get_as_snowflake(data, 'application_id')
-        self.guild_id: int = utils._get_as_snowflake(data, 'guild_id')
-        self.default_permission: bool = data.get('default_permission')
-        self.version: int = utils._get_as_snowflake(data, 'version')
+        self._id: int = utils._get_as_snowflake(data, 'id')
+        self._application_id: int = utils._get_as_snowflake(data, 'application_id')
+        self._guild_id: int = utils._get_as_snowflake(data, 'guild_id')
+        self._version: int = utils._get_as_snowflake(data, 'version')
 
         if 'name' in data:
             self.name = data.get('name')
         if 'description' in data:
             self.description = data.get('description')
+        if 'default_permission' in data:
+            self.default_permission = data.get('default_permission')
 
         return self
+
+    def update(self, **attrs) -> ApplicationCommand:
+        """Updates the command with new traits provided in ``attrs``
+
+        Parameters
+        ----------
+        **attrs:
+            The new attributes to update command with.
+
+        Returns
+        -------
+        :class:`ApplicationCommand`
+            The new commands.
+        """
+        forbidden_keys = (
+            'id',
+            'guild_id',
+            'application_id',
+            'version',
+            'cog'
+        )
+        for attr in attrs:
+            if f'_{attr}' in self.__dict__ and attr in forbidden_keys:
+                setattr(self, f'_{attr}', attrs[attr])
+
+    @property
+    def name(self) -> str:
+        """:class:`str`: The name of application command."""
+        return self._name
+
+    @property
+    def description(self) -> str:
+        """:class:`description`: The description of application command."""
+        return self._description
+
+    @property
+    def guild_ids(self) -> List[int]:
+        """List[:class:`int`]: The list of guild IDs in which this command will/was register.
+
+        Unlike :attr:`ApplicationCommand.guild_id` this is the list of guild IDs in which command
+        will register on the bot's connect.
+        """
+        return self._guild_ids
+
+    @property
+    def guild_id(self) -> int:
+        """:class:`int`: The ID of the guild this command belongs to.
+
+        Every command is stored per-guild basis and this attribute represents that guild's ID.
+        To get the list of guild IDs in which this command was initially registered, use
+        :attr:`ApplicationCommand.guild_id`
+        """
+        return self._guild_id
+
+    @property
+    def type(self) -> ApplicationCommandType:
+        """:class:`ApplicationCommandType`: Returns the type of application command."""
+        return self._type
+
+    @property
+    def default_permission(self) -> bool:
+        """
+        :class:`bool`: Returns the default permission of this command. Default permission
+        means whether this command will be enabled by default or not. ``False`` indicates
+        that this command is not useable by default.
+        """
+        return self._default_permission
+
+    @property
+    def id(self) -> Optional[int]:
+        """
+        Optional[:class:`int`]: The unique ID of this command. This is usually ``None`` before command
+        registration.
+        """
+        return self._id
+
+    @property
+    def application_id(self) -> Optional[int]:
+        """
+        Optional[:class:`int`]: The ID of application that owns this command usually :attr:`ClientUser.id`.
+        This is usually ``None`` before command registration.
+        """
+        return self._application_id
+
+    @property
+    def version(self) -> Optional[int]:
+        """
+        Optional[:class:`int`]: The unique version of the application command. Usually
+        :attr:`ApplicationCommand.id`
+        """
+        return self._version
+
+    @property
+    def cog(self):
+        """
+        Optional[:class:`ext.commands.Cog`]: Returns the cog in which this command was
+        registered. If command has no cog, then ``None`` is returned.
+        """
+        return self._cog
 
     async def _parse_option(self, interaction: Interaction, option: ApplicationCommandOptionPayload) -> Any:
         # This function isn't needed to be a coroutine function but it can be helpful in
@@ -489,7 +823,10 @@ class ApplicationCommand:
     def __str__(self):
         return self.name
 
-class SlashSubCommandGroup(Option):
+class SlashCommandChild(Option):
+    pass
+
+class SlashSubCommandGroup(SlashCommandChild):
     """Represents a subcommand group of a slash command.
 
     A slash subcommand group holds subcommands of that group.
@@ -656,7 +993,7 @@ class SlashSubCommandGroup(Option):
 
 
 
-class SlashSubCommand(Option):
+class SlashSubCommand(SlashCommandChild):
     """Represents a subcommand of a slash command.
 
     This can be registered using :func:`SlashCommand.sub_command` decorator.
@@ -767,16 +1104,15 @@ class SlashCommand(ApplicationCommand):
     """Represents a slash command.
 
     A slash command is a user input command that a user can use by typing ``/`` in
-    the chat.
+    the chat bar.
 
     This class inherits from :class:`ApplicationCommand` so all attributes valid
     there are valid here too.
 
-    In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.slash`
+    In this class, The :attr:`SlashCommand.type` attribute will always be :attr:`ApplicationCommandType.slash`
 
     Attributes
     ----------
-
     type: :class:`ApplicationCommandType`
         The type of command, Always :attr:`ApplicationCommandType.slash`
     options: List[:class:`Option`]
@@ -790,9 +1126,9 @@ class SlashCommand(ApplicationCommand):
         The children of this commands i.e sub-commands and sub-command groups.
     """
     def __init__(self, callback, **attrs):
-        self.type = ApplicationCommandType.slash.value
-        self.options: List[Option] = []
-        self.children: List[SlashSubCommand, SlashSubCommandGroup] = []
+        self._type: ApplicationType = ApplicationCommandType.slash.value
+        self._options: List[Option] = []
+        self._children: List[SlashCommandChild] = []
 
         # To stay consistent with the discord.ext.commands models, I added this
         # parent attribute here which will always be None in case of this.
@@ -801,119 +1137,152 @@ class SlashCommand(ApplicationCommand):
 
         super().__init__(callback, **attrs)
 
-    def get_option(self, name: str) -> Optional[Option]:
-        """Gets an option by it's name.
+    @property
+    def type(self) -> ApplicationCommandType:
+        """:class:`ApplicationCommandType`: The type of command. Always :attr:`ApplicatiionCommandType.slash`"""
+        return self._type
 
-        This function returns None if the option is not found.
+    @property
+    def options(self) -> List[Option]:
+        """List[:class:`Option`]: The list of options this command has."""
+        return self._options
+
+    @property
+    def children(self) -> List[Option]:
+        """List[:class:`SlashSubCommand`, :class:`SlashSubCommandGroup`]: The list of children this command has."""
+        return self._children
+
+    # Option management
+
+    def get_option(self, **attrs) -> Optional[Option]:
+        """Gets an option that matches the provided traits.
 
         Parameters
         ----------
-        name: :class:`str`
-            The name of option
+        **attrs:
+            The attributes of the :class:`Option`.
 
         Returns
         -------
-        Optional[:class:`Option`]:
-            The required option.
+        Optional[:class:`OptionChoice`]
+            The option that matched the traits. ``None`` if not found.
         """
-        return utils.get(self.options, name=name)
+        return utils.get(self._options, **attrs)
 
+    def add_option(self, *, index: int = -1, **attrs) -> Option:
+        """Adds a sub-option to option.
 
-    def add_option(self, option: Option) -> Option:
-        """Adds an option to this slash command.
+        To append an option, Use :func:`Option.append_option`.
 
         Parameters
         ----------
-        option: :class:`Option`
-            The option to add.
+        index: :class:`int`
+            The index to insert at. Defaults to ``-1`` aka end of options list.
+        **attrs:
+            The attributes of the :class:`Option`.
 
         Returns
         -------
         :class:`Option`
-            The added option.
-
+            The added choice.
         """
-        if not isinstance(option, Option):
-            raise TypeError('option must be an instance of Option class. Got %s' % option.__class__.__name__)
-
-        self.options.append(option)
+        option = Option(**attrs)
+        option.parent = self
+        self._options.insert(index, option)
         return option
 
-    def remove_option(self, name: str, /):
-        """Removes an option from the command by it's name.
-
-        If an error is raised, then it is silently swallowed by this function.
+    def append_option(self, option: Option) -> Option:
+        """Appends a sub-option to end of sub-options list.
 
         Parameters
         ----------
-        name: :class:`str`
-            The name of option.
-        """
-        try:
-            self.options.remove(utils.get(self.options), name=name)
-        except ValueError:
-            return
-
-
-    # children management
-
-    def get_child(self, name: str, /):
-        """
-        Gets a child of this command i.e a subcommand or subcommand group of this command
-        by the child's name.
-
-        Returns ``None`` if the child is not found.
-
-        Parameters
-        ----------
-        name: :class:`str`
-            The name of the child.
+        option: :class:`Option`
+            The option to append.
 
         Returns
         -------
-        Union[:class:`SlashSubCommand`, :class:`SlashSubGroup`]
-            The required slash subcommand or subcommand group.
+        :class:`Option`
+            The appended option.
         """
-        return (utils.get(self.children, name=name))
+        option.parent = self
+        self._options.append(option)
+        return option
 
-    def add_child(self, child: SlashSubCommand, /):
-        """
-        Adds a child i.e subcommand to the command group.
+    def remove_option(self, **attrs) -> Optional[Option]:
+        """Removes the sub-option that matches the provided traits.
 
-        This shouldn't generally be used. Instead, :func:`sub_command` decorator
-        should be used.
+        If option is not found, ``None`` would be returned.
 
         Parameters
         ----------
+        **attrs:
+            The attributes of the :class:`Option`.
 
-        child: :class:`SlashSubCommand`
-            The child to add.
+        Returns
+        -------
+        Optional[:class:`Option`]
+            The removed choice. ``None`` if not found.
         """
-        self.options.append(child)
-        self.children.append(child)
+        option = utils.get(self._options, **attrs)
+        if option:
+            self._options.remove(option)
 
-        for opt in child.callback.__annotations__.values():
-            if isinstance(opt, Option):
-                child.add_option(opt)
+        return option
 
+    # children management
 
+    def get_child(self, **attrs) -> Optional[SlashCommandChild]:
+        """Gets a child that matches the provided traits.
+
+        Parameters
+        ----------
+        **attrs:
+            The attributes of the child.
+
+        Returns
+        -------
+        Optional[:class:`SlashCommandChild`]
+            The option that matched the traits. ``None`` if not found.
+        """
+        return utils.get(self._children, **attrs)
+
+    def add_child(self, child: SlashCommandChild) -> SlashSubCommand:
+        """Adds a child to this command.
+
+        Parameters
+        ----------
+        child: :class:`SlashCommandChild`
+            The child to append.
+
+        Returns
+        -------
+        :class:`SlashCommandChild`
+            The appended child.
+        """
+        child.parent = self
+        self._children.append(child)
         return child
 
-    def remove_child(self, name: str, /):
-        """Removes a child like sub-command or sub-command group from the command.
+    def remove_child(self, **attrs) -> Optional[SlashCommandChild]:
+        """Removes a child from command that matches the provided traits.
+
+        If child is not found, ``None`` would be returned.
 
         Parameters
         ----------
+        **attrs:
+            The attributes of the child.
 
-        child: :class:`str`
-            The child to remove.
+        Returns
+        -------
+        Optional[:class:`SlashCommandChild`]
+            The removed child. ``None`` if not found.
         """
-        child = utils.get(self.children, name=name)
+        child = utils.get(self._children, **attrs)
+        if child:
+            self._children.remove(child)
 
-        try:
-            self.children.remove(child)
-        except ValueError:
-            return
+        return child
 
 
     # decorators
@@ -970,10 +1339,10 @@ class SlashCommand(ApplicationCommand):
 
     def to_dict(self) -> dict:
         dict_ = {
-            'name': self.name,
-            'type': self.type,
-            'options': [option.to_dict() for option in self.options],
-            'description': self.description,
+            'name': self._name,
+            'type': self._type,
+            'options': [option.to_dict() for option in self._options],
+            'description': self._description,
         }
 
         return dict_

@@ -463,7 +463,7 @@ class Cog(metaclass=CogMeta):
                     raise e
 
         for index, command in enumerate(self.__cog_application_commands__):
-            command.cog = self
+            command._cog = self
 
             try:
                 bot.add_pending_command(command)
