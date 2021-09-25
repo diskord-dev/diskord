@@ -3809,6 +3809,14 @@ OptionChoice
 .. autoclass:: OptionChoice()
     :members:
 
+SlashCommandChild
+~~~~~~~~~~~~~~~~~
+
+.. attributetable:: SlashCommandChild
+.. autoclass:: SlashCommandChild()
+    :members:
+    :inherited-members:
+
 SlashSubCommand
 ~~~~~~~~~~~~~~~
 
