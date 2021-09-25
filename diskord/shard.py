@@ -54,7 +54,6 @@ if TYPE_CHECKING:
 
 __all__ = (
     'AutoShardedClient',
-    'AutoShardedBot',
     'ShardInfo',
 )
 
