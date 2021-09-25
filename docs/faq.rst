@@ -81,13 +81,13 @@ General questions regarding library usage belong here.
 Old application commands are not getting removed after I remove them from code!
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This is normal, You can simply override :func:`on_connect` event and do:
+This is normal, You can simply override :func:`on_connect` event and set ``delete_unregistered_commands`` to ``True``:
 
 Usage: ::
     
     @client.event
     async def on_connect():
-        client.sync_application_commands(delete_unregistered_commands=True)
+        await client.sync_application_commands(delete_unregistered_commands=True)
 
 Why do I get error: "Invalid Interaction Application Command"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
