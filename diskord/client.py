@@ -30,7 +30,6 @@ import signal
 import sys
 import traceback
 import inspect
-import functools
 import aiohttp
 from typing import Any, Callable, Coroutine, Dict, Generator, List, Optional, Sequence, TYPE_CHECKING, Tuple, TypeVar, Union
 
@@ -121,36 +120,6 @@ def _cleanup_loop(loop: asyncio.AbstractEventLoop) -> None:
     finally:
         _log.info('Closing the event loop.')
         loop.close()
-
-def unwrap_function(function: Callable[..., Any]) -> Callable[..., Any]:
-    partial = functools.partial
-    while True:
-        if hasattr(function, '__wrapped__'):
-            function = function.__wrapped__
-        elif isinstance(function, partial):
-            function = function.func
-        else:
-            return function
-
-def get_signature_parameters(function: Callable[..., Any], globalns: Dict[str, Any]) -> Dict[str, inspect.Parameter]:
-    signature = inspect.signature(function)
-    params = {}
-    cache: Dict[str, Any] = {}
-    eval_annotation = utils.evaluate_annotation
-    for name, parameter in signature.parameters.items():
-        annotation = parameter.annotation
-        if annotation is parameter.empty:
-            params[name] = parameter
-            continue
-        if annotation is None:
-            params[name] = parameter.replace(annotation=type(None))
-            continue
-
-        annotation = eval_annotation(annotation, globalns, globalns, cache)
-        params[name] = parameter.replace(annotation=annotation)
-
-    return params
-
 
 class Client:
     r"""

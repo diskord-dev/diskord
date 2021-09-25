@@ -812,7 +812,7 @@ class InteractionContext:
     def __init__(self, client: Client, interaction: Interaction) -> None:
         self.client = client
         # bot alias exists for being consistent commands.Bot models
-        self.bot = bot
+        self.bot = client
         self.interaction = interaction
 
     @property
