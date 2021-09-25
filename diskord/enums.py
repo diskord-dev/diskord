@@ -623,6 +623,9 @@ class OptionType(Enum, comparable=True):
     mentionable = 9
     number  = 10
 
+    # aliases
+    command_group = 2
+
     @classmethod
     def from_datatype(cls, type_: Any, /):
         if isinstance(type_, int):

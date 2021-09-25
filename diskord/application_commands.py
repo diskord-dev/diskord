@@ -61,7 +61,7 @@ __all__ = (
     'SlashCommand',
     'SlashCommandChild',
     'SlashSubCommand',
-    'SlashSubCommandGroup',
+    'SlashCommandGroup',
     'UserCommand',
     'MessageCommand',
     'Option',
@@ -837,13 +837,13 @@ class ApplicationCommand:
 
 class SlashCommandChild(Option):
     """
-    Base class for slash commands children like :class:`SlashSubCommandGroup` and
+    Base class for slash commands children like :class:`SlashCommandGroup` and
     :class:`SlashSubCommand`.
 
     This class subclasses :class:`Option` so all attributes of option class are valid here.
 
     This class is not meant to be used in general and is here for documentation-purposes only.
-    For general use, Use the subclasses of this class like  :class:`SlashSubCommandGroup` and
+    For general use, Use the subclasses of this class like  :class:`SlashCommandGroup` and
     :class:`SlashSubCommand`.
     """
     def __init__(self, callback: Callable,
@@ -888,7 +888,7 @@ class SlashCommandChild(Option):
         }
 
 
-class SlashSubCommandGroup(SlashCommandChild):
+class SlashCommandGroup(SlashCommandChild):
     """Represents a subcommand group of a slash command.
 
     A slash subcommand group holds subcommands of that group.
@@ -916,8 +916,8 @@ class SlashSubCommandGroup(SlashCommandChild):
     More command groups can be added in a slash command and similarly, more commands
     can be added into a group.
 
-    *This class inherits :class:`SlashCommandChild` so all attributes valid there are
-    also valid in this class.*
+    This class inherits :class:`SlashCommandChild` so all attributes valid there are
+    also valid in this class.
     """
     def __init__(self, callback: Callable, **attrs):
         super().__init__(
@@ -954,7 +954,7 @@ class SlashSubCommandGroup(SlashCommandChild):
     def add_child(self, child: SlashCommandChild) -> SlashSubCommand:
         """Adds a child to this command.
 
-        This is just a lower-level of :func:`SlashSubCommandGroup.sub_command` decorator.
+        This is just a lower-level of :func:`SlashCommandGroup.sub_command` decorator.
         For general usage, Consider using it instead.
 
         Parameters
@@ -1032,7 +1032,7 @@ class SlashSubCommand(SlashCommandChild):
     """Represents a subcommand of a slash command.
 
     This can be registered using :func:`SlashCommand.sub_command` or
-    :func:`SlashSubCommandGroup.sub_command` decorator.
+    :func:`SlashCommandGroup.sub_command` decorator.
 
     Example: ::
 
@@ -1046,8 +1046,8 @@ class SlashSubCommand(SlashCommandChild):
 
     The usage of above command would be like ``/git push``.
 
-    *This class inherits :class:`SlashCommandChild` so all attributes valid there are
-    also valid in this class.*
+    This class inherits :class:`SlashCommandChild` so all attributes valid there are
+    also valid in this class.
     """
     def __init__(self, callback: Callable, **attrs):
         super().__init__(
@@ -1162,7 +1162,7 @@ class SlashCommand(ApplicationCommand):
             To get only the children i.e sub-commands and sub-command groups,
             Consider using :attr:`children`
 
-    children: List[:class:`SlashSubCommand`, `SlashSubCommandGroup`]
+    children: List[:class:`SlashSubCommand`, `SlashCommandGroup`]
         The children of this commands i.e sub-commands and sub-command groups.
     """
     def __init__(self, callback, **attrs):
@@ -1189,7 +1189,7 @@ class SlashCommand(ApplicationCommand):
 
     @property
     def children(self) -> List[Option]:
-        """List[:class:`SlashSubCommand`, :class:`SlashSubCommandGroup`]: The list of children this command has."""
+        """List[:class:`SlashSubCommand`, :class:`SlashCommandGroup`]: The list of children this command has."""
         return self._children
 
     # Option management
@@ -1379,7 +1379,7 @@ class SlashCommand(ApplicationCommand):
                 await ctx.send('Hello world!')
         """
         def inner(func: Callable):
-            return self.add_child(SlashSubCommandGroup(func, **attrs))
+            return self.add_child(SlashCommandGroup(func, **attrs))
 
         return inner
 

@@ -3815,7 +3815,6 @@ SlashCommandChild
 .. attributetable:: SlashCommandChild
 .. autoclass:: SlashCommandChild()
     :members:
-    :inherited-members:
 
 SlashSubCommand
 ~~~~~~~~~~~~~~~
@@ -3824,16 +3823,14 @@ SlashSubCommand
 
 .. autoclass:: SlashSubCommand()
     :members:
-    :inherited-members:
 
-SlashSubCommandGroup
+SlashCommandGroup
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. attributetable:: SlashSubCommandGroup
+.. attributetable:: SlashCommandGroup
 
-.. autoclass:: SlashSubCommandGroup()
+.. autoclass:: SlashCommandGroup()
     :members:
-    :inherited-members:
 
 
 
