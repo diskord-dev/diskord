@@ -714,14 +714,11 @@ class SlashSubCommand(Option):
         return self.parent.cog
 
     def to_dict(self) -> dict:
-        options = self.options
-        options.reverse()
-
         dict_ = {
             'name': self.name,
             'description': self.description,
             'type': OptionType.sub_command.value,
-            'options': [option.to_dict() for option in options],
+            'options': [option.to_dict() for option in self.options],
         }
         return dict_
 
@@ -835,7 +832,7 @@ class SlashCommand(ApplicationCommand):
 
         """
         if not isinstance(option, Option):
-            raise TypeError('option must be an instance of Option class.')
+            raise TypeError('option must be an instance of Option class. Got %s' % option.__class__.__name__)
 
         self.options.append(option)
         return option
@@ -968,18 +965,10 @@ class SlashCommand(ApplicationCommand):
         return inner
 
     def to_dict(self) -> dict:
-        # We're reversing the options list here because the order of how options are
-        # registered using decorator is below-to-top so we have to reverse it to
-        # normalize the list. The core reason is that discord API does not
-        # allow to put the non-required options before required ones which makes sense.
-
-        reversed_options = self.options
-        reversed_options.reverse()
-
         dict_ = {
             'name': self.name,
             'type': self.type,
-            'options': [option.to_dict() for option in reversed_options],
+            'options': [option.to_dict() for option in self.options],
             'description': self.description,
         }
 
