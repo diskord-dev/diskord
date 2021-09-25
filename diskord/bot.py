@@ -407,7 +407,7 @@ class Bot(Client):
             self._connection._application_commands[int(cmd['id'])] = command._from_data(cmd)
             self._pending_commands.pop(index)
 
-        _log.info('Application commands have been synchronised.')
+        _log.info('Application commands have been synchronised with the internal cache successfully.')
 
 
     async def register_application_commands(self, *, ignore_guild_register_fail: bool = True):

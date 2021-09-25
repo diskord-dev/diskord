@@ -110,7 +110,12 @@ def _cleanup_loop(loop: asyncio.AbstractEventLoop) -> None:
         loop.close()
 
 class Client:
-    r"""Represents a client connection that connects to Discord.
+    r"""
+    .. info::
+        Use :class:`Bot` for application commands and other features that
+        are not compatible within :class:`Client`.
+
+    Represents a client connection that connects to Discord.
     This class is used to interact with the Discord WebSocket and API.
 
     A number of options can be passed to the :class:`Client`.
