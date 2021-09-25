@@ -60,7 +60,6 @@ from .interactions import *
 from .components import *
 from .threads import *
 from .welcome_screen import *
-from .bot import *
 from .application_commands import *
 
 
