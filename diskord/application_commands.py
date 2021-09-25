@@ -596,8 +596,10 @@ class SlashSubCommandGroup(Option):
         self.options.append(child)
         self.children.append(child)
 
-        for opt in child.callback.__annotations__:
-            child.add_option(child.callback.__annotations__[opt])
+        for opt in child.callback.__annotations__.values():
+            if isinstance(opt, Option):
+                child.add_option(opt)
+
 
         return child
 
@@ -890,8 +892,10 @@ class SlashCommand(ApplicationCommand):
         self.options.append(child)
         self.children.append(child)
 
-        for opt in child.callback.__annotations__:
-            child.add_option(child.callback.__annotations__[opt])
+        for opt in child.callback.__annotations__.values():
+            if isinstance(opt, Option):
+                child.add_option(opt)
+
 
         return child
 

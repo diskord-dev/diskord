@@ -184,13 +184,9 @@ class Bot(Client):
         command.bot = self
         self._pending_commands.append(command)
 
-        unwrap = unwrap_function(command.callback)
-        globalns = getattr(unwrap, '__globals__', {})
-        params = get_signature_parameters(command.callback, globalns)
-
-        for opt in params:
-            if not params[opt].annotation is inspect._empty:
-                command.add_option(params[opt].annotation)
+        for opt in command.callback.__annotations__.values():
+            if isinstance(opt, Option):
+                command.add_option(opt)
 
         return command
 
