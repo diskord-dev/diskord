@@ -1374,6 +1374,17 @@ class SlashCommand(ApplicationCommand):
 
         return dict_
 
+class ContextMenuCommand(ApplicationCommand):
+    """Represents a context menu command."""
+    # This command is intentionally not documented
+
+    def to_dict(self) -> dict:
+        return {
+            'name': self._name,
+            'description': self._description,
+            'type': self._type,
+        }
+
 
 class UserCommand(ApplicationCommand):
     """Represents a user command.
@@ -1387,17 +1398,8 @@ class UserCommand(ApplicationCommand):
     In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.user`
     """
     def __init__(self, callback, **attrs):
-        self.type = ApplicationCommandType.user.value
+        self._type = ApplicationCommandType.user.value
         super().__init__(callback, **attrs)
-
-
-    def to_dict(self) -> dict:
-        dict_ = {
-            'name': self.name,
-            'description': self.description,
-            'type': self.type,
-        }
-        return dict_
 
 class MessageCommand(ApplicationCommand):
     """Represents a message command.
@@ -1411,14 +1413,5 @@ class MessageCommand(ApplicationCommand):
     In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.message`
     """
     def __init__(self, callback, **attrs):
-        self.type = ApplicationCommandType.message.value
+        self._type = ApplicationCommandType.message.value
         super().__init__(callback, **attrs)
-
-
-    def to_dict(self) -> dict:
-        dict_ = {
-            'name': self.name,
-            'description': self.description,
-            'type': self.type,
-        }
-        return dict_
