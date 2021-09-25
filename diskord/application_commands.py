@@ -679,7 +679,7 @@ class ApplicationCommand:
             if interaction.guild:
                 value = interaction.guild.get_member(int(option['value']))
             else:
-                value = context.bot.get_user(int(option['value']))
+                value = context.client.get_user(int(option['value']))
 
         elif option['type'] == OptionType.channel.value:
             value = interaction.guild.get_channel(int(option['value']))
@@ -716,7 +716,7 @@ class ApplicationCommand:
             if interaction.guild:
                 user = interaction.guild.get_member(int(interaction.data['target_id']))
             else:
-                user = context.bot.get_user(int(interaction.data['target_id']))
+                user = context.client.get_user(int(interaction.data['target_id']))
 
             # below code exists for "just in case" purpose
             if user is None:
@@ -731,7 +731,7 @@ class ApplicationCommand:
                         )
                 else:
                     user = User(
-                        state=context.bot._connection,
+                        state=context.client._connection,
                         data=resolved['users'][interaction.data['target_id']]
                         )
 
@@ -752,7 +752,7 @@ class ApplicationCommand:
                 )
             else:
                 message = Message(
-                    state=context.bot._connection,
+                    state=context.client._connection,
                     channel=interaction.user,
                     data=data,
                 )
@@ -1434,3 +1434,52 @@ class MessageCommand(ApplicationCommand):
     def __init__(self, callback, **attrs):
         self._type = ApplicationCommandType.message
         super().__init__(callback, **attrs)
+
+def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
+    """A decorator-based interface to add options to a slash command.
+
+    Usage: ::
+
+        @bot.slash_command(description="Highfive a member!")
+        @diskord.slash_option('member', description='The member to high-five.')
+        @diskord.slash_option('reason', description='Reason to high-five')
+
+        async def highfive(ctx, member: diskord.Member, reason = 'No reason!'):
+            await ctx.send(f'{ctx.author.name} high-fived {member.name} for {reason}')
+
+    .. warning::
+        The callback function must contain the argument and properly annotated or TypeError
+        will be raised.
+    """
+    def inner(func):
+        nonlocal type_
+        type_ = type_ or func.__annotations__.get(name, str)
+
+        sign = inspect.signature(func).parameters.get(attrs.get('arg', name))
+        if sign is None:
+            raise TypeError(f'Parameter for option {name} is missing.')
+
+        required = attrs.get('required')
+        if required is None:
+            required = sign.default is inspect._empty
+
+        if not hasattr(func, '__application_command_params__'):
+            unwrap = unwrap_function(func)
+            try:
+                globalns = unwrap.__globals__
+            except AttributeError:
+                globalns = {}
+
+            func.__application_command_params__ = get_signature_parameters(func, globalns)
+
+        params = func.__application_command_params__
+
+        func.__annotations__[attrs.get('arg', name)] = Option(
+            name=name,
+            type=params[attrs.get('arg', name)].annotation,
+            required=required,
+            **attrs
+            )
+        return func
+
+    return inner

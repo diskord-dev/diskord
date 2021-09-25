@@ -83,7 +83,7 @@ if TYPE_CHECKING:
     from .ui.view import View
     from .channel import VoiceChannel, StageChannel, TextChannel, CategoryChannel, StoreChannel, PartialMessageable
     from .threads import Thread
-    from .bot import Bot
+    from .client import Client
 
     InteractionChannel = Union[
         VoiceChannel, StageChannel, TextChannel, CategoryChannel, StoreChannel, Thread, PartialMessageable
@@ -803,13 +803,15 @@ class InteractionContext:
     Attributes
     ----------
 
-    bot: :class:`~discord.Bot`
+    bot: :class:`~diskord.Client`
         The bot this interaction context belongs to.
     interaction: :class:`Interaction`
         The actual interaction this context belongs to.
 
     """
-    def __init__(self, bot: Bot, interaction: Interaction) -> None:
+    def __init__(self, client: Client, interaction: Interaction) -> None:
+        self.client = client
+        # bot alias exists for being consistent commands.Bot models
         self.bot = bot
         self.interaction = interaction
 
