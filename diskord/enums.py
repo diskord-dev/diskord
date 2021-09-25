@@ -643,6 +643,10 @@ class OptionType(Enum, comparable=True):
             args = [arg.__name__ for arg in args]
             if 'Role' in args and any(['Member' in args, 'User' in args]):
                 return cls.mentionable
+            elif 'User' in args and 'Member' in args:
+                return cls.user
+            else:
+                return cls.string
 
         # using name because circular imports issues
         if type_.__name__ in ['User', 'Member']:
@@ -653,7 +657,7 @@ class OptionType(Enum, comparable=True):
             return cls.channel
 
         else:
-            raise TypeError('Unknown data type for option.')
+            raise TypeError(f'Unknown data type for {type_.__name__}.')
 
 class ApplicationCommandPermissionType(Enum, comparable=True):
     role = 1
