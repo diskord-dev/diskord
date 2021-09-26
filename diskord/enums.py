@@ -68,6 +68,7 @@ __all__ = (
     'NSFWLevel',
     'ApplicationCommandType',
     'OptionType',
+    'ApplicationCommandPermissionType',
 )
 
 
