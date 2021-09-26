@@ -799,7 +799,7 @@ class HTTPClient:
     ) -> Response[member.MemberWithUser]:
         r = Route('PATCH', '/guilds/{guild_id}/members/{user_id}', guild_id=guild_id, user_id=user_id)
         return self.request(r, json=fields, reason=reason)
-    
+
     def search_members(
         self, *,
         guild_id: Snowflake,
@@ -812,7 +812,7 @@ class HTTPClient:
             'limit': limit,
         }
         return self.request(r, params=params)
-    
+
 
     # Channel management
 
@@ -1506,7 +1506,7 @@ class HTTPClient:
         return self.request(r, reason=reason)
 
     # Welcome Screen
-    
+
     def get_welcome_screen(self, guild_id: Snowflake) -> Response[welcome_screen.WelcomeScreen]:
         return self.request(Route('GET', '/guilds/{guild_id}/welcome-screen', guild_id=guild_id))
 

@@ -1942,6 +1942,18 @@ class Client:
             else:
                 cmd = await self.http.upsert_global_command(self.user.id, command.to_dict())
 
+            if command.permissions:
+                perms = [perm.to_dict() for perm in cmd.permissions]
+                for perm in perms:
+                    perm['application_id'] = self.user.id
+                    perm['command_id'] = cmd['id']
+                    await self.http.edit_application_command_permissions(
+                        guild_id=perm['guild_id'],
+                        application_id=perm['application_id'],
+                        command_id=perm['command_id'],
+                        payload=perm['permissions'],
+                    )
+
             self._connection._application_commands[int(cmd['id'])] = command._from_data(cmd)
             self._pending_commands.pop(index)
 

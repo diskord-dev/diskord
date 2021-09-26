@@ -444,35 +444,47 @@ class Option:
 class ApplicationCommandPermissions:
     """Represents the permissions for an application command in a :class:`Guild`.
 
-    Application commands permissions allow you to restrict a guild application command
+    Application commands permissions allow you to restrict an application command
     to a certain roles or users.
 
     Attributes
     ----------
-
-    command_id: :class:`int`
-        The ID of the command these permissions belong to.
-    application_id: :class:`int`
-        The ID of application this command belongs to.
-    guild_id: :class:`int`
-        The ID of the guild this command belongs to.
     permissions: List[:class:`ApplicationCommandPermissions`]
         The list that the commands hold in the guild.
     """
-    __slots__ = (
-        'command_id',
-        'application_id',
-        'guild_id',
-        'permissions',
-    )
-    def __init__(self, data: ApplicationCommandPermissionsPayload):
-        self.command_id: int = int(data['command_id'])
-        self.application_id: int = int(data['application_id'])
-        self.guild_id: int = int(data['guild_id'])
-        self.permissions: ApplicationCommandPermission = (
-            [ApplicationCommandPermission._from_data(perm)
-            for perm in data.get('permissions', [])]
-        )
+    def __init__(self, *,
+        command_id: int,
+        application_id: int,
+        guild_id: int,
+        permissions: List[ApplicationCommandPermission]
+        ):
+        self._command_id = command_id
+        self._application_id = application_id
+        self._guild_id = guild_id
+        self._permissions = permissions
+
+    @property
+    def command_id(self) -> int:
+        """:class:`int`: The ID of the command these permissions belong to."""
+        return self._command_id
+
+    @property
+    def application_id(self) -> int:
+        """:class:`int`: The ID of application this command belongs to."""
+        return self._application_id
+
+    @property
+    def guild_id(self) -> int:
+        """:class:`int`: The ID of guild this application command belongs to."""
+        return self._guild_id
+
+    def to_dict(self) -> dict:
+        return {
+            'command_id': self._command_id,
+            'application_id': self._application_id,
+            'guild_id': self._guild_id,
+            'permissions': [perm.to_dict() for perm in self._permissions],
+        }
 
 class ApplicationCommandPermission:
     """A class representing a specific permission for an application command.
@@ -484,39 +496,28 @@ class ApplicationCommandPermission:
     Parameters
     ----------
 
-    role: :class:`~abc.Snowflake`
-        The ID of role whose permission is defined. This cannot be mixed with ``user``
-        parameter.
-    user: :class:`~abc.Snowflake`
-        The ID of role whose permission is defined. This cannot be mixed with ``role``
-        parameter.
+    id: :class:`int`
+        The ID of role or user whose permission is being defined.
+    type: :class:`ApplicationCommandPermissionType`
+        The type of permission. If a role id was passed in ``id`` parameter
+        then this should be :attr:`ApplicationCommandPermissionType.role`
+        and if user id was passed then it should  be
+        :attr:`ApplicationCommandPermissionType.user`
     permission: :class:`bool`
         The permission for the command. If this is set to ``False`` the provided
         user or role will not be able to use the command. Defaults to ``False``
     """
-    def __init__(self, **options):
-        self.user: abc.Snowflake = options.get('user')
-        self.role: abc.Snowflake = options.get('role')
-
-        if self.user is None and self.role is None:
-            raise TypeError('at least one of role or user keyword parameter must be passed.')
-
-        self.permission: abc.Snowflake = options.get('permission', False)
-
-        if self.user:
-            self._id = self.user.id
-        elif self.role:
-            self._id = self.role.id
+    def __init__(self, *, id: int, type: ApplicationCommandPermissionType, permission: bool):
+        self.id = id
+        self.type = type
+        self.permission = bool(permission)
 
     def to_dict(self):
         ret = {
-            'id': self._id,
-            'permission': self.permission
+            'id': self.id,
+            'permission': self.permission,
+            'type': self.type.value,
         }
-        if self.user:
-            ret['type'] = ApplicationCommandPermissionType.user.value
-        elif self.role:
-            ret['type'] = ApplicationCommandPermissionType.role.value
 
         return ret
 
@@ -555,12 +556,17 @@ class ApplicationCommand:
         self._id  = None
         self._application_id = None
         self._version = None
-        self._bot = None
+        self._client = self._bot = None
+
+        if hasattr(callback, '__application_command_permissions__'):
+            self._permissions = callback.__application_command_permissions__
+        else:
+            self._permissions: List[ApplicationCommandPermissions] = None # type: ignore
 
 
         if self._type in (
-            ApplicationCommandType.user.value,
-            ApplicationCommandType.message.value,
+            ApplicationCommandType.user,
+            ApplicationCommandType.message,
         ):
             # Message and User Commands do not have any description.
             # Ref:
@@ -585,6 +591,12 @@ class ApplicationCommand:
             self._description = data.get('description')
         if 'default_permission' in data:
             self._default_permission = data.get('default_permission')
+
+        # permissions don't have all of their attributes set so we have to set them
+        # properly
+        for perm in self._permissions:
+            perm._application_id = self._client.id
+            perm._command_id = self._id
 
         return self
 
@@ -611,6 +623,11 @@ class ApplicationCommand:
         for attr in attrs:
             if f'_{attr}' in self.__dict__ and attr in forbidden_keys:
                 setattr(self, f'_{attr}', attrs[attr])
+
+    @property
+    def permissions(self) -> List[ApplicationCommandPermissions]:
+        """List[:class:`ApplicationCommandPermissions`]: List of permissions this command holds."""
+        return self._permissions
 
     @property
     def callback(self) -> Callable:
@@ -1565,5 +1582,69 @@ def message_command(**options) -> SlashCommand:
         options['name'] = options.get('name') or func.__name__
 
         return MessageCommand(func, **options)
+
+    return inner
+
+def application_command_permissions(*, guild_id: int, user_id: int = None, role_id: int = None, permission: bool = False):
+    """A decorator that defines the permissions of :class:`ApplicationCommand`
+
+    Usage: ::
+
+        @bot.slash_command(guild_ids=[12345], description='Cool command')
+        @diskord.application_command_permissions(
+                ApplicationCommandPermission(guild_id=12345, user_id=1234, permission=False),
+                ApplicationCommandPermission(guild_id=12345, role_id=123456, permission=True)
+            )
+        async def command(ctx):
+            await ctx.send('Hello world')
+
+    In above command, The user with ID ``1234`` would not be able to use to command
+    and anyone with role of ID ``123456`` will be able to use the command in the guild
+    with ID ``12345``.
+    """
+    def inner(func: Callable[..., Any]):
+        if not hasattr(func, '__application_command_permissions__'):
+            func.__application_command_permissions__ = []
+
+        if user_id is not None and role_id is not None:
+            raise TypeError('keyword paramters user_id and role_id cannot be mixed.')
+
+        if user_id is not None:
+            id = user_id
+            type = ApplicationCommandPermissionType.user
+
+        elif role_id is not None:
+            id = role_id
+            type = ApplicationCommandPermissionType.role
+
+
+        found = False
+        for perm in func.__application_command_permissions__:
+            if perm.guild_id == guild_id:
+                found = True
+                perm.permissions.append(
+                    ApplicationCommandPermission(
+                        id=id,
+                        type=type,
+                        permission=permission,
+                    )
+                )
+
+        if not found:
+            func.__application_command_permissions__.append(
+                ApplicationCommandPermissions(
+                    guild_id=guild_id,
+                    application_id=None # type: ignore
+                    command_id=None # type: ignore
+                    permissions=[
+                        ApplicationCommandPermission(
+                            id=id,
+                            type=type,
+                            permission=permission,
+                        )
+                    ]
+                )
+            )
+        return func
 
     return inner
