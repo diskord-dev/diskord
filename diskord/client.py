@@ -1875,39 +1875,32 @@ class Client:
         HTTPException:
             The permissions synchronization failed.
         """
-        permissions = []
+        permissions = {}
 
         # firstly, we need to add permissions raw data to permissions list.
         for command in self._connection._application_commands.values():
-            if command._permissions:
-                perms = [perm.to_dict() for perm in command._permissions]
-                for perm in perms:
-                    # ensuring that permissions gets proper ids
-                    perm['application_id'] = self.user.id
-                    perm['command_id'] = command.id
-                    permissions.append(perm)
+            perms = [perm.to_dict() for perm in command._permissions]
+
+            for perm in perms:
+                if not perm['guild_id'] in permissions:
+                    permissions[perm['guild_id']] = []
+
+                # ensuring that permissions gets proper ids
+                perm['application_id'] = self.user.id
+                perm['command_id'] = command.id
+
+                permissions[perm['guild_id']].append({'id': perm['command_id'], 'permissions': perm['permissions']})
 
         # finally, batch-editing the permissions
-        while permissions:
-            # Discord API does not allow batch-editing more then 10
-            # commands permissions at a time.
-            current_perms = permissions[0:10]
-            payload = [
-                    {
-                        'id': perm['command_id'],
-                        'permissions': perm['permissions']
-                    }
-                    for perm in current_perms
-                ]
 
-            for perm in current_perms:
-                await self.http.bulk_edit_guild_application_command_permissions(
-                    guild_id=perm['guild_id'],
-                    application_id=perm['application_id'],
-                    payload=payload,
-                )
-            # finally removing the permissions that have been batch edited.
-            del permissions[0:10]
+        for guild in permissions:
+            payload = permissions[guild]
+            _log.info(f'Registering permissions: {payload}')
+            await self.http.bulk_edit_guild_application_command_permissions(
+                guild_id=guild,
+                application_id=self.user.id,
+                payload=payload,
+            )
 
     async def fetch_application_command_permissions(self, guild_id: int, /):
         """|coro|

@@ -576,7 +576,7 @@ class ApplicationCommand:
             self._permissions: List[ApplicationCommandGuildPermissions] = [] # type: ignore
 
         for perm in self._permissions:
-            perm.command = self
+            perm._command = self
 
         if self._type in (
             ApplicationCommandType.user,
@@ -1631,7 +1631,7 @@ def application_command_permission(*, guild_id: int, user_id: int = None, role_i
         for perm in func.__application_command_permissions__:
             if perm.guild_id == guild_id:
                 found = True
-                perm.permissions.append(
+                perm._permissions.append(
                     ApplicationCommandPermission(
                         id=id,
                         type=type,
