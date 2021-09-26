@@ -1906,7 +1906,7 @@ class Client:
                     application_id=perm['application_id'],
                     payload=payload,
                 )
-            # finally removing the permissions that have been batch editted.
+            # finally removing the permissions that have been batch edited.
             del permissions[0:10]
 
     async def fetch_application_command_permissions(self, guild_id: int, /):
@@ -1934,7 +1934,8 @@ class Client:
             application_id=self.user.id,
             guild_id=guild_id,
         )
-        response['permissions'] = [ApplicationCommandPermission(**perm) for perm in response['permissions']]
+        for perm in response:
+            perm['permissions'] = [ApplicationCommandPermission(**p) for p in perm['permissions']]
         return ApplicationCommandPermissions(**response)
 
     async def fetch_application_command_permission(self, *, guild_id: int, command_id: int, /):
@@ -1958,9 +1959,10 @@ class Client:
         List[:class:`ApplicationCommandPermissions`]
             The list of permissions for each command.
         """
-        response = await self.http.get_guild_application_command_permissions(
+        response = await self.http.get_application_command_permissions(
             application_id=self.user.id,
             guild_id=guild_id,
+            command_id=command_id,
         )
         response['permissions'] = [ApplicationCommandPermission(**perm) for perm in response['permissions']]
         return ApplicationCommandPermissions(**response)
@@ -2050,18 +2052,6 @@ class Client:
             self._connection._application_commands[int(cmd['id'])] = command._from_data(cmd)
             self._pending_commands.pop(index)
 
-        # batch-editing the permissions of commands
-        permissions = []
-
-        # firstly, we need to add permissions raw data to permissions list.
-        for command in self._connection._application_commands.values():
-            if command._permissions:
-                perms = [perm.to_dict() for perm in command._permissions]
-                for perm in perms:
-                    # ensuring that permissions gets proper ids
-                    perm['application_id'] = self.user.id
-                    perm['command_id'] = cmd['id']
-                    permissions.append(perm)
 
         # finally, batch-editing the permissions
         await self.sync_application_command_permissions()
