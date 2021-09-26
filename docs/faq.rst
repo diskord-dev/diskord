@@ -72,11 +72,34 @@ Consider the following example: ::
             if r.status == 200:
                 js = await r.json()
                 await channel.send(js['file'])
-
+                
 General
 ---------
 
 General questions regarding library usage belong here.
+
+Old application commands are not getting removed after I remove them from code!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is normal, You can simply override :func:`on_connect` event and set ``delete_unregistered_commands`` to ``True``:
+
+Usage: ::
+    
+    @client.event
+    async def on_connect():
+        await client.sync_application_commands(delete_unregistered_commands=True)
+
+Why do I get error: "Invalid Interaction Application Command"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is a Discord-related error. This usually happens with your **global** commands when you restart your bot. **Guild commands are not affected.**
+
+This error goes away after few minutes or even seconds. 
+
+.. tip::
+    It is recommended to test your commands with :attr:`ApplicationCommand.guild_ids` with your testing server ID for easy testing.
+    You will not encounter this error while testing if you specify :attr:`ApplicationCommand.guild_ids`
+    
 
 Where can I find usage examples?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

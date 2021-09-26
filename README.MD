@@ -18,6 +18,7 @@
 * Proper and sane rate limit handling.
 * Optimised in both speed and memory.
 * Actively maintained, Provides full coverage of Discord API.
+* Prebuilt Commands building framework to aid in bot development
 * Easy-to-use object oriented design
 
 ## Installation
@@ -65,7 +66,7 @@ import diskord
 
 client = diskord.Client()
 
-@client.slash_command('ping', description='Ping-Pong!')
+@client.slash_command(description='Ping-Pong!')
 async def ping(ctx):
     await ctx.send('Pong!')
 
