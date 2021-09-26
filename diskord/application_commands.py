@@ -564,6 +564,8 @@ class ApplicationCommand:
         else:
             self._permissions: List[ApplicationCommandPermissions] = [] # type: ignore
 
+        for perm in self._permissions:
+            perm.command = self
 
         if self._type in (
             ApplicationCommandType.user,

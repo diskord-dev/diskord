@@ -1909,6 +1909,61 @@ class Client:
             # finally removing the permissions that have been batch editted.
             del permissions[0:10]
 
+    async def fetch_application_command_permissions(self, guild_id: int, /):
+        """|coro|
+
+        Fetches the permissions of an application command in a guild.
+
+        .. info::
+            This function is an API call, Use :func:`get_application_command_permissions`
+            for general usage.
+
+        Parameters
+        ----------
+
+        guild_id: :class:`int`
+            The ID of guild to fetch permissions of.
+
+        Returns
+        -------
+
+        List[:class:`ApplicationCommandPermissions`]
+            The list of permissions for each command.
+        """
+        response = await self.http.get_guild_application_command_permissions(
+            application_id=self.user.id,
+            guild_id=guild_id,
+        )
+        response['permissions'] = [ApplicationCommandPermission(**perm) for perm in response['permissions']]
+        return ApplicationCommandPermissions(**response)
+
+    async def fetch_application_command_permission(self, *, guild_id: int, command_id: int, /):
+        """|coro|
+
+        Fetches the permissions of an application command in a guild.
+
+        .. info::
+            This function is an API call, Use :func:`get_application_command_permissions`
+            for general usage.
+
+        Parameters
+        ----------
+
+        guild_id: :class:`int`
+            The ID of guild to fetch permissions of.
+
+        Returns
+        -------
+
+        List[:class:`ApplicationCommandPermissions`]
+            The list of permissions for each command.
+        """
+        response = await self.http.get_guild_application_command_permissions(
+            application_id=self.user.id,
+            guild_id=guild_id,
+        )
+        response['permissions'] = [ApplicationCommandPermission(**perm) for perm in response['permissions']]
+        return ApplicationCommandPermissions(**response)
 
     # TODO: Add other API methods
 

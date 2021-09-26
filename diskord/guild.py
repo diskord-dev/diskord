@@ -3159,3 +3159,51 @@ class Guild(Hashable):
             guild_id=self.id,
             )
 
+
+    async def fetch_application_command_permissions(self):
+        """|coro|
+
+        Fetches the permissions of an application command in this guild.
+
+        .. info::
+            This function is an API call, Use :func:`get_application_command_permissions`
+            for general usage.
+
+        Returns
+        -------
+
+        List[:class:`ApplicationCommandPermissions`]
+            The list of permissions for each command.
+        """
+        response = await self.http.get_guild_application_command_permissions(
+            application_id=self.user.id,
+            guild_id=self.id,
+        )
+        for perm in response:
+            perm['permissions'] = [ApplicationCommandPermission(**p) for p in perm['permissions']]
+        return ApplicationCommandPermissions(**response)
+
+    async def fetch_application_command_permission(self, command_id: int, /):
+        """|coro|
+
+        Fetches the permissions of an application command in this guild by command ID.
+
+        .. info::
+            This function is an API call, Use :func:`get_application_command_permission`
+            for general usage.
+
+        Returns
+        -------
+
+        :class:`ApplicationCommandPermissions`
+            The permissions for the provided command.
+        """
+        response = await self.http.get_application_command_permissions(
+            application_id=self.user.id,
+            guild_id=self.id,
+            command_id=command_id,
+        )
+        response['permissions'] = [ApplicationCommandPermission(**perm) for perm in response['permissions']]
+        return ApplicationCommandPermissions(**response)
+
+
