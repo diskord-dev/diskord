@@ -71,7 +71,8 @@ __all__ = (
     'slash_option',
     'slash_command',
     'user_command',
-    'message_command'
+    'message_command',
+    'application_command_permission',
 )
 
 def unwrap_function(function: Callable[..., Any]) -> Callable[..., Any]:
@@ -561,7 +562,7 @@ class ApplicationCommand:
         if hasattr(callback, '__application_command_permissions__'):
             self._permissions = callback.__application_command_permissions__
         else:
-            self._permissions: List[ApplicationCommandPermissions] = None # type: ignore
+            self._permissions: List[ApplicationCommandPermissions] = [] # type: ignore
 
 
         if self._type in (
@@ -594,9 +595,6 @@ class ApplicationCommand:
 
         # permissions don't have all of their attributes set so we have to set them
         # properly
-        for perm in self._permissions:
-            perm._application_id = self._client.id
-            perm._command_id = self._id
 
         return self
 
@@ -1585,16 +1583,14 @@ def message_command(**options) -> SlashCommand:
 
     return inner
 
-def application_command_permissions(*, guild_id: int, user_id: int = None, role_id: int = None, permission: bool = False):
+def application_command_permission(*, guild_id: int, user_id: int = None, role_id: int = None, permission: bool = False):
     """A decorator that defines the permissions of :class:`ApplicationCommand`
 
     Usage: ::
 
         @bot.slash_command(guild_ids=[12345], description='Cool command')
-        @diskord.application_command_permissions(
-                ApplicationCommandPermission(guild_id=12345, user_id=1234, permission=False),
-                ApplicationCommandPermission(guild_id=12345, role_id=123456, permission=True)
-            )
+        @diskord.application_command_permission(guild_id=12345, user_id=1234, permission=False)
+        @diskord.application_command_permission(guild_id=12345, role_id=123456, permission=True)
         async def command(ctx):
             await ctx.send('Hello world')
 
@@ -1634,8 +1630,8 @@ def application_command_permissions(*, guild_id: int, user_id: int = None, role_
             func.__application_command_permissions__.append(
                 ApplicationCommandPermissions(
                     guild_id=guild_id,
-                    application_id=None # type: ignore
-                    command_id=None # type: ignore
+                    application_id=None, # type: ignore
+                    command_id=None, # type: ignore
                     permissions=[
                         ApplicationCommandPermission(
                             id=id,

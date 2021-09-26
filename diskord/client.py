@@ -1942,20 +1942,43 @@ class Client:
             else:
                 cmd = await self.http.upsert_global_command(self.user.id, command.to_dict())
 
-            if command.permissions:
-                perms = [perm.to_dict() for perm in cmd.permissions]
-                for perm in perms:
-                    perm['application_id'] = self.user.id
-                    perm['command_id'] = cmd['id']
-                    await self.http.edit_application_command_permissions(
-                        guild_id=perm['guild_id'],
-                        application_id=perm['application_id'],
-                        command_id=perm['command_id'],
-                        payload=perm['permissions'],
-                    )
-
             self._connection._application_commands[int(cmd['id'])] = command._from_data(cmd)
             self._pending_commands.pop(index)
+
+        # batch-editing the permissions of commands
+        permissions = []
+
+        # firstly, we need to add permissions raw data to permissions list.
+        for command in self._connection._application_commands.values():
+            if command._permissions:
+                perms = [perm.to_dict() for perm in command._permissions]
+                for perm in perms:
+                    # ensuring that permissions gets proper ids
+                    perm['application_id'] = self.user.id
+                    perm['command_id'] = cmd['id']
+                    permissions.append(perm)
+
+        # finally, batch-editing the permissions
+        while permissions:
+            # Discord API does not allow batch-editing more then 10
+            # commands permissions at a time.
+            current_perms = permissions[0:10]
+            payload = [
+                    {
+                        'id': perm['command_id'],
+                        'permissions': perm['permissions']
+                    }
+                    for perm in current_perms
+                ]
+
+            for perm in current_perms:
+                await self.http.bulk_edit_guild_application_command_permissions(
+                    guild_id=perm['guild_id'],
+                    application_id=perm['application_id'],
+                    payload=payload,
+                )
+            # finally removing the permissions that have been batch editted.
+            del permissions[0:10]
 
         _log.info('Application commands have been synchronised with the internal cache successfully.')
 
