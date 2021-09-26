@@ -18,6 +18,7 @@
 * Proper and sane rate limit handling.
 * Optimised in both speed and memory.
 * Actively maintained, Provides full coverage of Discord API.
+* Prebuilt Commands building framework to aid in bot development
 * Easy-to-use object oriented design
 
 ## Installation
