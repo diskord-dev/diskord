@@ -3767,6 +3767,22 @@ ApplicationCommand
     :members:
     :inherited-members:
 
+ApplicationCommandPermissions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: ApplicationCommandPermissions
+
+.. autoclass:: ApplicationCommandPermissions()
+    :members:
+
+ApplicationCommandPermission
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: ApplicationCommandPermission
+
+.. autoclass:: ApplicationCommandPermission()
+    :members:
+
 SlashCommand
 ~~~~~~~~~~~~
 

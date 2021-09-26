@@ -60,6 +60,8 @@ if TYPE_CHECKING:
 
 __all__ = (
     'ApplicationCommand',
+    'ApplicationCommandPermissions',
+    'ApplicationCommandPermission',
     'SlashCommand',
     'SlashCommandChild',
     'SlashSubCommand',
@@ -463,6 +465,15 @@ class ApplicationCommandPermissions:
         self._application_id = application_id
         self._guild_id = guild_id
         self._permissions = permissions
+
+        self._command: ApplicationCommand = None # type: ignore
+
+
+    @property
+    def command(self) -> ApplicationCommand:
+        """:class:`ApplicationCommand`: The command these permissions belongs to."""
+        return self._command
+
 
     @property
     def command_id(self) -> int:
