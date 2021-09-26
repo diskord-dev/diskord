@@ -60,7 +60,7 @@ if TYPE_CHECKING:
 
 __all__ = (
     'ApplicationCommand',
-    'ApplicationCommandPermissions',
+    'ApplicationCommandGuildPermissions',
     'ApplicationCommandPermission',
     'SlashCommand',
     'SlashCommandChild',
@@ -444,7 +444,7 @@ class Option:
 # TODO: Work on Application command permissions.
 
 
-class ApplicationCommandPermissions:
+class ApplicationCommandGuildPermissions:
     """Represents the permissions for an application command in a :class:`Guild`.
 
     Application commands permissions allow you to restrict an application command
@@ -452,7 +452,7 @@ class ApplicationCommandPermissions:
 
     Attributes
     ----------
-    permissions: List[:class:`ApplicationCommandPermissions`]
+    permissions: List[:class:`ApplicationCommandGuildPermissions`]
         The list that the commands hold in the guild.
     """
     def __init__(self, *,
@@ -573,7 +573,7 @@ class ApplicationCommand:
         if hasattr(callback, '__application_command_permissions__'):
             self._permissions = callback.__application_command_permissions__
         else:
-            self._permissions: List[ApplicationCommandPermissions] = [] # type: ignore
+            self._permissions: List[ApplicationCommandGuildPermissions] = [] # type: ignore
 
         for perm in self._permissions:
             perm.command = self
@@ -636,8 +636,8 @@ class ApplicationCommand:
                 setattr(self, f'_{attr}', attrs[attr])
 
     @property
-    def permissions(self) -> List[ApplicationCommandPermissions]:
-        """List[:class:`ApplicationCommandPermissions`]: List of permissions this command holds."""
+    def permissions(self) -> List[ApplicationCommandGuildPermissions]:
+        """List[:class:`ApplicationCommandGuildPermissions`]: List of permissions this command holds."""
         return self._permissions
 
     @property
@@ -1641,7 +1641,7 @@ def application_command_permission(*, guild_id: int, user_id: int = None, role_i
 
         if not found:
             func.__application_command_permissions__.append(
-                ApplicationCommandPermissions(
+                ApplicationCommandGuildPermissions(
                     guild_id=guild_id,
                     application_id=None, # type: ignore
                     command_id=None, # type: ignore

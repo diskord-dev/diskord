@@ -1927,7 +1927,7 @@ class Client:
         Returns
         -------
 
-        List[:class:`ApplicationCommandPermissions`]
+        List[:class:`ApplicationCommandGuildPermissions`]
             The list of permissions for each command.
         """
         response = await self.http.get_guild_application_command_permissions(
@@ -1936,7 +1936,7 @@ class Client:
         )
         for perm in response:
             perm['permissions'] = [ApplicationCommandPermission(**p) for p in perm['permissions']]
-        return ApplicationCommandPermissions(**response)
+        return ApplicationCommandGuildPermissions(**response)
 
     async def fetch_application_command_permission(self, *, guild_id: int, command_id: int):
         """|coro|
@@ -1956,7 +1956,7 @@ class Client:
         Returns
         -------
 
-        List[:class:`ApplicationCommandPermissions`]
+        List[:class:`ApplicationCommandGuildPermissions`]
             The list of permissions for each command.
         """
         response = await self.http.get_application_command_permissions(
@@ -1965,7 +1965,7 @@ class Client:
             command_id=command_id,
         )
         response['permissions'] = [ApplicationCommandPermission(**perm) for perm in response['permissions']]
-        return ApplicationCommandPermissions(**response)
+        return ApplicationCommandGuildPermissions(**response)
 
     # TODO: Add other API methods
 

@@ -3172,7 +3172,7 @@ class Guild(Hashable):
         Returns
         -------
 
-        List[:class:`ApplicationCommandPermissions`]
+        List[:class:`ApplicationCommandGuildPermissions`]
             The list of permissions for each command.
         """
         response = await self.http.get_guild_application_command_permissions(
@@ -3181,7 +3181,7 @@ class Guild(Hashable):
         )
         for perm in response:
             perm['permissions'] = [ApplicationCommandPermission(**p) for p in perm['permissions']]
-        return ApplicationCommandPermissions(**response)
+        return ApplicationCommandGuildPermissions(**response)
 
     async def fetch_application_command_permission(self, command_id: int, /):
         """|coro|
@@ -3195,7 +3195,7 @@ class Guild(Hashable):
         Returns
         -------
 
-        :class:`ApplicationCommandPermissions`
+        :class:`ApplicationCommandGuildPermissions`
             The permissions for the provided command.
         """
         response = await self.http.get_application_command_permissions(
@@ -3204,6 +3204,6 @@ class Guild(Hashable):
             command_id=command_id,
         )
         response['permissions'] = [ApplicationCommandPermission(**perm) for perm in response['permissions']]
-        return ApplicationCommandPermissions(**response)
+        return ApplicationCommandGuildPermissions(**response)
 
 

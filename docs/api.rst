@@ -2714,10 +2714,43 @@ of :class:`enum.Enum`.
 
         The option is a message command.
 
-    .. attribute:: slash_command
+    .. attribute:: slash
 
         The option is a chat input "aka" a slash command.
 
+.. class:: ApplicationCommandPermissionType
+
+    Represents the type of permission of an application command.
+
+    .. versionadded:: 2.5
+
+    .. container:: operations
+
+        .. describe:: x == y
+
+            Checks if two permission types are equal.
+        .. describe:: x != y
+
+            Checks if two permission types are not equal.
+        .. describe:: x > y
+
+            Checks if a permission types is higher than another.
+        .. describe:: x < y
+
+            Checks if a permission types is lower than another.
+        .. describe:: x >= y
+
+            Checks if a permission types is higher or equal to another.
+        .. describe:: x <= y
+
+            Checks if a permission types is lower or equal to another.
+
+
+    .. attribute:: role
+        The permission represents a role.
+
+    .. attribute:: user
+        The permission represents a user.
 
 .. class:: OptionType
 
@@ -3767,12 +3800,12 @@ ApplicationCommand
     :members:
     :inherited-members:
 
-ApplicationCommandPermissions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ApplicationCommandGuildPermissions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. attributetable:: ApplicationCommandPermissions
+.. attributetable:: ApplicationCommandGuildPermissions
 
-.. autoclass:: ApplicationCommandPermissions()
+.. autoclass:: ApplicationCommandGuildPermissions()
     :members:
 
 ApplicationCommandPermission
