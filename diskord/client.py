@@ -1859,7 +1859,7 @@ class Client:
 
         return resolved
 
-    async def sync_application_command_permissions(self):
+    async def sync_application_commands_permissions(self):
         """|coro|
 
         Synchronizes the application command permissions to API.
@@ -2047,7 +2047,7 @@ class Client:
 
 
         # finally, batch-editing the permissions
-        await self.sync_application_command_permissions()
+        await self.sync_application_commands_permissions()
 
         _log.info('Application commands have been synchronised with the internal cache successfully.')
 
@@ -2117,7 +2117,7 @@ class Client:
                 self._connection._application_commands[int(cmd['id'])] = utils.get(self._pending_commands, name=cmd['name'])._from_data(cmd)
 
         # finally, batch-editing the permissions
-        await self.sync_application_command_permissions()
+        await self.sync_application_commands_permissions()
 
 
         _log.info('Registered %s commands successfully.' % str(len(self._pending_commands)))
