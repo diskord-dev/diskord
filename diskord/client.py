@@ -1859,6 +1859,56 @@ class Client:
 
         return resolved
 
+    async def sync_application_command_permissions(self):
+        """|coro|
+
+        Synchronizes the application command permissions to API.
+
+        This function shouldn't generally be used as it is automatically called
+        under-the-hood while commands are being registered in :func:`sync_application_commands`
+        or :func:`register_application_commands`
+
+        This function takes no parameters.
+
+        Raises
+        ------
+        HTTPException:
+            The permissions synchronization failed.
+        """
+        permissions = []
+
+        # firstly, we need to add permissions raw data to permissions list.
+        for command in self._connection._application_commands.values():
+            if command._permissions:
+                perms = [perm.to_dict() for perm in command._permissions]
+                for perm in perms:
+                    # ensuring that permissions gets proper ids
+                    perm['application_id'] = self.user.id
+                    perm['command_id'] = command.id
+                    permissions.append(perm)
+
+        # finally, batch-editing the permissions
+        while permissions:
+            # Discord API does not allow batch-editing more then 10
+            # commands permissions at a time.
+            current_perms = permissions[0:10]
+            payload = [
+                    {
+                        'id': perm['command_id'],
+                        'permissions': perm['permissions']
+                    }
+                    for perm in current_perms
+                ]
+
+            for perm in current_perms:
+                await self.http.bulk_edit_guild_application_command_permissions(
+                    guild_id=perm['guild_id'],
+                    application_id=perm['application_id'],
+                    payload=payload,
+                )
+            # finally removing the permissions that have been batch editted.
+            del permissions[0:10]
+
 
     # TODO: Add other API methods
 
@@ -1959,26 +2009,7 @@ class Client:
                     permissions.append(perm)
 
         # finally, batch-editing the permissions
-        while permissions:
-            # Discord API does not allow batch-editing more then 10
-            # commands permissions at a time.
-            current_perms = permissions[0:10]
-            payload = [
-                    {
-                        'id': perm['command_id'],
-                        'permissions': perm['permissions']
-                    }
-                    for perm in current_perms
-                ]
-
-            for perm in current_perms:
-                await self.http.bulk_edit_guild_application_command_permissions(
-                    guild_id=perm['guild_id'],
-                    application_id=perm['application_id'],
-                    payload=payload,
-                )
-            # finally removing the permissions that have been batch editted.
-            del permissions[0:10]
+        await self.sync_application_command_permissions()
 
         _log.info('Application commands have been synchronised with the internal cache successfully.')
 
@@ -2046,6 +2077,10 @@ class Client:
                     raise e
             for cmd in cmds:
                 self._connection._application_commands[int(cmd['id'])] = utils.get(self._pending_commands, name=cmd['name'])._from_data(cmd)
+
+        # finally, batch-editing the permissions
+        await self.sync_application_command_permissions()
+
 
         _log.info('Registered %s commands successfully.' % str(len(self._pending_commands)))
 
