@@ -1938,7 +1938,7 @@ class Client:
             perm['permissions'] = [ApplicationCommandPermission(**p) for p in perm['permissions']]
         return ApplicationCommandPermissions(**response)
 
-    async def fetch_application_command_permission(self, *, guild_id: int, command_id: int, /):
+    async def fetch_application_command_permission(self, *, guild_id: int, command_id: int):
         """|coro|
 
         Fetches the permissions of an application command in a guild.
