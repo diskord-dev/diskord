@@ -66,7 +66,7 @@ import diskord
 
 client = diskord.Client()
 
-@client.slash_command('ping', description='Ping-Pong!')
+@client.slash_command(description='Ping-Pong!')
 async def ping(ctx):
     await ctx.send('Pong!')
 
