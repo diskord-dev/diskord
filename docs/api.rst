@@ -2747,9 +2747,11 @@ of :class:`enum.Enum`.
 
 
     .. attribute:: role
+
         The permission represents a role.
 
     .. attribute:: user
+
         The permission represents a user.
 
 .. class:: OptionType
