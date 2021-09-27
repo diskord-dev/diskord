@@ -73,6 +73,15 @@ are custom to the command extension module.
     inside a command either through user input error, check
     failure, or an error in your own code.
 
+    .. info::
+        This is not for application commands. For example, if you register a :func:`~commands.check`on an application command, Then if that check fails and raises an error, that error would 
+        **not** be passed to this but it would be passed in 
+        :func:`diskord.on_application_command_error` so it must be used in case of application
+        commands.
+
+        This leads to usage of two seperate handlers for application commands and prefixed
+        commands and that is only solution as both systems are entirely different.
+
     A default one is provided (:meth:`.Bot.on_command_error`).
 
     :param ctx: The invocation context.

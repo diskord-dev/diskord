@@ -280,10 +280,10 @@ class InteractionResponded(ClientException):
 
 
 class _BaseCommandError(Exception):
-    # this class is kind of a hacky base class for errors in discord.ext.commands stuff 
-    # that is used in application commands like checks, this is purely for instance checking
-    # and avoiding circular import issues. Yeah, not the best implementation but the only
-    # implementation I could possibly think of.
+    # this class is kind of a hacky base class for errors from discord.ext.commands for stuff
+    # that comes from there that is used in application commands like checks, this is purely for 
+    # instance checking and avoiding circular import issues. 
+    # Yeah, not the best implementation but the only implementation I could possibly think of.
     pass
 
 class ApplicationCommandError(ClientException):

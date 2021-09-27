@@ -544,6 +544,9 @@ class ApplicationCommand:
     checks: List[Callable[:class:`InteractionContext`, bool]]
         The list of checks this commands holds that will be checked before command's
         invocation.
+
+        For more info on checks and how to register them, See :func:`~ext.commands.check` 
+        documentation as these checks actually come from there.
     """
     def __init__(self, callback: Callable, **attrs: Any):
         self._callback = callback
