@@ -728,7 +728,7 @@ class ApplicationCommand:
 
         This is the non-decorator interface to :func:`.check`.
 
-        .. versionadded:: 1.3
+        .. versionadded:: 2.0
 
         Parameters
         -----------
@@ -744,7 +744,7 @@ class ApplicationCommand:
         This function is idempotent and will not raise an exception
         if the function is not in the command's checks.
 
-        .. versionadded:: 1.3
+        .. versionadded:: 2.0
 
         Parameters
         -----------
@@ -764,7 +764,7 @@ class ApplicationCommand:
         inside the :attr:`~ApplicationCommand.checks` attribute. This also checks whether the
         command is disabled.
 
-        .. versionchanged:: 1.3
+        .. versionchanged:: 2.0
             Checks whether the command is disabled or not
 
         Parameters
@@ -1021,7 +1021,7 @@ class SlashCommandChild(Option):
 
         This is the non-decorator interface to :func:`.check`.
 
-        .. versionadded:: 1.3
+        .. versionadded:: 2.0
 
         Parameters
         -----------
@@ -1037,7 +1037,7 @@ class SlashCommandChild(Option):
         This function is idempotent and will not raise an exception
         if the function is not in the command's checks.
 
-        .. versionadded:: 1.3
+        .. versionadded:: 2.0
 
         Parameters
         -----------
@@ -1057,7 +1057,7 @@ class SlashCommandChild(Option):
         inside the :attr:`~ApplicationCommand.checks` attribute. This also checks whether the
         command is disabled.
 
-        .. versionchanged:: 1.3
+        .. versionchanged:: 2.0
             Checks whether the command is disabled or not
 
         Parameters
