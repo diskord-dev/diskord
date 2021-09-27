@@ -17,9 +17,10 @@
 * Modern Pythonic API using `async` / `await`.
 * Proper and sane rate limit handling.
 * Optimised in both speed and memory.
-* Actively maintained, Provides full coverage of Discord API.
+* Provides full coverage of Discord API including Interactions i.e Slash Commands.
 * Prebuilt Commands building framework to aid in bot development
 * Easy-to-use object oriented design
+* Actively maintained & updated
 
 ## Installation
 
