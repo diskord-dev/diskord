@@ -2187,7 +2187,7 @@ class Client:
     async def process_application_commands(self, interaction: Interaction) -> Any:
         """|coro|
 
-        Handles an application command interaction.  This function holds the application
+        Handles an application command interaction. This function holds the application
         command main processing logic.
 
         This function is used under-the-hood to handle all the application commands interactions.
