@@ -43,6 +43,7 @@ from .channel import _threaded_channel_factory, PartialMessageable
 from .enums import ChannelType
 from .mentions import AllowedMentions
 from .errors import *
+from .errors import _BaseCommandError
 from .enums import Status, VoiceRegion, ApplicationCommandType, OptionType
 from .flags import ApplicationFlags, Intents
 from .gateway import *
@@ -2229,7 +2230,14 @@ class Client:
 
         try:
             await command.invoke(context)
-        except ApplicationCommandError as error:
+        except (ApplicationCommandError, _BaseCommandError) as error:
+            # here comes the important part, There have been many concerns about error handlers
+            # of legacy commands and application commands.
+            # we need seperate handlers for each type, the reason behind this is purely
+            # based on the fact that prefixed commands are NOT same as application commands
+            # and have different implementation. there can be more complicated issues
+            # if we merge the handlers or in general, these two unlike systems so there
+            # is no possibility of them to be merged in one!
             self.dispatch('application_command_error', context, error)
         else:
             self.dispatch('application_command_completion', context)

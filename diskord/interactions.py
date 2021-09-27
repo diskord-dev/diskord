@@ -814,6 +814,7 @@ class InteractionContext:
         # bot alias exists for being consistent commands.Bot models
         self.bot = client
         self.interaction = interaction
+        self._state = self.interaction._state
 
     @property
     def channel(self) -> abc.Snowflake:
@@ -838,6 +839,24 @@ class InteractionContext:
     author = user
 
     @property
+    def me(self) -> Union[Member, User]:
+        """
+        Union[:class:`Member`, :class:`User`]: Similar to :attr:`.Guild.me` except it may
+        return the :class:`.ClientUser` in private message contexts.
+        """
+        return self.guild.me if self.guild is not None else self.bot.user  # type: ignore
+
+    @property
+    def voice_client(self) -> Optional[VoiceProtocol]:
+        r"""Optional[:class:`.VoiceProtocol`]: A shortcut to :attr:`.Guild.voice_client`\, if applicable."""
+        g = self.guild
+        return g.voice_client if g else None
+
+    @utils.copy_doc(Message.reply)
+    async def reply(self, content: Optional[str] = None, **kwargs: Any) -> Message:
+        return await self.message.reply(content, **kwargs)
+
+    @property
     def response(self) -> InteractionResponse:
         """:class:`InteractionResponse`: The response of interaction."""
         return self.interaction.response
@@ -859,6 +878,3 @@ class InteractionContext:
     @property
     def followup(self) -> Callable:
         return self.interaction.followup
-
-# Application commands
-

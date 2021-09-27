@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from typing import Optional, Any, TYPE_CHECKING, List, Callable, Type, Tuple, Union
 
-from diskord.errors import ClientException, DiscordException
+from diskord.errors import ClientException, DiscordException, _BaseCommandError
 
 if TYPE_CHECKING:
     from inspect import Parameter
@@ -184,7 +184,7 @@ class BadArgument(UserInputError):
     """
     pass
 
-class CheckFailure(CommandError):
+class CheckFailure(CommandError, _BaseCommandError):
     """Exception raised when the predicates in :attr:`.Command.checks` have failed.
 
     This inherits from :exc:`CommandError`

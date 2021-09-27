@@ -46,9 +46,10 @@ from .enums import (
     OptionType,
     ApplicationCommandPermissionType,
 )
-from .errors import ApplicationCommandError
+from .errors import ApplicationCommandError, ApplicationCommandCheckFailure
 from .user import User
 from .member import Member
+from .interactions import InteractionContext
 
 if TYPE_CHECKING:
     from .types.interactions import (
@@ -106,7 +107,8 @@ def get_signature_parameters(function: Callable[..., Any], globalns: Dict[str, A
 
     return params
 
-
+Check = Callable[[InteractionContext, 'Context'], bool]
+    
 class OptionChoice:
     """Represents an option choice for an application command's option.
 
@@ -539,23 +541,9 @@ class ApplicationCommand:
 
     Parameters
     ----------
-    callback: Callable
-        The callback function for this command.
-    name: :class:`str`
-        The name of the command. Defaults to callback's name.
-    description: :class:`str`
-        The description of this command. Defaults to the docstring of the callback if found.
-        otherwise defaults to ``"No description"``
-
-        .. note::
-            Due to Discord's Limitation, In the case of :class:`MessageCommand` and
-            :class:`UserCommand`, This attribute is always an empty string.
-    guild_ids: List[:class:`int`]
-        The guild this command will be registered in. Defaults to an empty list for
-        global command.
-    default_permission: :class:`bool`
-        Whether the command will be enabled by default or not.
-        If this is set to ``False`` no one can use this command, Not even guild adminstators.
+    checks: List[Callable[:class:`InteractionContext`, bool]]
+        The list of checks this commands holds that will be checked before command's
+        invocation.
     """
     def __init__(self, callback: Callable, **attrs: Any):
         self._callback = callback
@@ -588,6 +576,15 @@ class ApplicationCommand:
             # https://discord.com/developers/docs/interactions/application-commands#message-commands
 
             self.description = ''
+
+
+        try:
+            checks = self._callback.__commands_checks__
+            checks.reverse()
+        except AttributeError:
+            checks = attrs.get('checks', [])
+
+        self.checks: List[Check] = checks
 
     def is_global_command(self) -> bool:
         """:class:`bool`: Whether the command is global command or not."""
@@ -720,6 +717,84 @@ class ApplicationCommand:
         """
         return self._cog
 
+    # checks management
+
+    def add_check(self, predicate: Check):
+        """
+        Adds a check to the command.
+
+        This is the non-decorator interface to :func:`.check`.
+
+        .. versionadded:: 1.3
+
+        Parameters
+        -----------
+        predicate
+            The function that will be used as a check.
+        """
+        self.checks.append(predicate)
+        return predicate
+
+    def remove_check(self, func: Check) -> None:
+        """Removes a check from the command.
+
+        This function is idempotent and will not raise an exception
+        if the function is not in the command's checks.
+
+        .. versionadded:: 1.3
+
+        Parameters
+        -----------
+        func
+            The function to remove from the checks.
+        """
+
+        try:
+            self.checks.remove(func)
+        except ValueError:
+            pass
+
+    async def can_run(self, ctx: InteractionContext) -> bool:
+        """|coro|
+
+        Checks if the command can be executed by checking all the predicates
+        inside the :attr:`~ApplicationCommand.checks` attribute. This also checks whether the
+        command is disabled.
+
+        .. versionchanged:: 1.3
+            Checks whether the command is disabled or not
+
+        Parameters
+        -----------
+        ctx: :class:`InteractionContext`
+            The ctx of the command currently being invoked.
+
+        Raises
+        -------
+        :class:`ApplicationCommandError`
+            Any command error that was raised during a check call will be propagated
+            by this function.
+
+        Returns
+        --------
+        :class:`bool`
+            A boolean indicating if the command can be invoked.
+        """
+        cog = self.cog
+        if cog is not None:
+            local_check = type(cog)._get_overridden_method(cog.cog_check)
+            if local_check is not None:
+                ret = await utils.maybe_coroutine(local_check, ctx)
+                if not ret:
+                    return False
+
+        predicates = self.checks
+        if not predicates:
+            # since we have no checks, then we just return True.
+            return True
+
+        return await utils.async_all(predicate(ctx) for predicate in predicates)  # type: ignore
+
     async def _parse_option(self, interaction: Interaction, option: ApplicationCommandOptionPayload) -> Any:
         # This function isn't needed to be a coroutine function but it can be helpful in
         # future so, yes that's the reason it's an async function.
@@ -765,6 +840,8 @@ class ApplicationCommand:
             The interaction invocation context.
         """
         interaction: Interaction = context.interaction
+        command = None
+        args = [context]
 
         if not interaction.data['type'] == self.type.value:
             raise TypeError(f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}')
@@ -792,12 +869,8 @@ class ApplicationCommand:
                         data=resolved['users'][interaction.data['target_id']]
                         )
 
-            if self.cog is not None:
-                await self.callback(self.cog, context, user)
-            else:
-                await self.callback(context, user)
-
-            return
+            args.append(user)
+            command = self
 
         elif self.type == ApplicationCommandType.message.value:
             data = interaction.data['resolved']['messages'][interaction.data['target_id']]
@@ -814,14 +887,8 @@ class ApplicationCommand:
                     data=data,
                 )
 
-            if self.cog is not None:
-                await self.callback(self.cog, context, message)
-            else:
-                await self.callback(context, message)
-
-            return
-
-
+            args.append(message)
+            command = self
 
         options = interaction.data.get('options', [])
         kwargs = {}
@@ -840,13 +907,8 @@ class ApplicationCommand:
                     resolved = subcommand.get_option(name=sub_option['name'])
                     kwargs[resolved.arg] = value
 
-
-                if subcommand.cog is not None:
-                    await subcommand.callback(subcommand.cog, context, **kwargs)
-                else:
-                    await subcommand.callback(context, **kwargs)
-
-                return
+                command = subcommand
+                break
 
             elif option['type'] == OptionType.sub_command_group.value:
                 # In case of sub-command groups interactions, The options array
@@ -865,25 +927,28 @@ class ApplicationCommand:
                     resolved = subcommand.get_option(name=sub_option['name'])
                     kwargs[resolved.arg] = value
 
-
-                if subcommand.cog is not None:
-                    await subcommand.callback(subcommand.cog, context, **kwargs)
-                else:
-                    await subcommand.callback(context, **kwargs)
-
-                return
+                command = subcommand
+                break
 
             else:
                 value = await self._parse_option(interaction, option)
                 option = self.get_option(name=option['name'])
                 kwargs[option.arg] = value
 
-        if self.cog is not None:
-            await self.callback(self.cog, context, **kwargs)
+        if command is None:
+            # if we're here, that means that a simple slash command
+            # was invoked with no options/subcommands that's why it wasn't set during
+            # options parsing.
+            command = self
+
+        context.command = command
+        if not (await command.can_run(context)):
+            raise ApplicationCommandCheckFailure(f'checks functions for application command {command._name} failed.')
+
+        if command.cog is not None:
+            await command.callback(command.cog, *args, **kwargs)
         else:
-            await self.callback(context, **kwargs)
-
-
+            await command.callback(*args, **kwargs)
 
     def __repr__(self):
         # More attributes here?
@@ -916,6 +981,15 @@ class SlashCommandChild(Option):
         self._callback = callback
         self._parent = None
 
+
+        try:
+            checks = self._callback.__commands_checks__
+            checks.reverse()
+        except AttributeError:
+            checks = kwargs.get('checks', [])
+
+        self.checks: List[Check] = checks
+
     @property
     def guild_ids(self) -> List[int]:
         """List[:class:`int`]: Returns the list of guild IDs in which the parent command is registered."""
@@ -935,6 +1009,85 @@ class SlashCommandChild(Option):
     def callback(self) -> SlashCommand:
         """Callable: The callback function for this child."""
         return self._callback
+
+    # checks management
+
+    def add_check(self, predicate: Check):
+        """
+        Adds a check to the command.
+
+        This is the non-decorator interface to :func:`.check`.
+
+        .. versionadded:: 1.3
+
+        Parameters
+        -----------
+        predicate
+            The function that will be used as a check.
+        """
+        self.checks.append(predicate)
+        return predicate
+
+    def remove_check(self, func: Check) -> None:
+        """Removes a check from the command.
+
+        This function is idempotent and will not raise an exception
+        if the function is not in the command's checks.
+
+        .. versionadded:: 1.3
+
+        Parameters
+        -----------
+        func
+            The function to remove from the checks.
+        """
+
+        try:
+            self.checks.remove(func)
+        except ValueError:
+            pass
+
+    async def can_run(self, ctx: InteractionContext) -> bool:
+        """|coro|
+
+        Checks if the command can be executed by checking all the predicates
+        inside the :attr:`~ApplicationCommand.checks` attribute. This also checks whether the
+        command is disabled.
+
+        .. versionchanged:: 1.3
+            Checks whether the command is disabled or not
+
+        Parameters
+        -----------
+        ctx: :class:`InteractionContext`
+            The ctx of the command currently being invoked.
+
+        Raises
+        -------
+        :class:`ApplicationCommandError`
+            Any command error that was raised during a check call will be propagated
+            by this function.
+
+        Returns
+        --------
+        :class:`bool`
+            A boolean indicating if the command can be invoked.
+        """
+        cog = self.cog
+        if cog is not None:
+            local_check = type(cog)._get_overridden_method(cog.cog_check)
+            if local_check is not None:
+                ret = await utils.maybe_coroutine(local_check, ctx)
+                if not ret:
+                    return False
+
+        predicates = self.checks
+        if not predicates:
+            # since we have no checks, then we just return True.
+            return True
+
+        return await utils.async_all(predicate(ctx) for predicate in predicates)  # type: ignore
+
 
     def to_dict(self) -> dict:
         return {

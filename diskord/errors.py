@@ -56,6 +56,7 @@ __all__ = (
 )
 
 
+
 class DiscordException(Exception):
     """Base exception class for diskord
 
@@ -277,12 +278,30 @@ class InteractionResponded(ClientException):
         self.interaction: Interaction = interaction
         super().__init__('This interaction has already been responded to before')
 
+
+class _BaseCommandError(Exception):
+    # this class is (kind of a) base class for application command errors discord.ext.commands.CommandError 
+    # and purely exists for instance checking purposes to avoid circular import issues.
+    # bad yet only implementation
+    pass
+
 class ApplicationCommandError(ClientException):
     """Base exception from which other application commands exceptions are derived.
-    
-    This class is really useful to create custom exceptions which you can handle in
+
+    This class is similar to :class:`~commands.CommandError` but it is for application
+    commands.
+
+    This class is useful to create custom exceptions which you can handle in
     :func:`on_application_command_error`. An exception that subclasses this class
     that is raised in an application command will be passed to :func:`on_application_command_error`
-    listener. 
+    listener.
+    """
+    pass
+
+class ApplicationCommandCheckFailure(ApplicationCommandError):
+    """A unique exception indicating that checks for an application command failed.
+
+    This class is similar to :class:`~commands.CheckFailure` but it is for application
+    commands and is not sent in :func:`on_command_error` but in :func:`on_application_command_error`
     """
     pass
