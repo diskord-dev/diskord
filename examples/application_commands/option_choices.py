@@ -11,7 +11,7 @@ bot = commands.Bot(command_prefix='!')
     diskord.OptionChoice(name='Cookie', value='cookie'), 
     diskord.OptionChoice(name='Candy', value='candy'),
 ])
-@bot.slash_option('quantity', description='The quantity of items to buy. Defaults to 1')
+@diskord.slash_option('quantity', description='The quantity of items to buy. Defaults to 1')
 async def buy(ctx, item, quantity: int = 1):
   await ctx.send(f'you bought {quantity} {item}(s)!')
   
