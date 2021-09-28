@@ -906,6 +906,7 @@ class ApplicationCommand:
                 # just options of a command. And option names are unique
 
                 subcommand = self.get_child(name=option['name'])
+                context.command = subcommand
                 sub_options = option.get('options', [])
 
                 for sub_option in sub_options:
@@ -928,6 +929,7 @@ class ApplicationCommand:
                 group = self.get_child(name=option['name'])
                 sub_options = subcommand_raw.get('options', [])
                 subcommand = group.get_child(name=subcommand_raw['name'])
+                context.command = subcommand
 
                 for sub_option in sub_options:
                     value = await self._parse_option(interaction, sub_option)
@@ -941,19 +943,15 @@ class ApplicationCommand:
                 break
 
             else:
+                if context.command is None:
+                    context.command = self
+
                 value = await self._parse_option(interaction, option)
                 option = self.get_option(name=option['name'])
                 if option.converter is not None:
                     kwargs[option.arg] = option.converter().convert(value)
                 kwargs[option.arg] = value
 
-        if command is None:
-            # if we're here, that means that a simple slash command
-            # was invoked with no options/subcommands that's why it wasn't set during
-            # options parsing.
-            command = self
-
-        context.command = command
         if not (await command.can_run(context)):
             raise ApplicationCommandCheckFailure(f'checks functions for application command {command._name} failed.')
 
