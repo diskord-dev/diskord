@@ -814,7 +814,10 @@ class InteractionContext:
         # bot alias exists for being consistent commands.Bot models
         self.bot = client
         self.interaction = interaction
-        self._state = self.interaction._state
+        self.command: ApplicationCommand = None # type: ignore
+        self._state: ConnectionState = self.interaction._state
+
+
 
     @property
     def channel(self) -> abc.Snowflake:
