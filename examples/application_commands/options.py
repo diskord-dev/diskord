@@ -12,14 +12,14 @@ async def on_ready():
 @bot.slash_command()
 # the first argument "text" is the name of option and the name of argument
 # in command function that represents this option.
-@bot.slash_option('text', description='The text to say!')
+@diskord.slash_option('text', description='The text to say!')
 async def say(ctx, text):
   await ctx.send(f'{ctx.author.name} said: {text}')
 
 # We can do similar for users, roles, channels etc.
-@bot.slash_command()
-@bot.slash_option('user', description='The user to slap!')
-@bot.slash_option('amount', description='Amounts of slaps! Defaults to 1')
+@diskord.slash_command()
+@diskord.slash_option('user', description='The user to slap!')
+@diskord.slash_option('amount', description='Amounts of slaps! Defaults to 1')
 # annotating user as "diskord.User" will make option type a user and same for "int"
 # setting a default value to an argument will make that option optional.
 async def slap(ctx, user: diskord.User, amount: int = 1): 
