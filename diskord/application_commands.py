@@ -108,7 +108,7 @@ def get_signature_parameters(function: Callable[..., Any], globalns: Dict[str, A
     return params
 
 Check = Callable[[InteractionContext, 'Context'], bool]
-    
+
 class OptionChoice:
     """Represents an option choice for an application command's option.
 
@@ -190,7 +190,7 @@ class Option:
         choices: List[OptionChoice] = None,
         required: bool = True,
         arg: str = None,
-        converter: Any = None # todo: proper typehint
+        converter: 'Converter' = None # todo: proper typehint
     ):
         try:
             self._type: OptionType = OptionType.from_datatype(type)
@@ -207,7 +207,7 @@ class Option:
             self._choices = []
 
         self._options: List[Option] = []
-        self.converter = converter # type: ignore
+        self.converter: 'Converter' = converter # type: ignore
 
         self._parent: Union[ApplicationCommand, Option] = None # type: ignore
 
