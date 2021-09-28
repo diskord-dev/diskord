@@ -18,9 +18,12 @@ async def say(ctx, text):
 
 # We can do similar for users, roles, channels etc.
 @bot.slash_command()
-@bot.slash_option('user', description='The user to slap!') 
-async def slap(ctx, user: diskord.User): # annotating user as "diskord.User" will make option type a user
-  await ctx.send(f'{ctx.author.name} slapped {user.name}')
+@bot.slash_option('user', description='The user to slap!')
+@bot.slash_option('amount', description='Amounts of slaps! Defaults to 1')
+# annotating user as "diskord.User" will make option type a user and same for "int"
+# setting a default value to an argument will make that option optional.
+async def slap(ctx, user: diskord.User, amount: int = 1): 
+  await ctx.send(f'{ctx.author.name} slapped {user.name}, {amount} times!')
   
 # available types are:
 # diskord.Role: For role
