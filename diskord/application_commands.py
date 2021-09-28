@@ -190,6 +190,7 @@ class Option:
         choices: List[OptionChoice] = None,
         required: bool = True,
         arg: str = None,
+        converter: Any = None # todo: proper typehint
     ):
         try:
             self._type: OptionType = OptionType.from_datatype(type)
@@ -206,7 +207,7 @@ class Option:
             self._choices = []
 
         self._options: List[Option] = []
-        self.converter = None # type: ignore
+        self.converter = converter # type: ignore
 
         self._parent: Union[ApplicationCommand, Option] = None # type: ignore
 
@@ -913,7 +914,9 @@ class ApplicationCommand:
                     value = await self._parse_option(interaction, sub_option)
                     resolved = subcommand.get_option(name=sub_option['name'])
                     if resolved.converter is not None:
-                        kwargs[resolved.arg] = resolved.converter().convert(value)
+                        kwargs[resolved.arg] = await resolved.converter().convert(context, value)
+                    else:
+                        kwargs[resolved.arg] = value
 
                 command = subcommand
                 break
@@ -934,25 +937,30 @@ class ApplicationCommand:
                 for sub_option in sub_options:
                     value = await self._parse_option(interaction, sub_option)
                     resolved = subcommand.get_option(name=sub_option['name'])
-                    kwargs[resolved.arg] = value
 
                     if resolved.converter is not None:
-                        kwargs[resolved.arg] = resolved.converter().convert(value)
+                        kwargs[resolved.arg] = await resolved.converter().convert(context, value)
+                    else:
+                        kwargs[resolved.arg] = value
 
                 command = subcommand
                 break
 
             else:
-                if context.command is None:
-                    context.command = self
+                if command is None:
+                    command = self
+                    context.command = command
 
                 value = await self._parse_option(interaction, option)
                 option = self.get_option(name=option['name'])
+
                 if option.converter is not None:
-                    kwargs[option.arg] = option.converter().convert(value)
-                kwargs[option.arg] = value
+                    kwargs[option.arg] = await option.converter().convert(context, value)
+                else:
+                    kwargs[option.arg] = value
 
         if not (await command.can_run(context)):
+            # todo: do this before options parsing.
             raise ApplicationCommandCheckFailure(f'checks functions for application command {command._name} failed.')
 
         if command.cog is not None:
@@ -1693,10 +1701,14 @@ def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
             func.__application_command_params__ = get_signature_parameters(func, globalns)
 
         params = func.__application_command_params__
+        type_ = params[attrs.get('arg', name)].annotation
+
+        if type_ is inspect._empty:
+            type_ = str
 
         func.__annotations__[attrs.get('arg', name)] = Option(
             name=name,
-            type=params[attrs.get('arg', name)].annotation,
+            type=type_,
             required=required,
             **attrs
             )
