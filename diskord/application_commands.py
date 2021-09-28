@@ -179,7 +179,9 @@ class Option:
         The argument name which represents this option in callback function.
     choices: List[:class:`OptionChoice`]
         The list of choices this option has.
-
+    converter: Optional[:class:`~ext.commands.Converter`]
+        The converter of this option. This is derived directly from converters in 
+        commands extension. Read about :class:`ext.commands.Converter`
     """
     def __init__(self, *,
         name: str,
@@ -204,6 +206,7 @@ class Option:
             self._choices = []
 
         self._options: List[Option] = []
+        self.converter = None # type: ignore
 
         self._parent: Union[ApplicationCommand, Option] = None # type: ignore
 
@@ -908,7 +911,8 @@ class ApplicationCommand:
                 for sub_option in sub_options:
                     value = await self._parse_option(interaction, sub_option)
                     resolved = subcommand.get_option(name=sub_option['name'])
-                    kwargs[resolved.arg] = value
+                    if resolved.converter is not None:
+                        kwargs[resolved.arg] = resolved.converter().convert(value)
 
                 command = subcommand
                 break
@@ -930,12 +934,17 @@ class ApplicationCommand:
                     resolved = subcommand.get_option(name=sub_option['name'])
                     kwargs[resolved.arg] = value
 
+                    if resolved.converter is not None:
+                        kwargs[resolved.arg] = resolved.converter().convert(value)
+
                 command = subcommand
                 break
 
             else:
                 value = await self._parse_option(interaction, option)
                 option = self.get_option(name=option['name'])
+                if option.converter is not None:
+                    kwargs[option.arg] = option.converter().convert(value)
                 kwargs[option.arg] = value
 
         if command is None:
