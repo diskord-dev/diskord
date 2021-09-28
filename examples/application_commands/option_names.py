@@ -6,7 +6,7 @@ bot = commands.Bot(command_prefix='!')
 # you can set "arg" keyword argument to the name of argument that represents the option in the command function
 # and then change the option name as desired.
 @bot.slash_command()
-@bot.slash_option('sentence', arg='text', description='The text to say!')
+@diskord.slash_option('sentence', arg='text', description='The text to say!')
 async def say(ctx, text):
   await ctx.send(f'{ctx.author.name} said: {text}')
 
