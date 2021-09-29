@@ -688,13 +688,15 @@ class OptionType(Enum, comparable=True):
                     except KeyError:
                         # unknown type in typing.Union? ignore it.
                         pass
+                    else:
+                        return cls.channel
             else:
                 try:
                     option._channel_types.append(channel_types_map[annotation.__name__])
                 except KeyError:
                     pass
-
-            return cls.channel
+                else:
+                    return cls.channel
         
         return cls.string
 

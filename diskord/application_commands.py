@@ -259,7 +259,6 @@ class Option:
     @property
     def options(self) -> List[Option]:
         """List[:class:`Option`]: The list of sub-options of this option."""
-        self._options.reverse()        
         return self._options
 
     @property
@@ -1448,7 +1447,6 @@ class SlashCommand(ApplicationCommand):
     @property
     def options(self) -> List[Option]:
         """List[:class:`Option`]: The list of options this command has."""
-        self._options.reverse()
         return self._options
 
     @property
@@ -1718,27 +1716,26 @@ def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
     def inner(func):
         nonlocal type_
         type_ = type_ or func.__annotations__.get(name, str)
-        arg = attrs.get('arg', name)
+        arg = attrs.pop('arg', name)
 
-        sign = inspect.signature(func).parameters.get(attrs.get('arg', name))
+        sign = inspect.signature(func).parameters.get(arg)
         if sign is None:
             raise TypeError(f'Parameter for option {name} is missing.')
 
-        required = attrs.get('required')
+        required = attrs.pop('required', None)
         if required is None:
             required = sign.default is inspect._empty
 
-        if not hasattr(func, '__application_command_params__'):
-            unwrap = unwrap_function(func)
-            try:
-                globalns = unwrap.__globals__
-            except AttributeError:
-                globalns = {}
+        unwrap = unwrap_function(func)
+        try:
+            globalns = unwrap.__globals__
+        except AttributeError:
+            globalns = {}
 
-            func.__application_command_params__ = get_signature_parameters(func, globalns)
+        func.__application_command_params__ = get_signature_parameters(func, globalns)
 
         params = func.__application_command_params__
-        type_ = params[attrs.get('arg', name)].annotation
+        type_ = params[arg].annotation
 
         if type_ is inspect._empty: # no annotations were passed.
             type_ = str
