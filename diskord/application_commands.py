@@ -182,6 +182,9 @@ class Option:
     converter: Optional[:class:`~ext.commands.Converter`]
         The converter of this option. This is derived directly from converters in 
         commands extension. Read about :class:`ext.commands.Converter`
+    channel_types: List[:class:`ChannelType`]
+        The channel types to show, If :attr:`Option.type` is :attr:`OptionType.channel`.
+        This is determined by the annotation of the option in callback function.
     """
     def __init__(self, *,
         name: str,
@@ -227,6 +230,20 @@ class Option:
     def name(self) -> str:
         """:class:`str`: The name of option."""
         return self._name
+
+    @property
+    def channel_types(self) -> List[ChannelType]:
+        """List[:class:`ChannelType`]: The channel types to show, If :attr:`Option.type` 
+        is :attr:`OptionType.channel`.
+
+        .. info::
+            Though this is determined by the annotation of parameter that represents
+            this option in the callback function, Due to how Discord's Enum work, 
+            For precise selection of channel types, Pass the list of desired channel
+            types in ``channel_types`` parameter in :class:`Option`
+        """
+        return self._channel_types
+
 
     @property
     def description(self) -> str:
