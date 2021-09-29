@@ -238,9 +238,9 @@ class Option:
 
         .. info::
             Though this is determined by the annotation of parameter that represents
-            this option in the callback function, Due to how Discord's Enum work, 
-            For precise selection of channel types, Pass the list of desired channel
-            types in ``channel_types`` parameter in :class:`Option`
+            this option in the callback function, It should be noted that due to how 
+            Discord's Enum work, For precise selection of channel types, Pass the list of 
+            desired :class:`ChannelType` in ``channel_types`` parameter in :class:`Option`
         """
         return self._channel_types
 
