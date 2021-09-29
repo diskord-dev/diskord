@@ -190,18 +190,15 @@ class Option:
         choices: List[OptionChoice] = None,
         required: bool = True,
         arg: str = None,
-        converter: 'Converter' = None # todo: proper typehint
+        converter: 'Converter' = None,
+        **attrs,
     ):
-        try:
-            self._type: OptionType = OptionType.from_datatype(type)
-        except TypeError:
-            self._type: OptionType = type
-
+        self._callback: Callable[..., Any] = attrs.get('callback')
         self._name = name
         self._description = description or "No description"
         self._required = required
         self._arg = arg or self.name
-
+        self._channel_types: List[ChannelType] = attrs.get('channel_types', []) # type: ignore
         self._choices: List[OptionChoice] = choices
         if self._choices is None:
             self._choices = []
@@ -210,6 +207,14 @@ class Option:
         self.converter: 'Converter' = converter # type: ignore
 
         self._parent: Union[ApplicationCommand, Option] = None # type: ignore
+
+        if type in [OptionType.sub_command_group, OptionType.sub_command]:
+            self._type = type
+        else:
+            try:
+                self._type: OptionType = OptionType.from_datatype(type, option=self)
+            except TypeError:
+                self._type: OptionType = type
 
     def __repr__(self):
         return f'<Option name={self._name!r} description={self._description!r}>'
@@ -254,6 +259,7 @@ class Option:
     @property
     def options(self) -> List[Option]:
         """List[:class:`Option`]: The list of sub-options of this option."""
+        self._options.reverse()        
         return self._options
 
     @property
@@ -436,13 +442,22 @@ class Option:
             'name': self._name,
             'description': self._description,
             'choices': [choice.to_dict() for choice in self._choices],
-            'options': [option.to_dict() for option in self._options],
+            'options': [option.to_dict() for option in self.options],
         }
 
         if not self.is_command_or_group():
             # Discord API doesn't allow passing required in the payload of
             # options that have type of 1 or 2.
             dict_['required'] = self._required
+
+        if self._channel_types:
+            dict_['channel_types'] = []
+            for t in self._channel_types:
+                if isinstance(t, list):
+                    for st in t:
+                        dict_['channel_types'].append(st.value)
+                else:
+                    dict_['channel_types'].append(t.value)
 
         return dict_
 
@@ -820,6 +835,24 @@ class ApplicationCommand:
             else:
                 value = context.client.get_user(int(option['value']))
 
+            # value can be none in case when member intents are not available
+
+            if value is None:
+                resolved = interaction.data['resolved']
+                if interaction.guild:
+                    member_with_user = resolved['members'][option['value']]
+                    member_with_user['user'] = resolved['users'][option['value']]
+                    value = Member(
+                        data=member_with_user,
+                        guild=interaction.guild,
+                        state=interaction.guild._state
+                        )
+                else:
+                    value = User(
+                        state=context.client._connection,
+                        data=resolved['users'][option['value']]
+                        )
+
         elif option['type'] == OptionType.channel.value:
             value = interaction.guild.get_channel(int(option['value']))
 
@@ -990,6 +1023,7 @@ class SlashCommandChild(Option):
         type: SlashChildType, *,
         name: str = None,
         description: str = None,
+        **kwargs
     ):
         super().__init__(
             name=name or callback.__name__,
@@ -1112,7 +1146,7 @@ class SlashCommandChild(Option):
             'name': self._name,
             'description': self._description,
             'type': self._type.value,
-            'options': [option.to_dict() for option in self._options],
+            'options': [option.to_dict() for option in self.options],
         }
 
 
@@ -1285,6 +1319,7 @@ class SlashSubCommand(SlashCommandChild):
         )
         self._parent = None
 
+
     # Option management
 
     def get_option(self, **attrs) -> Optional[Option]:
@@ -1413,6 +1448,7 @@ class SlashCommand(ApplicationCommand):
     @property
     def options(self) -> List[Option]:
         """List[:class:`Option`]: The list of options this command has."""
+        self._options.reverse()
         return self._options
 
     @property
@@ -1615,7 +1651,7 @@ class SlashCommand(ApplicationCommand):
         dict_ = {
             'name': self._name,
             'type': self._type.value,
-            'options': [option.to_dict() for option in self._options],
+            'options': [option.to_dict() for option in self.options],
             'description': self._description,
         }
 
@@ -1682,6 +1718,7 @@ def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
     def inner(func):
         nonlocal type_
         type_ = type_ or func.__annotations__.get(name, str)
+        arg = attrs.get('arg', name)
 
         sign = inspect.signature(func).parameters.get(attrs.get('arg', name))
         if sign is None:
@@ -1703,13 +1740,15 @@ def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
         params = func.__application_command_params__
         type_ = params[attrs.get('arg', name)].annotation
 
-        if type_ is inspect._empty:
+        if type_ is inspect._empty: # no annotations were passed.
             type_ = str
 
-        func.__annotations__[attrs.get('arg', name)] = Option(
+        func.__annotations__[arg] = Option(
             name=name,
             type=type_,
+            arg=arg,
             required=required,
+            callback=func,
             **attrs
             )
         return func
