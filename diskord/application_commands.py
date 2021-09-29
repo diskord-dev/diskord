@@ -1141,11 +1141,15 @@ class SlashCommandChild(Option):
 
 
     def to_dict(self) -> dict:
+        options = self.options
+        if isinstance(self, SlashSubCommand) and isinstance(self._parent, SlashCommandGroup):
+            options.reverse()
+        
         return {
             'name': self._name,
             'description': self._description,
             'type': self._type.value,
-            'options': [option.to_dict() for option in self.options],
+            'options': [option.to_dict() for option in options],
         }
 
 
@@ -1316,7 +1320,7 @@ class SlashSubCommand(SlashCommandChild):
             OptionType.sub_command.value,
             **attrs
         )
-        self._parent = None
+        self._parent: Union[SlashCommand, SlashCommandGroup] = None # type: ignore
 
 
     # Option management
