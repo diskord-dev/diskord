@@ -2217,7 +2217,6 @@ class Client:
             The interaction to handle. If the interaction is not a application command interaction,
             then this will silently ignore the interaction.
         """
-        print(interaction.data)
         if not interaction.is_application_command():
             return
 
