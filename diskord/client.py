@@ -2038,6 +2038,7 @@ class Client:
                         # make the command in the guild
                         if ignore_guild_register_fail:
                             traceback.print_exc()
+                            continue
                         else:
                             raise e
             else:
@@ -2112,6 +2113,7 @@ class Client:
                 # bot doesn't has application.commands scope
                 if ignore_guild_register_fail:
                     traceback.print_exc()
+                    continue
                 else:
                     raise e
             for cmd in cmds:
@@ -2215,6 +2217,7 @@ class Client:
             The interaction to handle. If the interaction is not a application command interaction,
             then this will silently ignore the interaction.
         """
+        print(interaction.data)
         if not interaction.is_application_command():
             return
 
