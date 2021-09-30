@@ -1723,9 +1723,12 @@ class Client:
         command.client = self
         self._pending_commands.append(command)
 
-        for opt in command.callback.__annotations__.values():
-            if isinstance(opt, Option):
-                command.append_option(opt)
+
+        if not hasattr(command.callback, '__application_command_params__'):
+            command.callback.__application_command_params__ = {}        
+
+        for opt in command.callback.__application_command_params__.values():
+            command.append_option(opt)
 
         return command
 

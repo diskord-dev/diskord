@@ -40,6 +40,7 @@ import inspect
 import functools
 
 from . import utils
+from .utils import unwrap_function, get_signature_parameters
 from .enums import (
     try_enum,
     ApplicationCommandType,
@@ -77,36 +78,6 @@ __all__ = (
     'message_command',
     'application_command_permission',
 )
-
-def unwrap_function(function: Callable[..., Any]) -> Callable[..., Any]:
-    partial = functools.partial
-    while True:
-        if hasattr(function, '__wrapped__'):
-            function = function.__wrapped__
-        elif isinstance(function, partial):
-            function = function.func
-        else:
-            return function
-
-def get_signature_parameters(function: Callable[..., Any], globalns: Dict[str, Any]) -> Dict[str, inspect.Parameter]:
-    signature = inspect.signature(function)
-    params = {}
-    cache: Dict[str, Any] = {}
-    eval_annotation = utils.evaluate_annotation
-    for name, parameter in signature.parameters.items():
-        annotation = parameter.annotation
-        if annotation is parameter.empty:
-            params[name] = parameter
-            continue
-        if annotation is None:
-            params[name] = parameter.replace(annotation=type(None))
-            continue
-
-        annotation = eval_annotation(annotation, globalns, globalns, cache)
-        params[name] = parameter.replace(annotation=annotation)
-
-    return params
-
 Check = Callable[[InteractionContext, 'Context'], bool]
 
 class OptionChoice:
@@ -458,7 +429,7 @@ class Option:
             'name': self._name,
             'description': self._description,
             'choices': [choice.to_dict() for choice in self._choices],
-            'options': [option.to_dict() for option in self.options],
+            'options': [option.to_dict() for option in reversed(self.options)],
         }
 
         if not self.is_command_or_group():
@@ -1160,7 +1131,7 @@ class SlashCommandChild(Option):
             'name': self._name,
             'description': self._description,
             'type': self._type.value,
-            'options': [option.to_dict() for option in self._options],
+            'options': [option.to_dict() for option in reversed(self.options)],
         }
 
 
@@ -1246,10 +1217,12 @@ class SlashCommandGroup(SlashCommandChild):
         child._parent = self
         self._options.append(child)
         self._children.append(child)
-        
-        for opt in child.callback.__annotations__.values():
-            if isinstance(opt, Option):
-                child.append_option(opt)
+
+        if not hasattr(child.callback, '__application_command_params__'):
+            child.callback.__application_command_params__ = {}
+
+        for opt in child.callback.__application_command_params__.values():
+            child.append_option(opt)
 
         return child
 
@@ -1582,9 +1555,12 @@ class SlashCommand(ApplicationCommand):
         self._options.append(child)
         self._children.append(child)
 
-        for opt in child.callback.__annotations__.values():
-            if isinstance(opt, Option):
-                child.append_option(opt)
+        if not hasattr(child.callback, '__application_command_params__'):
+            child.callback.__application_command_params__ = {}
+
+        for opt in child.callback.__application_command_params__.values():
+            child.append_option(opt)
+
 
         return child
 
@@ -1666,7 +1642,7 @@ class SlashCommand(ApplicationCommand):
         dict_ = {
             'name': self._name,
             'type': self._type.value,
-            'options': [option.to_dict() for option in self.options],
+            'options': [option.to_dict() for option in reversed(self.options)],
             'description': self._description,
         }
 
@@ -1714,7 +1690,7 @@ class MessageCommand(ApplicationCommand):
         self._type = ApplicationCommandType.message
         super().__init__(callback, **attrs)
 
-def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
+def slash_option(name: str,  **attrs) -> Option:
     """A decorator-based interface to add options to a slash command.
 
     Usage: ::
@@ -1731,17 +1707,14 @@ def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
         will be raised.
     """
     def inner(func):
-        nonlocal type_
-        type_ = type_ or func.__annotations__.get(name, str)
+        # Originally the Option object was inserted directly in
+        # annotations but that was problematic so it was changed to 
+        # this.
+
         arg = attrs.pop('arg', name)
 
-        sign = inspect.signature(func).parameters.get(arg)
-        if sign is None:
-            raise TypeError(f'Parameter for option {name} is missing.')
-
-        required = attrs.pop('required', None)
-        if required is None:
-            required = sign.default is inspect._empty
+        if not hasattr(func, '__application_command_params__'):
+            func.__application_command_params__ = {}
 
         unwrap = unwrap_function(func)
         try:
@@ -1749,21 +1722,24 @@ def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
         except AttributeError:
             globalns = {}
 
-        func.__application_command_params__ = get_signature_parameters(func, globalns)
+        params = get_signature_parameters(func, globalns)
+        param = params.get(arg)
 
-        params = func.__application_command_params__
-        type_ = params[arg].annotation
+        required = attrs.pop('required', None)
+        if required is None:
+            required = param.default is inspect._empty
 
-        if type_ is inspect._empty: # no annotations were passed.
-            type_ = str
+        type = params[arg].annotation
 
-        func.__annotations__[arg] = Option(
-            name=name,
-            type=type_,
-            arg=arg,
-            required=required,
-            callback=func,
-            **attrs
+        if type is inspect._empty: # no annotations were passed.
+            type = str
+
+        func.__application_command_params__[arg] = (
+            Option(
+                name=name, type=type, 
+                arg=arg, required=required, 
+                callback=func, **attrs
+                )
             )
         return func
 
