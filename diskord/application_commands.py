@@ -478,8 +478,6 @@ class Option:
         return dict_
 
 
-# TODO: Work on Application command permissions.
-
 
 class ApplicationCommandGuildPermissions:
     """Represents the permissions for an application command in a :class:`Guild`.
@@ -1157,16 +1155,12 @@ class SlashCommandChild(Option):
         return await utils.async_all(predicate(ctx) for predicate in predicates)  # type: ignore
 
 
-    def to_dict(self) -> dict:
-        options = self.options
-        if isinstance(self, SlashSubCommand) and isinstance(self._parent, SlashCommandGroup):
-            options.reverse()
-        
+    def to_dict(self) -> dict:            
         return {
             'name': self._name,
             'description': self._description,
             'type': self._type.value,
-            'options': [option.to_dict() for option in options],
+            'options': [option.to_dict() for option in self._options],
         }
 
 
@@ -1252,7 +1246,7 @@ class SlashCommandGroup(SlashCommandChild):
         child._parent = self
         self._options.append(child)
         self._children.append(child)
-
+        
         for opt in child.callback.__annotations__.values():
             if isinstance(opt, Option):
                 child.append_option(opt)
@@ -1309,6 +1303,8 @@ class SlashCommandGroup(SlashCommandChild):
             return self.add_child(SlashSubCommand(func, **attrs))
 
         return inner
+
+
 
 class SlashSubCommand(SlashCommandChild):
     """Represents a subcommand of a slash command.

@@ -2031,7 +2031,7 @@ class Client:
             command = self._pending_commands[index]
             if command.guild_ids:
                 for guild_id in command.guild_ids:
-                    try:
+                    try:            
                         cmd = await self.http.upsert_guild_command(self.user.id, guild_id, command.to_dict())
                     except Forbidden as e:
                         # the bot is missing application.commands scope so cannot
@@ -2042,7 +2042,8 @@ class Client:
                         else:
                             raise e
             else:
-                cmd = await self.http.upsert_global_command(self.user.id, command.to_dict())
+                data = command.to_dict()            
+                cmd = await self.http.upsert_global_command(self.user.id, data)
 
             self._connection._application_commands[int(cmd['id'])] = command._from_data(cmd)
             self._pending_commands.pop(index)

@@ -249,10 +249,12 @@ class Role(Hashable):
         self.mentionable: bool = data.get('mentionable', False)
         self.tags: Optional[RoleTags]
         self._icon: Optional[Asset] = data.get('icon')
-        try:
-            self.unicode_emoji: Optional[PartialEmoji] = PartialEmoji.from_str(data['unicode_emoji'])
-        except KeyError:
-            self.unicode_emoji: Optional = None
+        
+        # TODO:
+        # try:
+        #     self.unicode_emoji: Optional[PartialEmoji] = PartialEmoji.from_str(str(data['unicode_emoji']))
+        # except KeyError:
+        #     self.unicode_emoji: Optional[PartialEmoji] = None
 
 
         try:
