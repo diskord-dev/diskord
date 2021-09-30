@@ -47,7 +47,7 @@ from .enums import (
     OptionType,
     ApplicationCommandPermissionType,
 )
-from .errors import ApplicationCommandError, ApplicationCommandCheckFailure
+from .errors import ApplicationCommandError, ApplicationCommandCheckFailure, ApplicationCommandConversionError
 from .user import User
 from .member import Member
 from .interactions import InteractionContext
@@ -932,7 +932,10 @@ class ApplicationCommand:
                     value = await self._parse_option(interaction, sub_option)
                     resolved = subcommand.get_option(name=sub_option['name'])
                     if resolved.converter is not None:
-                        kwargs[resolved.arg] = await resolved.converter().convert(context, value)
+                        try:
+                            kwargs[resolved.arg] = await resolved.converter().convert(context, value)
+                        except Exception as error:
+                            raise ApplicationCommandConversionError(resolved.converter, error) from error        
                     else:
                         kwargs[resolved.arg] = value
 
@@ -957,7 +960,10 @@ class ApplicationCommand:
                     resolved = subcommand.get_option(name=sub_option['name'])
 
                     if resolved.converter is not None:
-                        kwargs[resolved.arg] = await resolved.converter().convert(context, value)
+                        try:
+                            kwargs[resolved.arg] = await resolved.converter().convert(context, value)
+                        except Exception as error:
+                            raise ApplicationCommandConversionError(resolved.converter, error) from error        
                     else:
                         kwargs[resolved.arg] = value
 
@@ -970,12 +976,15 @@ class ApplicationCommand:
                     context.command = command
 
                 value = await self._parse_option(interaction, option)
-                option = self.get_option(name=option['name'])
+                resolved = self.get_option(name=option['name'])
 
-                if option.converter is not None:
-                    kwargs[option.arg] = await option.converter().convert(context, value)
+                if resolved.converter is not None:
+                    try:
+                        kwargs[option.arg] = await resolved.converter().convert(context, value)
+                    except Exception as error:
+                        raise ApplicationCommandConversionError(resolved.converter, error) from error
                 else:
-                    kwargs[option.arg] = value
+                    kwargs[resolved.arg] = value
 
         if not (await command.can_run(context)):
             # todo: do this before options parsing.
