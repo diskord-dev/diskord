@@ -36,6 +36,7 @@ from typing import (
     Union,
     get_origin,
     )
+from .utils import unwrap_function, get_signature_parameters
 
 __all__ = (
     'Enum',
@@ -675,12 +676,18 @@ class OptionType(Enum, comparable=True):
                     ],
                 'StageChannel': ChannelType.stage_voice
             }
-            annotation = option._callback.__application_command_params__.get(option.arg)
-            if annotation:
-                annotation = annotation.annotation
+            unwrap = unwrap_function(option._callback)
+            try:
+                globalns = unwrap.__globals__
+            except AttributeError:
+                globalns = {}
+
+            params = get_signature_parameters(option._callback, globalns)
+            param = params.get(option._arg)
+
             
-            if get_origin(annotation) is Union:
-                args = [arg.__name__ for arg in annotation.__args__]
+            if get_origin(param.annotation) is Union:
+                args = [arg.__name__ for arg in param.annotation.__args__]
                 # now we have the name of all the channel types that were in typing.Union
                 for arg in args:
                     try:
@@ -692,7 +699,7 @@ class OptionType(Enum, comparable=True):
                         return cls.channel
             else:
                 try:
-                    option._channel_types.append(channel_types_map[annotation.__name__])
+                    option._channel_types.append(channel_types_map[param.annotation.__name__])
                 except KeyError:
                     pass
                 else:
