@@ -53,6 +53,8 @@ __all__ = (
     'PrivilegedIntentsRequired',
     'InteractionResponded',
     'ApplicationCommandError',
+    'ApplicationCommandCheckFailure',
+    'ApplicationCommandConversionError',
 )
 
 
@@ -306,3 +308,24 @@ class ApplicationCommandCheckFailure(ApplicationCommandError):
     commands and is not sent in :func:`on_command_error` but in :func:`on_application_command_error`
     """
     pass
+
+class ApplicationCommandConversionError(ApplicationCommandError):
+    """Exception raised when a :class:`~ext.commands.Converter` class raises 
+    non-ApplicationCommandError.
+
+    This inherits from :exc:`ApplicationCommandError`.
+
+    This class is similar to :exc:`~ext.commands.ConversionError` but it is for application
+    commands and is not sent in :func:`on_command_error` but in :func:`on_application_command_error`
+
+    Attributes
+    ----------
+    converter: :class:`diskord.ext.commands.Converter`
+        The converter that failed.
+    original: :exc:`Exception`
+        The original exception that was raised. You can also get this via
+        the ``__cause__`` attribute.
+    """
+    def __init__(self, converter: 'Converter', original: Exception) -> None:
+        self.converter: Converter = converter
+        self.original: Exception = original
