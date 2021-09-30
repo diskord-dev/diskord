@@ -117,7 +117,7 @@ class CommandError(DiscordException):
         else:
             super().__init__(*args)
 
-class ConversionError(CommandError, _BaseCommandError):
+class ConversionError(CommandError):
     """Exception raised when a Converter class raises non-CommandError.
 
     This inherits from :exc:`CommandError`.
