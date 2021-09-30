@@ -220,7 +220,7 @@ class Guild(Hashable):
         - ``VERIFIED``: Guild is a verified server.
         - ``VIP_REGIONS``: Guild has VIP voice regions.
         - ``WELCOME_SCREEN_ENABLED``: Guild has enabled the welcome screen.
-        - ``ROLE_SUBSCRIPTIONS_ENABLED``: Guild has role subscriptions enabled.
+        - ``ROLE_ICONS``: Guild can set role icons.
 
     premium_tier: :class:`int`
         The premium tier for this guild. Corresponds to "Nitro Server" in the official UI.

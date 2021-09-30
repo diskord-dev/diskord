@@ -40,15 +40,17 @@ import inspect
 import functools
 
 from . import utils
+from .utils import unwrap_function, get_signature_parameters
 from .enums import (
     try_enum,
     ApplicationCommandType,
     OptionType,
     ApplicationCommandPermissionType,
 )
-from .errors import ApplicationCommandError
+from .errors import ApplicationCommandError, ApplicationCommandCheckFailure, ApplicationCommandConversionError
 from .user import User
 from .member import Member
+from .interactions import InteractionContext
 
 if TYPE_CHECKING:
     from .types.interactions import (
@@ -76,36 +78,7 @@ __all__ = (
     'message_command',
     'application_command_permission',
 )
-
-def unwrap_function(function: Callable[..., Any]) -> Callable[..., Any]:
-    partial = functools.partial
-    while True:
-        if hasattr(function, '__wrapped__'):
-            function = function.__wrapped__
-        elif isinstance(function, partial):
-            function = function.func
-        else:
-            return function
-
-def get_signature_parameters(function: Callable[..., Any], globalns: Dict[str, Any]) -> Dict[str, inspect.Parameter]:
-    signature = inspect.signature(function)
-    params = {}
-    cache: Dict[str, Any] = {}
-    eval_annotation = utils.evaluate_annotation
-    for name, parameter in signature.parameters.items():
-        annotation = parameter.annotation
-        if annotation is parameter.empty:
-            params[name] = parameter
-            continue
-        if annotation is None:
-            params[name] = parameter.replace(annotation=type(None))
-            continue
-
-        annotation = eval_annotation(annotation, globalns, globalns, cache)
-        params[name] = parameter.replace(annotation=annotation)
-
-    return params
-
+Check = Callable[[InteractionContext, 'Context'], bool]
 
 class OptionChoice:
     """Represents an option choice for an application command's option.
@@ -177,7 +150,12 @@ class Option:
         The argument name which represents this option in callback function.
     choices: List[:class:`OptionChoice`]
         The list of choices this option has.
-
+    converter: Optional[:class:`~ext.commands.Converter`]
+        The converter of this option. This is derived directly from converters in 
+        commands extension. Read about :class:`ext.commands.Converter`
+    channel_types: List[:class:`ChannelType`]
+        The channel types to show, If :attr:`Option.type` is :attr:`OptionType.channel`.
+        This is determined by the annotation of the option in callback function.
     """
     def __init__(self, *,
         name: str,
@@ -186,24 +164,31 @@ class Option:
         choices: List[OptionChoice] = None,
         required: bool = True,
         arg: str = None,
+        converter: 'Converter' = None,
+        **attrs,
     ):
-        try:
-            self._type: OptionType = OptionType.from_datatype(type)
-        except TypeError:
-            self._type: OptionType = type
-
+        self._callback: Callable[..., Any] = attrs.get('callback')
         self._name = name
         self._description = description or "No description"
         self._required = required
         self._arg = arg or self.name
-
+        self._channel_types: List[ChannelType] = attrs.get('channel_types', []) # type: ignore
         self._choices: List[OptionChoice] = choices
         if self._choices is None:
             self._choices = []
 
         self._options: List[Option] = []
+        self.converter: 'Converter' = converter # type: ignore
 
         self._parent: Union[ApplicationCommand, Option] = None # type: ignore
+
+        if type in [OptionType.sub_command_group, OptionType.sub_command]:
+            self._type = type
+        else:
+            try:
+                self._type: OptionType = OptionType.from_datatype(type, option=self)
+            except TypeError:
+                self._type: OptionType = type
 
     def __repr__(self):
         return f'<Option name={self._name!r} description={self._description!r}>'
@@ -216,6 +201,20 @@ class Option:
     def name(self) -> str:
         """:class:`str`: The name of option."""
         return self._name
+
+    @property
+    def channel_types(self) -> List[ChannelType]:
+        """List[:class:`ChannelType`]: The channel types to show, If :attr:`Option.type` 
+        is :attr:`OptionType.channel`.
+
+        .. info::
+            Though this is determined by the annotation of parameter that represents
+            this option in the callback function, It should be noted that due to how 
+            Discord's Enum work, For precise selection of channel types, Pass the list of 
+            desired :class:`ChannelType` in ``channel_types`` parameter in :class:`Option`
+        """
+        return self._channel_types
+
 
     @property
     def description(self) -> str:
@@ -430,7 +429,7 @@ class Option:
             'name': self._name,
             'description': self._description,
             'choices': [choice.to_dict() for choice in self._choices],
-            'options': [option.to_dict() for option in self._options],
+            'options': [option.to_dict() for option in reversed(self.options)],
         }
 
         if not self.is_command_or_group():
@@ -438,10 +437,17 @@ class Option:
             # options that have type of 1 or 2.
             dict_['required'] = self._required
 
+        if self._channel_types:
+            dict_['channel_types'] = []
+            for t in self._channel_types:
+                if isinstance(t, list):
+                    for st in t:
+                        dict_['channel_types'].append(st.value)
+                else:
+                    dict_['channel_types'].append(t.value)
+
         return dict_
 
-
-# TODO: Work on Application command permissions.
 
 
 class ApplicationCommandGuildPermissions:
@@ -539,23 +545,12 @@ class ApplicationCommand:
 
     Parameters
     ----------
-    callback: Callable
-        The callback function for this command.
-    name: :class:`str`
-        The name of the command. Defaults to callback's name.
-    description: :class:`str`
-        The description of this command. Defaults to the docstring of the callback if found.
-        otherwise defaults to ``"No description"``
+    checks: List[Callable[:class:`InteractionContext`, bool]]
+        The list of checks this commands holds that will be checked before command's
+        invocation.
 
-        .. note::
-            Due to Discord's Limitation, In the case of :class:`MessageCommand` and
-            :class:`UserCommand`, This attribute is always an empty string.
-    guild_ids: List[:class:`int`]
-        The guild this command will be registered in. Defaults to an empty list for
-        global command.
-    default_permission: :class:`bool`
-        Whether the command will be enabled by default or not.
-        If this is set to ``False`` no one can use this command, Not even guild adminstators.
+        For more info on checks and how to register them, See :func:`~ext.commands.check` 
+        documentation as these checks actually come from there.
     """
     def __init__(self, callback: Callable, **attrs: Any):
         self._callback = callback
@@ -588,6 +583,15 @@ class ApplicationCommand:
             # https://discord.com/developers/docs/interactions/application-commands#message-commands
 
             self.description = ''
+
+
+        try:
+            checks = self._callback.__commands_checks__
+            checks.reverse()
+        except AttributeError:
+            checks = attrs.get('checks', [])
+
+        self.checks: List[Check] = checks
 
     def is_global_command(self) -> bool:
         """:class:`bool`: Whether the command is global command or not."""
@@ -720,6 +724,84 @@ class ApplicationCommand:
         """
         return self._cog
 
+    # checks management
+
+    def add_check(self, predicate: Check):
+        """
+        Adds a check to the command.
+
+        This is the non-decorator interface to :func:`.check`.
+
+        .. versionadded:: 2.0
+
+        Parameters
+        -----------
+        predicate
+            The function that will be used as a check.
+        """
+        self.checks.append(predicate)
+        return predicate
+
+    def remove_check(self, func: Check) -> None:
+        """Removes a check from the command.
+
+        This function is idempotent and will not raise an exception
+        if the function is not in the command's checks.
+
+        .. versionadded:: 2.0
+
+        Parameters
+        -----------
+        func
+            The function to remove from the checks.
+        """
+
+        try:
+            self.checks.remove(func)
+        except ValueError:
+            pass
+
+    async def can_run(self, ctx: InteractionContext) -> bool:
+        """|coro|
+
+        Checks if the command can be executed by checking all the predicates
+        inside the :attr:`~ApplicationCommand.checks` attribute. This also checks whether the
+        command is disabled.
+
+        .. versionchanged:: 2.0
+            Checks whether the command is disabled or not
+
+        Parameters
+        -----------
+        ctx: :class:`InteractionContext`
+            The ctx of the command currently being invoked.
+
+        Raises
+        -------
+        :class:`ApplicationCommandError`
+            Any command error that was raised during a check call will be propagated
+            by this function.
+
+        Returns
+        --------
+        :class:`bool`
+            A boolean indicating if the command can be invoked.
+        """
+        cog = self.cog
+        if cog is not None:
+            local_check = type(cog)._get_overridden_method(cog.cog_check)
+            if local_check is not None:
+                ret = await utils.maybe_coroutine(local_check, ctx)
+                if not ret:
+                    return False
+
+        predicates = self.checks
+        if not predicates:
+            # since we have no checks, then we just return True.
+            return True
+
+        return await utils.async_all(predicate(ctx) for predicate in predicates)  # type: ignore
+
     async def _parse_option(self, interaction: Interaction, option: ApplicationCommandOptionPayload) -> Any:
         # This function isn't needed to be a coroutine function but it can be helpful in
         # future so, yes that's the reason it's an async function.
@@ -737,6 +819,24 @@ class ApplicationCommand:
                 value = interaction.guild.get_member(int(option['value']))
             else:
                 value = context.client.get_user(int(option['value']))
+
+            # value can be none in case when member intents are not available
+
+            if value is None:
+                resolved = interaction.data['resolved']
+                if interaction.guild:
+                    member_with_user = resolved['members'][option['value']]
+                    member_with_user['user'] = resolved['users'][option['value']]
+                    value = Member(
+                        data=member_with_user,
+                        guild=interaction.guild,
+                        state=interaction.guild._state
+                        )
+                else:
+                    value = User(
+                        state=context.client._connection,
+                        data=resolved['users'][option['value']]
+                        )
 
         elif option['type'] == OptionType.channel.value:
             value = interaction.guild.get_channel(int(option['value']))
@@ -765,6 +865,8 @@ class ApplicationCommand:
             The interaction invocation context.
         """
         interaction: Interaction = context.interaction
+        command = None
+        args = [context]
 
         if not interaction.data['type'] == self.type.value:
             raise TypeError(f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}')
@@ -792,12 +894,8 @@ class ApplicationCommand:
                         data=resolved['users'][interaction.data['target_id']]
                         )
 
-            if self.cog is not None:
-                await self.callback(self.cog, context, user)
-            else:
-                await self.callback(context, user)
-
-            return
+            args.append(user)
+            command = self
 
         elif self.type == ApplicationCommandType.message.value:
             data = interaction.data['resolved']['messages'][interaction.data['target_id']]
@@ -814,14 +912,8 @@ class ApplicationCommand:
                     data=data,
                 )
 
-            if self.cog is not None:
-                await self.callback(self.cog, context, message)
-            else:
-                await self.callback(context, message)
-
-            return
-
-
+            args.append(message)
+            command = self
 
         options = interaction.data.get('options', [])
         kwargs = {}
@@ -833,20 +925,22 @@ class ApplicationCommand:
                 # just options of a command. And option names are unique
 
                 subcommand = self.get_child(name=option['name'])
+                context.command = subcommand
                 sub_options = option.get('options', [])
 
                 for sub_option in sub_options:
                     value = await self._parse_option(interaction, sub_option)
                     resolved = subcommand.get_option(name=sub_option['name'])
-                    kwargs[resolved.arg] = value
+                    if resolved.converter is not None:
+                        try:
+                            kwargs[resolved.arg] = await resolved.converter().convert(context, value)
+                        except Exception as error:
+                            raise ApplicationCommandConversionError(resolved.converter, error) from error        
+                    else:
+                        kwargs[resolved.arg] = value
 
-
-                if subcommand.cog is not None:
-                    await subcommand.callback(subcommand.cog, context, **kwargs)
-                else:
-                    await subcommand.callback(context, **kwargs)
-
-                return
+                command = subcommand
+                break
 
             elif option['type'] == OptionType.sub_command_group.value:
                 # In case of sub-command groups interactions, The options array
@@ -859,31 +953,47 @@ class ApplicationCommand:
                 group = self.get_child(name=option['name'])
                 sub_options = subcommand_raw.get('options', [])
                 subcommand = group.get_child(name=subcommand_raw['name'])
+                context.command = subcommand
 
                 for sub_option in sub_options:
                     value = await self._parse_option(interaction, sub_option)
                     resolved = subcommand.get_option(name=sub_option['name'])
-                    kwargs[resolved.arg] = value
 
+                    if resolved.converter is not None:
+                        try:
+                            kwargs[resolved.arg] = await resolved.converter().convert(context, value)
+                        except Exception as error:
+                            raise ApplicationCommandConversionError(resolved.converter, error) from error        
+                    else:
+                        kwargs[resolved.arg] = value
 
-                if subcommand.cog is not None:
-                    await subcommand.callback(subcommand.cog, context, **kwargs)
-                else:
-                    await subcommand.callback(context, **kwargs)
-
-                return
+                command = subcommand
+                break
 
             else:
+                if command is None:
+                    command = self
+                    context.command = command
+
                 value = await self._parse_option(interaction, option)
-                option = self.get_option(name=option['name'])
-                kwargs[option.arg] = value
+                resolved = self.get_option(name=option['name'])
 
-        if self.cog is not None:
-            await self.callback(self.cog, context, **kwargs)
+                if resolved.converter is not None:
+                    try:
+                        kwargs[option.arg] = await resolved.converter().convert(context, value)
+                    except Exception as error:
+                        raise ApplicationCommandConversionError(resolved.converter, error) from error
+                else:
+                    kwargs[resolved.arg] = value
+
+        if not (await command.can_run(context)):
+            # todo: do this before options parsing.
+            raise ApplicationCommandCheckFailure(f'checks functions for application command {command._name} failed.')
+
+        if command.cog is not None:
+            await command.callback(command.cog, *args, **kwargs)
         else:
-            await self.callback(context, **kwargs)
-
-
+            await command.callback(*args, **kwargs)
 
     def __repr__(self):
         # More attributes here?
@@ -907,6 +1017,7 @@ class SlashCommandChild(Option):
         type: SlashChildType, *,
         name: str = None,
         description: str = None,
+        **kwargs
     ):
         super().__init__(
             name=name or callback.__name__,
@@ -915,6 +1026,15 @@ class SlashCommandChild(Option):
         )
         self._callback = callback
         self._parent = None
+
+
+        try:
+            checks = self._callback.__commands_checks__
+            checks.reverse()
+        except AttributeError:
+            checks = kwargs.get('checks', [])
+
+        self.checks: List[Check] = checks
 
     @property
     def guild_ids(self) -> List[int]:
@@ -936,12 +1056,91 @@ class SlashCommandChild(Option):
         """Callable: The callback function for this child."""
         return self._callback
 
-    def to_dict(self) -> dict:
+    # checks management
+
+    def add_check(self, predicate: Check):
+        """
+        Adds a check to the command.
+
+        This is the non-decorator interface to :func:`.check`.
+
+        .. versionadded:: 2.0
+
+        Parameters
+        -----------
+        predicate
+            The function that will be used as a check.
+        """
+        self.checks.append(predicate)
+        return predicate
+
+    def remove_check(self, func: Check) -> None:
+        """Removes a check from the command.
+
+        This function is idempotent and will not raise an exception
+        if the function is not in the command's checks.
+
+        .. versionadded:: 2.0
+
+        Parameters
+        -----------
+        func
+            The function to remove from the checks.
+        """
+
+        try:
+            self.checks.remove(func)
+        except ValueError:
+            pass
+
+    async def can_run(self, ctx: InteractionContext) -> bool:
+        """|coro|
+
+        Checks if the command can be executed by checking all the predicates
+        inside the :attr:`~ApplicationCommand.checks` attribute. This also checks whether the
+        command is disabled.
+
+        .. versionchanged:: 2.0
+            Checks whether the command is disabled or not
+
+        Parameters
+        -----------
+        ctx: :class:`InteractionContext`
+            The ctx of the command currently being invoked.
+
+        Raises
+        -------
+        :class:`ApplicationCommandError`
+            Any command error that was raised during a check call will be propagated
+            by this function.
+
+        Returns
+        --------
+        :class:`bool`
+            A boolean indicating if the command can be invoked.
+        """
+        cog = self.cog
+        if cog is not None:
+            local_check = type(cog)._get_overridden_method(cog.cog_check)
+            if local_check is not None:
+                ret = await utils.maybe_coroutine(local_check, ctx)
+                if not ret:
+                    return False
+
+        predicates = self.checks
+        if not predicates:
+            # since we have no checks, then we just return True.
+            return True
+
+        return await utils.async_all(predicate(ctx) for predicate in predicates)  # type: ignore
+
+
+    def to_dict(self) -> dict:            
         return {
             'name': self._name,
             'description': self._description,
             'type': self._type.value,
-            'options': [option.to_dict() for option in self._options],
+            'options': [option.to_dict() for option in reversed(self.options)],
         }
 
 
@@ -1028,9 +1227,11 @@ class SlashCommandGroup(SlashCommandChild):
         self._options.append(child)
         self._children.append(child)
 
-        for opt in child.callback.__annotations__.values():
-            if isinstance(opt, Option):
-                child.append_option(opt)
+        if not hasattr(child.callback, '__application_command_params__'):
+            child.callback.__application_command_params__ = {}
+
+        for opt in child.callback.__application_command_params__.values():
+            child.append_option(opt)
 
         return child
 
@@ -1085,6 +1286,8 @@ class SlashCommandGroup(SlashCommandChild):
 
         return inner
 
+
+
 class SlashSubCommand(SlashCommandChild):
     """Represents a subcommand of a slash command.
 
@@ -1112,7 +1315,8 @@ class SlashSubCommand(SlashCommandChild):
             OptionType.sub_command.value,
             **attrs
         )
-        self._parent = None
+        self._parent: Union[SlashCommand, SlashCommandGroup] = None # type: ignore
+
 
     # Option management
 
@@ -1360,9 +1564,12 @@ class SlashCommand(ApplicationCommand):
         self._options.append(child)
         self._children.append(child)
 
-        for opt in child.callback.__annotations__.values():
-            if isinstance(opt, Option):
-                child.append_option(opt)
+        if not hasattr(child.callback, '__application_command_params__'):
+            child.callback.__application_command_params__ = {}
+
+        for opt in child.callback.__application_command_params__.values():
+            child.append_option(opt)
+
 
         return child
 
@@ -1444,7 +1651,7 @@ class SlashCommand(ApplicationCommand):
         dict_ = {
             'name': self._name,
             'type': self._type.value,
-            'options': [option.to_dict() for option in self._options],
+            'options': [option.to_dict() for option in reversed(self.options)],
             'description': self._description,
         }
 
@@ -1492,7 +1699,7 @@ class MessageCommand(ApplicationCommand):
         self._type = ApplicationCommandType.message
         super().__init__(callback, **attrs)
 
-def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
+def slash_option(name: str,  **attrs) -> Option:
     """A decorator-based interface to add options to a slash command.
 
     Usage: ::
@@ -1509,33 +1716,39 @@ def slash_option(name: str, type_: Any = None,  **attrs) -> Option:
         will be raised.
     """
     def inner(func):
-        nonlocal type_
-        type_ = type_ or func.__annotations__.get(name, str)
+        # Originally the Option object was inserted directly in
+        # annotations but that was problematic so it was changed to 
+        # this.
 
-        sign = inspect.signature(func).parameters.get(attrs.get('arg', name))
-        if sign is None:
-            raise TypeError(f'Parameter for option {name} is missing.')
-
-        required = attrs.get('required')
-        if required is None:
-            required = sign.default is inspect._empty
+        arg = attrs.pop('arg', name)
 
         if not hasattr(func, '__application_command_params__'):
-            unwrap = unwrap_function(func)
-            try:
-                globalns = unwrap.__globals__
-            except AttributeError:
-                globalns = {}
+            func.__application_command_params__ = {}
 
-            func.__application_command_params__ = get_signature_parameters(func, globalns)
+        unwrap = unwrap_function(func)
+        try:
+            globalns = unwrap.__globals__
+        except AttributeError:
+            globalns = {}
 
-        params = func.__application_command_params__
+        params = get_signature_parameters(func, globalns)
+        param = params.get(arg)
 
-        func.__annotations__[attrs.get('arg', name)] = Option(
-            name=name,
-            type=params[attrs.get('arg', name)].annotation,
-            required=required,
-            **attrs
+        required = attrs.pop('required', None)
+        if required is None:
+            required = param.default is inspect._empty
+
+        type = params[arg].annotation
+
+        if type is inspect._empty: # no annotations were passed.
+            type = str
+
+        func.__application_command_params__[arg] = (
+            Option(
+                name=name, type=type, 
+                arg=arg, required=required, 
+                callback=func, **attrs
+                )
             )
         return func
 

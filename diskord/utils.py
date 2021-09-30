@@ -1017,3 +1017,32 @@ def format_dt(dt: datetime.datetime, /, style: Optional[TimestampStyle] = None) 
     if style is None:
         return f'<t:{int(dt.timestamp())}>'
     return f'<t:{int(dt.timestamp())}:{style}>'
+
+def unwrap_function(function: Callable[..., Any]) -> Callable[..., Any]:
+    partial = functools.partial
+    while True:
+        if hasattr(function, '__wrapped__'):
+            function = function.__wrapped__
+        elif isinstance(function, partial):
+            function = function.func
+        else:
+            return function
+
+def get_signature_parameters(function: Callable[..., Any], globalns: Dict[str, Any]) -> Dict[str, inspect.Parameter]:
+    signature = _signature(function)
+    params = {}
+    cache: Dict[str, Any] = {}
+    eval_annotation = evaluate_annotation
+    for name, parameter in signature.parameters.items():
+        annotation = parameter.annotation
+        if annotation is parameter.empty:
+            params[name] = parameter
+            continue
+        if annotation is None:
+            params[name] = parameter.replace(annotation=type(None))
+            continue
+
+        annotation = eval_annotation(annotation, globalns, globalns, cache)
+        params[name] = parameter.replace(annotation=annotation)
+
+    return params

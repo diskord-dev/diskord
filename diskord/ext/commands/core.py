@@ -1641,12 +1641,20 @@ def check(predicate: Check) -> Callable[[T], T]:
     These checks should be predicates that take in a single parameter taking
     a :class:`.Context`. If the check returns a ``False``\-like value then
     during invocation a :exc:`.CheckFailure` exception is raised and sent to
-    the :func:`.on_command_error` event.
+    the :func:`.on_command_error` event or :func:`~diskord.on_application_command_error` in
+    case of application commands.
 
     If an exception should be thrown in the predicate then it should be a
-    subclass of :exc:`.CommandError`. Any exception not subclassed from it
+    subclass of :exc:`.CommandError` or :class:`ApplicationCommandError` in case of application
+    commands. Any exception not subclassed from it
     will be propagated while those subclassed will be sent to
-    :func:`.on_command_error`.
+    :func:`.on_command_error` or :func:`~diskord.on_application_command_error` in
+    case of application commands.
+
+    .. warning::
+        If a check added on an application command fails then :func:`~diskord.on_application_command_error`
+        is invoked instead of :func:`.on_command_error`, Similarly, :func:`.on_command_error`
+        is not compatible with application commands. 
 
     A special attribute named ``predicate`` is bound to the value
     returned by this decorator to retrieve the predicate passed to the

@@ -32,6 +32,7 @@ from .colour import Colour
 from .mixins import Hashable
 from .utils import snowflake_time, _get_as_snowflake, MISSING
 from .asset import Asset
+from .partial_emoji import PartialEmoji
 
 __all__ = (
     'RoleTags',
@@ -187,6 +188,7 @@ class Role(Hashable):
         'guild',
         'tags',
         '_state',
+        'unicode_emoji',
     )
 
     def __init__(self, *, guild: Guild, state: ConnectionState, data: RolePayload):
@@ -247,6 +249,13 @@ class Role(Hashable):
         self.mentionable: bool = data.get('mentionable', False)
         self.tags: Optional[RoleTags]
         self._icon: Optional[Asset] = data.get('icon')
+        
+        # TODO:
+        # try:
+        #     self.unicode_emoji: Optional[PartialEmoji] = PartialEmoji.from_str(str(data['unicode_emoji']))
+        # except KeyError:
+        #     self.unicode_emoji: Optional[PartialEmoji] = None
+
 
         try:
             self.tags = RoleTags(data['tags'])
@@ -372,6 +381,7 @@ class Role(Hashable):
         hoist: bool = MISSING,
         mentionable: bool = MISSING,
         icon: Optional[bytes] = MISSING,
+        unicode_emoji: Optional[str] = MISSING,
         position: int = MISSING,
         reason: Optional[str] = MISSING,
     ) -> Optional[Role]:
@@ -404,8 +414,11 @@ class Role(Hashable):
             Indicates if the role should be mentionable by others.
         icon: Optional[:class:`bytes`]
             A :term:`py:bytes-like object` representing the icon of the role. Only PNG/JPEG is supported.
-            Could be ``None`` to denote removal of the icon. Role's guild must has ``ROLE_SUBSCRIPTIONS_ENABLED``
+            Could be ``None`` to denote removal of the icon. Role's guild must has ``ROLE_ICONS``
             in :attr:`Guild.features`
+        unicode_emoji: Union[:class:`str`, :class:`PartialEmoji`]:
+            The unicode emoji string for role icon. ``None`` denotes the removal of 
+            unicode emoji.
         position: :class:`int`
             The new role's position. This must be below your top role's
             position or it will fail.
@@ -457,6 +470,12 @@ class Role(Hashable):
                 payload['icon'] = icon
             else:
                 payload['icon'] = utils._bytes_to_base64_data(icon)
+
+        if unicode_emoji is not MISSING:
+            if unicode_emoji is None:
+                payload['unicode_emoji'] = str(unicode_emoji)
+            else:
+                payload['unicode_emoji'] = str(unicode_emoji)
 
         data = await self._state.http.edit_role(self.guild.id, self.id, reason=reason, **payload)
         return Role(guild=self.guild, data=data, state=self._state)

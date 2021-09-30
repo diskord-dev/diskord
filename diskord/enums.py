@@ -36,6 +36,7 @@ from typing import (
     Union,
     get_origin,
     )
+from .utils import unwrap_function, get_signature_parameters
 
 __all__ = (
     'Enum',
@@ -628,7 +629,7 @@ class OptionType(Enum, comparable=True):
     command_group = 2
 
     @classmethod
-    def from_datatype(cls, type_: Any, /):
+    def from_datatype(cls, type_: Any, *, option = None):
         if isinstance(type_, int):
             return try_enum(cls, type_)
 
@@ -649,19 +650,62 @@ class OptionType(Enum, comparable=True):
                 return cls.mentionable
             elif 'User' in args and 'Member' in args:
                 return cls.user
-            else:
-                return cls.string
-
-        # using name because circular imports issues
-        if type_.__name__ in ['User', 'Member']:
-            return cls.user
-        elif type_.__name__ == 'Role':
-            return cls.role
-        elif type_.__name__  == 'GuildChannel':
-            return cls.channel
-
         else:
-            raise TypeError(f'Unknown data type for {type_.__name__}.')
+            if type_.__name__ in ['User', 'Member']:
+                return cls.user
+            elif type_.__name__ == 'Role':
+                return cls.role
+            elif type_.__name__  == 'GuildChannel':
+                return cls.channel
+
+        if option is not None:
+            if option._channel_types:
+                return cls.channel
+
+            channel_types_map = {
+                'TextChannel': [ChannelType.text, ChannelType.news],
+                'DMChannel': ChannelType.private,
+                'GroupChannel': ChannelType.group,
+                'VoiceChannel': ChannelType.voice,
+                'CategoryChannel': ChannelType.category,
+                'StoreChannel': ChannelType.store,
+                'Thread': [
+                    ChannelType.news_thread, 
+                    ChannelType.private_thread,
+                    ChannelType.public_thread,
+                    ],
+                'StageChannel': ChannelType.stage_voice
+            }
+            unwrap = unwrap_function(option._callback)
+            try:
+                globalns = unwrap.__globals__
+            except AttributeError:
+                globalns = {}
+
+            params = get_signature_parameters(option._callback, globalns)
+            param = params.get(option._arg)
+
+            
+            if get_origin(param.annotation) is Union:
+                args = [arg.__name__ for arg in param.annotation.__args__]
+                # now we have the name of all the channel types that were in typing.Union
+                for arg in args:
+                    try:
+                        option._channel_types.append(channel_types_map[arg])
+                    except KeyError:
+                        # unknown type in typing.Union? ignore it.
+                        pass
+                    else:
+                        return cls.channel
+            else:
+                try:
+                    option._channel_types.append(channel_types_map[param.annotation.__name__])
+                except KeyError:
+                    pass
+                else:
+                    return cls.channel
+        
+        return cls.string
 
 class ApplicationCommandPermissionType(Enum, comparable=True):
     role = 1

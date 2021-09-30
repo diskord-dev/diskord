@@ -53,7 +53,10 @@ __all__ = (
     'PrivilegedIntentsRequired',
     'InteractionResponded',
     'ApplicationCommandError',
+    'ApplicationCommandCheckFailure',
+    'ApplicationCommandConversionError',
 )
+
 
 
 class DiscordException(Exception):
@@ -277,12 +280,52 @@ class InteractionResponded(ClientException):
         self.interaction: Interaction = interaction
         super().__init__('This interaction has already been responded to before')
 
+
+class _BaseCommandError(Exception):
+    # this class is kind of a hacky base class for errors from discord.ext.commands for stuff
+    # that comes from there that is used in application commands like checks, this is purely for 
+    # instance checking and avoiding circular import issues. 
+    # Yeah, not the best implementation but the only implementation I could possibly think of.
+    pass
+
 class ApplicationCommandError(ClientException):
     """Base exception from which other application commands exceptions are derived.
-    
-    This class is really useful to create custom exceptions which you can handle in
+
+    This class is similar to :class:`~commands.CommandError` but it is for application
+    commands.
+
+    This class is useful to create custom exceptions which you can handle in
     :func:`on_application_command_error`. An exception that subclasses this class
     that is raised in an application command will be passed to :func:`on_application_command_error`
-    listener. 
+    listener.
     """
     pass
+
+class ApplicationCommandCheckFailure(ApplicationCommandError):
+    """A unique exception indicating that checks for an application command failed.
+
+    This class is similar to :class:`~commands.CheckFailure` but it is for application
+    commands and is not sent in :func:`on_command_error` but in :func:`on_application_command_error`
+    """
+    pass
+
+class ApplicationCommandConversionError(ApplicationCommandError):
+    """Exception raised when a :class:`~ext.commands.Converter` class raises 
+    non-ApplicationCommandError.
+
+    This inherits from :exc:`ApplicationCommandError`.
+
+    This class is similar to :exc:`~ext.commands.ConversionError` but it is for application
+    commands and is not sent in :func:`on_command_error` but in :func:`on_application_command_error`
+
+    Attributes
+    ----------
+    converter: :class:`diskord.ext.commands.Converter`
+        The converter that failed.
+    original: :exc:`Exception`
+        The original exception that was raised. You can also get this via
+        the ``__cause__`` attribute.
+    """
+    def __init__(self, converter: 'Converter', original: Exception) -> None:
+        self.converter: Converter = converter
+        self.original: Exception = original

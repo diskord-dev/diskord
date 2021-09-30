@@ -655,25 +655,17 @@ to handle it, which defaults to print a traceback and ignoring the exception.
     This is a really helpful event and acts as an error handler for your application
     commands.
 
+    .. info::
+        This is not same as :func:`~commands.on_command_error` as it only is for application
+        commands. For example, if you register a :func:`~commands.check` on an application
+        command, Then if that check fails and raises an error, that error would be passed
+        in this listener and **not** :func:`~commands.on_command_error`.
+
+        This leads to usage of two seperate handlers for application commands and prefixed
+        commands and that is only solution as both systems are entirely different.
+
     You can create your own exceptions that subclass :class:`ApplicationCommandError` that
     you can raise in your commands and handle them within this event.
-
-    Usage: ::
-
-        class UserBlacklisted(diskord.ApplicationCommandError):
-            pass
-
-        @bot.command()
-        async def test(ctx):
-            if ctx.author.id == 123456789:
-                raise UserBlacklisted()
-
-        @bot.event
-        async def on_application_command_error(ctx, error):
-            if isinstance(error, ApplicationCommandError):
-                await ctx.send('You are blacklisted from using this command.')
-            else:
-                raise error
 
     .. versionadded:: 2.5
 

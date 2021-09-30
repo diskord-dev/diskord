@@ -28,7 +28,7 @@ import diskord.utils
 
 from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, TYPE_CHECKING, Tuple, TypeVar, Type
 
-from diskord import ApplicationCommand
+from diskord import ApplicationCommand, Option
 from ._types import _BaseCommand
 
 if TYPE_CHECKING:
@@ -464,6 +464,12 @@ class Cog(metaclass=CogMeta):
 
         for index, command in enumerate(self.__cog_application_commands__):
             command._cog = self
+            if command.id is not None:
+                # if we're here then command is registered and synced and we
+                # just have to add it to application commands list and it 
+                # would start working as normal.
+                bot._connection._application_commands[int(command.id)] = command
+                continue
 
             try:
                 bot.add_pending_command(command)

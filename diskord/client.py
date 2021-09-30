@@ -43,6 +43,7 @@ from .channel import _threaded_channel_factory, PartialMessageable
 from .enums import ChannelType
 from .mentions import AllowedMentions
 from .errors import *
+from .errors import _BaseCommandError
 from .enums import Status, VoiceRegion, ApplicationCommandType, OptionType
 from .flags import ApplicationFlags, Intents
 from .gateway import *
@@ -1722,9 +1723,12 @@ class Client:
         command.client = self
         self._pending_commands.append(command)
 
-        for opt in command.callback.__annotations__.values():
-            if isinstance(opt, Option):
-                command.append_option(opt)
+
+        if not hasattr(command.callback, '__application_command_params__'):
+            command.callback.__application_command_params__ = {}        
+
+        for opt in command.callback.__application_command_params__.values():
+            command.append_option(opt)
 
         return command
 
@@ -2030,17 +2034,19 @@ class Client:
             command = self._pending_commands[index]
             if command.guild_ids:
                 for guild_id in command.guild_ids:
-                    try:
+                    try:            
                         cmd = await self.http.upsert_guild_command(self.user.id, guild_id, command.to_dict())
                     except Forbidden as e:
                         # the bot is missing application.commands scope so cannot
                         # make the command in the guild
                         if ignore_guild_register_fail:
                             traceback.print_exc()
+                            continue
                         else:
                             raise e
             else:
-                cmd = await self.http.upsert_global_command(self.user.id, command.to_dict())
+                data = command.to_dict()            
+                cmd = await self.http.upsert_global_command(self.user.id, data)
 
             self._connection._application_commands[int(cmd['id'])] = command._from_data(cmd)
             self._pending_commands.pop(index)
@@ -2111,6 +2117,7 @@ class Client:
                 # bot doesn't has application.commands scope
                 if ignore_guild_register_fail:
                     traceback.print_exc()
+                    continue
                 else:
                     raise e
             for cmd in cmds:
@@ -2186,7 +2193,7 @@ class Client:
     async def process_application_commands(self, interaction: Interaction) -> Any:
         """|coro|
 
-        Handles an application command interaction.  This function holds the application
+        Handles an application command interaction. This function holds the application
         command main processing logic.
 
         This function is used under-the-hood to handle all the application commands interactions.
@@ -2229,7 +2236,14 @@ class Client:
 
         try:
             await command.invoke(context)
-        except ApplicationCommandError as error:
+        except (ApplicationCommandError, _BaseCommandError) as error:
+            # here comes the important part, There have been many concerns about error handlers
+            # of legacy commands and application commands.
+            # we need seperate handlers for each type, the reason behind this is purely
+            # based on the fact that prefixed commands are NOT same as application commands
+            # and have different implementation. there can be more complicated issues
+            # if we merge the handlers or in general, these two unlike systems so there
+            # is no possibility of them to be merged in one!
             self.dispatch('application_command_error', context, error)
         else:
             self.dispatch('application_command_completion', context)
