@@ -856,7 +856,7 @@ class ApplicationCommand:
             The interaction invocation context.
         """
         interaction: Interaction = context.interaction
-        args = [context]
+        args = []
 
         if not interaction.data['type'] == self.type.value:
             raise TypeError(f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}')
@@ -926,7 +926,7 @@ class ApplicationCommand:
                     value = await self._parse_option(interaction, sub_option)
                     resolved = subcommand.get_option(name=sub_option['name'])
                     if resolved.converter is not None:
-                        converted = await self._run_converter(resolved.converter, ctx, value)
+                        converted = await self._run_converter(resolved.converter, context, value)
                         kwargs[resolved.arg] = converted
                     else:
                         kwargs[resolved.arg] = value
@@ -953,20 +953,20 @@ class ApplicationCommand:
                     resolved = subcommand.get_option(name=sub_option['name'])
 
                     if resolved.converter is not None:
-                        converted = await self._run_converter(resolved.converter, ctx, value)
+                        converted = await self._run_converter(resolved.converter, context, value)
                         kwargs[resolved.arg] = converted    
                     else:
                         kwargs[resolved.arg] = value
                 
             else:
                 if context.command is None:
-                    context.command = command
+                    context.command = self
 
                 value = await self._parse_option(interaction, option)
                 resolved = self.get_option(name=option['name'])
 
                 if resolved.converter is not None:
-                    converted = await self._run_converter(resolved.converter, ctx, value)
+                    converted = await self._run_converter(resolved.converter, context, value)
                     kwargs[resolved.arg] = converted    
                 else:
                     kwargs[resolved.arg] = value
@@ -977,6 +977,7 @@ class ApplicationCommand:
         if context.command.cog is not None:
             args.append(context.command.cog)
         
+        args.append(context)
         await context.command.callback(*args, **kwargs)
 
     def __repr__(self):
