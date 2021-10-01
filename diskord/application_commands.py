@@ -917,6 +917,10 @@ class ApplicationCommand:
 
                 subcommand = self.get_child(name=option['name'])
                 context.command = subcommand
+                
+                if not (await context.command.can_run(context)):
+                    raise ApplicationCommandCheckFailure(f'checks functions for application command {command._name} failed.')
+
                 sub_options = option.get('options', [])
 
                 for sub_option in sub_options:
@@ -927,10 +931,7 @@ class ApplicationCommand:
                         kwargs[resolved.arg] = converted
                     else:
                         kwargs[resolved.arg] = value
-
-                command = subcommand
-                break
-
+                
             elif option['type'] == OptionType.sub_command_group.value:
                 # In case of sub-command groups interactions, The options array
                 # only has one element which is the subcommand that is being used
@@ -940,9 +941,13 @@ class ApplicationCommand:
 
                 subcommand_raw = option['options'][0]
                 group = self.get_child(name=option['name'])
-                sub_options = subcommand_raw.get('options', [])
                 subcommand = group.get_child(name=subcommand_raw['name'])
                 context.command = subcommand
+
+                if not (await context.command.can_run(context)):
+                    raise ApplicationCommandCheckFailure(f'checks functions for application command {command._name} failed.')
+
+                sub_options = subcommand_raw.get('options', [])
 
                 for sub_option in sub_options:
                     value = await self._parse_option(interaction, sub_option)
@@ -953,13 +958,9 @@ class ApplicationCommand:
                         kwargs[resolved.arg] = converted    
                     else:
                         kwargs[resolved.arg] = value
-
-                command = subcommand
-                break
-
+                
             else:
-                if command is None:
-                    command = self
+                if context.command is None:
                     context.command = command
 
                 value = await self._parse_option(interaction, option)
@@ -971,14 +972,13 @@ class ApplicationCommand:
                 else:
                     kwargs[resolved.arg] = value
 
-        if not (await command.can_run(context)):
-            # todo: do this before options parsing.
+        if not (await context.command.can_run(context)):
             raise ApplicationCommandCheckFailure(f'checks functions for application command {command._name} failed.')
 
-        if command.cog is not None:
-            args.append(command.cog)
+        if context.command.cog is not None:
+            args.append(context.command.cog)
         
-        await command.callback(*args, **kwargs)
+        await context.command.callback(*args, **kwargs)
 
     def __repr__(self):
         # More attributes here?
