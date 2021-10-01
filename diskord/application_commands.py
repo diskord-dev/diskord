@@ -856,7 +856,6 @@ class ApplicationCommand:
             The interaction invocation context.
         """
         interaction: Interaction = context.interaction
-        command = None
         args = [context]
 
         if not interaction.data['type'] == self.type.value:
@@ -886,7 +885,7 @@ class ApplicationCommand:
                         )
 
             args.append(user)
-            command = self
+            context.command = self
 
         elif self.type == ApplicationCommandType.message.value:
             data = interaction.data['resolved']['messages'][interaction.data['target_id']]
@@ -904,7 +903,7 @@ class ApplicationCommand:
                 )
 
             args.append(message)
-            command = self
+            context.command = self
 
         options = interaction.data.get('options', [])
         kwargs = {}
@@ -919,7 +918,7 @@ class ApplicationCommand:
                 context.command = subcommand
                 
                 if not (await context.command.can_run(context)):
-                    raise ApplicationCommandCheckFailure(f'checks functions for application command {command._name} failed.')
+                    raise ApplicationCommandCheckFailure(f'checks functions for application command {context.command._name} failed.')
 
                 sub_options = option.get('options', [])
 
@@ -945,7 +944,7 @@ class ApplicationCommand:
                 context.command = subcommand
 
                 if not (await context.command.can_run(context)):
-                    raise ApplicationCommandCheckFailure(f'checks functions for application command {command._name} failed.')
+                    raise ApplicationCommandCheckFailure(f'checks functions for application command {context.command._name} failed.')
 
                 sub_options = subcommand_raw.get('options', [])
 
@@ -973,7 +972,7 @@ class ApplicationCommand:
                     kwargs[resolved.arg] = value
 
         if not (await context.command.can_run(context)):
-            raise ApplicationCommandCheckFailure(f'checks functions for application command {command._name} failed.')
+            raise ApplicationCommandCheckFailure(f'checks functions for application command {context.command._name} failed.')
 
         if context.command.cog is not None:
             args.append(context.command.cog)
