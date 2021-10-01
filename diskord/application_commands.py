@@ -171,12 +171,12 @@ class Option:
         self._name = name
         self._description = description or "No description"
         self._required = required
-        self._arg = arg or self.name
         self._channel_types: List[ChannelType] = attrs.get('channel_types', []) # type: ignore
         self._choices: List[OptionChoice] = choices
         if self._choices is None:
             self._choices = []
 
+        self._arg = arg or self.name
         self._options: List[Option] = []
         self.converter: 'Converter' = converter # type: ignore
 
@@ -554,10 +554,10 @@ class ApplicationCommand:
     """
     def __init__(self, callback: Callable, **attrs: Any):
         self._callback = callback
-        self._name = attrs.get('name') or getattr(callback, '__name__', None)
+        self._name = attrs.get('name') or callback.__name__
         self._description = attrs.get('description', callback.__doc__) or 'No description'
         self._guild_ids   = attrs.get('guild_ids', [])
-        self._default_permission = attrs.get('default_permission')
+        self._default_permission = attrs.get('default_permission', True)
 
         self._cog = None
         self._id  = None
@@ -1843,7 +1843,6 @@ def application_command_permission(*, guild_id: int, user_id: int = None, role_i
         found = False
         for perm in func.__application_command_permissions__:
             if perm.guild_id == guild_id:
-                found = True
                 perm._permissions.append(
                     ApplicationCommandPermission(
                         id=id,
@@ -1851,22 +1850,23 @@ def application_command_permission(*, guild_id: int, user_id: int = None, role_i
                         permission=permission,
                     )
                 )
+                return func
 
-        if not found:
-            func.__application_command_permissions__.append(
-                ApplicationCommandGuildPermissions(
-                    guild_id=guild_id,
-                    application_id=None, # type: ignore
-                    command_id=None, # type: ignore
-                    permissions=[
-                        ApplicationCommandPermission(
-                            id=id,
-                            type=type,
-                            permission=permission,
-                        )
-                    ]
-                )
+        
+        func.__application_command_permissions__.append(
+            ApplicationCommandGuildPermissions(
+                guild_id=guild_id,
+                application_id=None, # type: ignore
+                command_id=None, # type: ignore
+                permissions=[
+                    ApplicationCommandPermission(
+                        id=id,
+                        type=type,
+                        permission=permission,
+                    )
+                ]
             )
+        )
         return func
 
     return inner
