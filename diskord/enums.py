@@ -660,6 +660,8 @@ class OptionType(Enum, comparable=True):
 
         if option is not None:
             if option._channel_types:
+                # the channel types are passed already so 
+                # we will do any changes to it and simply return OptionType.channel.
                 return cls.channel
 
             channel_types_map = {
@@ -684,8 +686,7 @@ class OptionType(Enum, comparable=True):
 
             params = get_signature_parameters(option._callback, globalns)
             param = params.get(option._arg)
-
-            
+    
             if get_origin(param.annotation) is Union:
                 args = [arg.__name__ for arg in param.annotation.__args__]
                 # now we have the name of all the channel types that were in typing.Union
