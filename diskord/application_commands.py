@@ -565,13 +565,15 @@ class ApplicationCommand:
         self._version = None
         self._client = self._bot = None
 
-        if hasattr(callback, '__application_command_permissions__'):
-            self._permissions = callback.__application_command_permissions__
-        else:
-            self._permissions: List[ApplicationCommandGuildPermissions] = [] # type: ignore
+        try:
+            permissions = callback.__application_command_permissions__
+        except AttributeError:
+            permissions = [] # type: ignore
 
-        for perm in self._permissions:
+        for perm in permissions:
             perm._command = self
+
+        self._permissions: List[ApplicationCommandGuildPermissions] = []
 
         if self._type in (
             ApplicationCommandType.user,
@@ -614,30 +616,6 @@ class ApplicationCommand:
         # properly
 
         return self
-
-    def update(self, **attrs) -> ApplicationCommand:
-        """Updates the command with new traits provided in ``attrs``
-
-        Parameters
-        ----------
-        **attrs:
-            The new attributes to update command with.
-
-        Returns
-        -------
-        :class:`ApplicationCommand`
-            The new commands.
-        """
-        forbidden_keys = (
-            'id',
-            'guild_id',
-            'application_id',
-            'version',
-            'cog'
-        )
-        for attr in attrs:
-            if f'_{attr}' in self.__dict__ and attr in forbidden_keys:
-                setattr(self, f'_{attr}', attrs[attr])
 
     @property
     def permissions(self) -> List[ApplicationCommandGuildPermissions]:
