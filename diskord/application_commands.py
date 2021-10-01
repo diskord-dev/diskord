@@ -765,6 +765,10 @@ class ApplicationCommand:
         :class:`bool`
             A boolean indicating if the command can be invoked.
         """
+        if hasattr(ctx.bot, 'can_run'):
+            if not await ctx.bot.can_run(ctx):
+                raise ApplicationCommandCheckFailure(f'The global check functions for command {self.qualified_name} failed.')
+
         cog = self.cog
         if cog is not None:
             local_check = type(cog)._get_overridden_method(cog.cog_check)
@@ -830,6 +834,15 @@ class ApplicationCommand:
 
         return value
 
+    async def _run_converter(self, converter, ctx, value):
+        try:
+            converted = await converter().convert(ctx, value)
+        except Exception as error:
+            if isinstance(error, ApplicationCommandError):
+                raise error
+            raise ApplicationCommandConversionError(converter, error) from error
+        else:
+            return converted
 
     async def invoke(self, context: InteractionContext):
         """|coro|
@@ -910,10 +923,8 @@ class ApplicationCommand:
                     value = await self._parse_option(interaction, sub_option)
                     resolved = subcommand.get_option(name=sub_option['name'])
                     if resolved.converter is not None:
-                        try:
-                            kwargs[resolved.arg] = await resolved.converter().convert(context, value)
-                        except Exception as error:
-                            raise ApplicationCommandConversionError(resolved.converter, error) from error        
+                        converted = await self._run_converter(resolved.converter, ctx, value)
+                        kwargs[resolved.arg] = converted
                     else:
                         kwargs[resolved.arg] = value
 
@@ -938,10 +949,8 @@ class ApplicationCommand:
                     resolved = subcommand.get_option(name=sub_option['name'])
 
                     if resolved.converter is not None:
-                        try:
-                            kwargs[resolved.arg] = await resolved.converter().convert(context, value)
-                        except Exception as error:
-                            raise ApplicationCommandConversionError(resolved.converter, error) from error        
+                        converted = await self._run_converter(resolved.converter, ctx, value)
+                        kwargs[resolved.arg] = converted    
                     else:
                         kwargs[resolved.arg] = value
 
@@ -957,10 +966,8 @@ class ApplicationCommand:
                 resolved = self.get_option(name=option['name'])
 
                 if resolved.converter is not None:
-                    try:
-                        kwargs[option.arg] = await resolved.converter().convert(context, value)
-                    except Exception as error:
-                        raise ApplicationCommandConversionError(resolved.converter, error) from error
+                    converted = await self._run_converter(resolved.converter, ctx, value)
+                    kwargs[resolved.arg] = converted    
                 else:
                     kwargs[resolved.arg] = value
 
@@ -969,9 +976,9 @@ class ApplicationCommand:
             raise ApplicationCommandCheckFailure(f'checks functions for application command {command._name} failed.')
 
         if command.cog is not None:
-            await command.callback(command.cog, *args, **kwargs)
-        else:
-            await command.callback(*args, **kwargs)
+            args.append(command.cog)
+        
+        await command.callback(*args, **kwargs)
 
     def __repr__(self):
         # More attributes here?
@@ -1097,6 +1104,10 @@ class SlashCommandChild(Option):
         :class:`bool`
             A boolean indicating if the command can be invoked.
         """
+        if hasattr(ctx.bot, 'can_run'):
+            if not await ctx.bot.can_run(ctx):
+                raise ApplicationCommandCheckFailure(f'The global check functions for command {self.qualified_name} failed.')
+
         cog = self.cog
         if cog is not None:
             local_check = type(cog)._get_overridden_method(cog.cog_check)
