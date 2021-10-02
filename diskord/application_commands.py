@@ -743,11 +743,7 @@ class ApplicationCommand:
         """|coro|
 
         Checks if the command can be executed by checking all the predicates
-        inside the :attr:`~ApplicationCommand.checks` attribute. This also checks whether the
-        command is disabled.
-
-        .. versionchanged:: 2.0
-            Checks whether the command is disabled or not
+        inside the :attr:`~ApplicationCommand.checks` attribute.
 
         Parameters
         -----------
@@ -1789,6 +1785,11 @@ def message_command(**options) -> SlashCommand:
         @diskord.message_command()
         async def test(ctx, message):
             await ctx.send('Hello world')
+
+    Parameters
+    ----------
+    **options:
+        The options of :class:`MessageCommand`
     """
     def inner(func: Callable):
         if not inspect.iscoroutinefunction(func):
@@ -1830,7 +1831,6 @@ def application_command_permission(*, guild_id: int, user_id: int = None, role_i
             type = ApplicationCommandPermissionType.role
 
 
-        found = False
         for perm in func.__application_command_permissions__:
             if perm.guild_id == guild_id:
                 perm._permissions.append(
