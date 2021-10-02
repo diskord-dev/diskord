@@ -553,7 +553,7 @@ class ApplicationCommand:
         documentation as these checks actually come from there.
 
     callback: Callable[..., Any]
-        Callable[..., Any]: Returns the command's callback function.
+        the callback function of this command.
     """
     def __init__(self, callback: Callable, **attrs: Any):
         self.callback = callback
