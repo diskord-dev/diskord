@@ -232,8 +232,7 @@ These are not breaking changes but few major additions in v2.x.
 
 * Threads support
 * Application Commands i.e Slash commands, Context menu commands etc.
-  * Partial support for application command extensions i.e Checks, Converters
-  
+* Partial support for application command extensions i.e Checks, Converters
 * Full Stickers Support
 * Message Components and interactions
 * Stage instances support
@@ -258,7 +257,7 @@ These are not breaking changes but few major additions in v2.x.
 * Add :meth:`Guild.delete_custom_emoji` method
 * Add :func:`on_raw_typing` event for DM typing.
 * Add :attr:`Template.url`
-* Add :attr:`Command.extras` to attach additional data to command.
+* Add :attr:`ext.Command.extras` to attach additional data to command.
 * Add :attr:`Activity.buttons`
 * Add :meth:`Template.is_dirty`
 * Add :attr:`VoiceChannel.video_quality_mode`
