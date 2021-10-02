@@ -344,7 +344,7 @@ class Role(Hashable):
     @property
     def unicode_emoji(self) -> Optional[PartialEmoji]:
         """Optional[:class:`PartialEmoji`]: The unicode emoji that represents the role icon,
-        Could be ``None``.
+        Could be ``None`` if role has no icon.
 
         .. versionadded:: 2.5
         """
