@@ -1911,7 +1911,7 @@ class Client:
 
         Fetches the permissions of an application command in a guild.
 
-        .. info::
+        .. note::
             This function is an API call, Use :func:`get_application_command_permissions`
             for general usage.
 
@@ -1940,7 +1940,7 @@ class Client:
 
         Fetches the permissions of an application command in a guild.
 
-        .. info::
+        .. note::
             This function is an API call, Use :func:`get_application_command_permissions`
             for general usage.
 

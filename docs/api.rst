@@ -4113,7 +4113,7 @@ WelcomeScreen
     :members:
 
 WelcomeScreenChannel
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. attributetable:: WelcomeScreenChannel
 

@@ -129,7 +129,7 @@ class Option:
     This class is generally not initialized manually, Instead :func:`.option` decorator
     interface is used.
 
-    .. info::
+    .. note::
         All parameters except ``name`` and ``description`` are optional.
 
     Parameters
@@ -207,7 +207,7 @@ class Option:
         """List[:class:`ChannelType`]: The channel types to show, If :attr:`Option.type` 
         is :attr:`OptionType.channel`.
 
-        .. info::
+        .. note::
             Though this is determined by the annotation of parameter that represents
             this option in the callback function, It should be noted that due to how 
             Discord's Enum work, For precise selection of channel types, Pass the list of 
