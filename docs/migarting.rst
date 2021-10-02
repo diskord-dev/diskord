@@ -1,6 +1,6 @@
 .. currentmodule:: diskord
 
-.. _migrating:
+.. _migrating_2_0:
 
 Migrating to v2.x
 =================
