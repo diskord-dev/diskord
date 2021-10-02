@@ -3165,7 +3165,7 @@ class Guild(Hashable):
 
         Fetches the permissions of an application command in this guild.
 
-        .. info::
+        .. note::
             This function is an API call, Use :func:`get_application_command_permissions`
             for general usage.
 
@@ -3188,7 +3188,7 @@ class Guild(Hashable):
 
         Fetches the permissions of an application command in this guild by command ID.
 
-        .. info::
+        .. note::
             This function is an API call, Use :func:`get_application_command_permission`
             for general usage.
 
