@@ -138,7 +138,7 @@ Available types are as follows, You can annotate your options with these types t
 * :class:`diskord.StageChannel`: A stage voice channel in a guild.
 * :class:`diskord.Thread`: A thread within a text channel in a guild.
 * :class:`diskord.Role`: A role in a guild.
-* :class:`Union[:class:`diskord.Role`, :class:`diskord.User`]`: Any mentionable i.e role or user.
+* Union[:class:`diskord.Role`, :class:`diskord.User`]: Any mentionable i.e role or user.
 
 Option Choices
 ++++++++++++++
