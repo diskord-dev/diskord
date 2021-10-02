@@ -188,7 +188,7 @@ class Role(Hashable):
         'guild',
         'tags',
         '_state',
-        'unicode_emoji',
+        '_unicode_emoji',
     )
 
     def __init__(self, *, guild: Guild, state: ConnectionState, data: RolePayload):
