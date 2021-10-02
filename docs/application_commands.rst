@@ -202,7 +202,7 @@ Example: ::
   async def remove(ctx):
     await ctx.send('removed a todo.')
 
-.. image:: /images/slash_sub_command_group.png
+.. image:: /images/slash_command_sub_command_group.png
 
 Checks
 ------
