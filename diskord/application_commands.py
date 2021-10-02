@@ -994,8 +994,8 @@ class SlashCommandChild(Option):
     For general use, Use the subclasses of this class like  :class:`SlashCommandGroup` and
     :class:`SlashSubCommand`.
 
-    callback
-        Callable: The callback function for this child.
+    callback: Callable[..., Any]
+        The callback function for this child.
     """
     def __init__(self, callback: Callable,
         type: SlashChildType, *,
