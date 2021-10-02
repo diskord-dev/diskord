@@ -353,9 +353,12 @@ to handle it, which defaults to print a traceback and ignoring the exception.
 
     Called when someone begins typing a message.
 
+    .. info::
+        This is not called for DM typing start. Use :func:`on_raw_typing`
+        for that purpose.
+
     The ``channel`` parameter can be a :class:`abc.Messageable` instance.
-    Which could either be :class:`TextChannel`, :class:`GroupChannel`, or
-    :class:`DMChannel`.
+    Which could either be :class:`TextChannel`, :class:`GroupChannel`
 
     If the ``channel`` is a :class:`TextChannel` then the ``user`` parameter
     is a :class:`Member`, otherwise it is a :class:`User`.
@@ -368,6 +371,16 @@ to handle it, which defaults to print a traceback and ignoring the exception.
     :type user: Union[:class:`User`, :class:`Member`]
     :param when: When the typing started as an aware datetime in UTC.
     :type when: :class:`datetime.datetime`
+
+.. function:: on_raw_typing(payload)
+    
+    Called when someone beings typing a message.
+
+    Unlike :func:`on_typing` this is called regardless of cache state. This is
+    called in Direct Messages channel too.
+
+    :param payload: The raw payload data
+    :type payload: :class:`RawTypingEvent`
 
 .. function:: on_message(message)
 
@@ -4247,6 +4260,14 @@ RawThreadDeleteEvent
 .. attributetable:: RawThreadDeleteEvent
 
 .. autoclass:: RawThreadDeleteEvent()
+    :members:
+
+RawTypingEvent
+~~~~~~~~~~~~~~~~
+
+.. attributetable:: RawTypingEvent
+
+.. autoclass:: RawTypingEvent()
     :members:
 
 PartialWebhookGuild

@@ -248,10 +248,10 @@ These are not breaking changes but few major additions in v2.x.
 * Add support for explicit time parameter in ext.tasks.
 * Add :class:`fetch_message` to webhooks.
 * Add :class:`ApplicationFlags`
-* Add :class:`~commands.GuildChannelConverter`.
-* Add :class:`~commands.ObjectConverter`
+* Add :class:`ext.commands.GuildChannelConverter`.
+* Add :class:`ext.commands.ObjectConverter`
 * Add :meth:`Client.fetch_invite`
-* Add :meth:`Color.fuchsia` & :meth:`Color.yellow`
+* Add :meth:`Colour.fuchsia` & :meth:`Colour.yellow`
 * Add :meth:`Role.is_assignable`
 * Add :meth:`Member.get_role`
 * Add :meth:`Guild.delete_custom_emoji` method
