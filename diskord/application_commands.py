@@ -92,10 +92,10 @@ class OptionChoice:
         A user-set value of the choice. Will be passed in the command's callback.
     """
     def __init__(self, *, name: str, value: str):
-        self.name  = name
+        self.name = name
         self.value = value
 
-        self._option: Option = None # type: ignore
+        self._option: Option = None  # type: ignore
 
     @property
     def option(self) -> Option:
@@ -551,16 +551,19 @@ class ApplicationCommand:
 
         For more info on checks and how to register them, See :func:`~ext.commands.check` 
         documentation as these checks actually come from there.
+
+    callback: Callable[..., Any]
+        the callback function of this command.
     """
     def __init__(self, callback: Callable, **attrs: Any):
-        self._callback = callback
+        self.callback = callback
         self._name = attrs.get('name') or callback.__name__
         self._description = attrs.get('description', callback.__doc__) or 'No description'
-        self._guild_ids   = attrs.get('guild_ids', [])
+        self._guild_ids = attrs.get('guild_ids', [])
         self._default_permission = attrs.get('default_permission', True)
 
         self._cog = None
-        self._id  = None
+        self._id = None
         self._application_id = None
         self._version = None
         self._client = self._bot = None
@@ -568,7 +571,7 @@ class ApplicationCommand:
         try:
             permissions = callback.__application_command_permissions__
         except AttributeError:
-            permissions = [] # type: ignore
+            permissions = []  # type: ignore
 
         for perm in permissions:
             perm._command = self
@@ -621,11 +624,6 @@ class ApplicationCommand:
     def permissions(self) -> List[ApplicationCommandGuildPermissions]:
         """List[:class:`ApplicationCommandGuildPermissions`]: List of permissions this command holds."""
         return self._permissions
-
-    @property
-    def callback(self) -> Callable:
-        """Callable[..., Any]: Returns the command's callback function."""
-        return self._callback
 
     @property
     def name(self) -> str:
@@ -984,6 +982,7 @@ class ApplicationCommand:
     def __str__(self):
         return self.name
 
+
 class SlashCommandChild(Option):
     """
     Base class for slash commands children like :class:`SlashCommandGroup` and
@@ -994,6 +993,9 @@ class SlashCommandChild(Option):
     This class is not meant to be used in general and is here for documentation-purposes only.
     For general use, Use the subclasses of this class like  :class:`SlashCommandGroup` and
     :class:`SlashSubCommand`.
+
+    callback: Callable[..., Any]
+        The callback function for this child.
     """
     def __init__(self, callback: Callable,
         type: SlashChildType, *,
@@ -1006,7 +1008,7 @@ class SlashCommandChild(Option):
             description=description or callback.__doc__ or 'No description.',
             type=type,
         )
-        self._callback = callback
+        self.callback = callback
         self._parent = None
 
 
@@ -1032,11 +1034,6 @@ class SlashCommandChild(Option):
     def parent(self) -> SlashCommand:
         """:class:`SlashCommand`: The parent command of this child command."""
         return self._parent
-
-    @property
-    def callback(self) -> SlashCommand:
-        """Callable: The callback function for this child."""
-        return self._callback
 
     # checks management
 
@@ -1555,7 +1552,6 @@ class SlashCommand(ApplicationCommand):
 
         for opt in child.callback.__application_command_params__.values():
             child.append_option(opt)
-
 
         return child
 
