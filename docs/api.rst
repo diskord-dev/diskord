@@ -655,7 +655,7 @@ to handle it, which defaults to print a traceback and ignoring the exception.
     This is a really helpful event and acts as an error handler for your application
     commands.
 
-    .. info::
+    .. note::
         This is not same as :func:`~commands.on_command_error` as it only is for application
         commands. For example, if you register a :func:`~commands.check` on an application
         command, Then if that check fails and raises an error, that error would be passed
