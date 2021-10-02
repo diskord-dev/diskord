@@ -71,6 +71,6 @@ If you're looking for something related to the project itself, it's here.
 .. toctree::
   :maxdepth: 1
 
+  migrating_2_0
   whats_new
   version_guarantees
-  migrating.rst
