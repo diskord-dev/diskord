@@ -1,4 +1,4 @@
-.. currentmodule:: diskord
+.. currentmodule:: discord
 
 .. _application_commands:
 
@@ -66,7 +66,7 @@ Example: ::
   async def slap(ctx, user):
     await ctx.send(f'{ctx.author.name} slapped {user.name}')
   
-.. image:: /images/application_commands/user_command.png
+.. image:: images/application_commands/user_command.png
 
 Message Commands
 ----------------
@@ -97,8 +97,8 @@ Example: ::
   async def highfive(ctx, member: diskord.Member):
     await ctx.send(f'{ctx.author.name} highfived {member.name}!')
 
-.. image:: /images/application_commands/slash_command_option.png
-.. image:: /images/application_commands/slash_command_option_member.png
+.. image:: images/application_commands/slash_command_option.png
+.. image:: images/application_commands/slash_command_option_member.png
 
 Option Types & Requirement setting
 ++++++++++++++++++++++++++++++++++++
@@ -120,7 +120,7 @@ For example: ::
 
 In above example, the ``quantity`` option is set as an integer and only integer can be passed to it and it is optional because we set the default value to ``1``, Not providing this option would default it's value to ``1``.
 
-.. image:: /images/application_commands/slash_command_option_typing.png
+.. image:: images/application_commands/slash_command_option_typing.png
 
 Available types are as follows, You can annotate your options with these types to get different results:
 
@@ -138,7 +138,7 @@ Available types are as follows, You can annotate your options with these types t
 * :class:`diskord.StageChannel`: A stage voice channel in a guild.
 * :class:`diskord.Thread`: A thread within a text channel in a guild.
 * :class:`diskord.Role`: A role in a guild.
-* :class:`Union[diskord.Role, diskord.User]`: Any mentionable i.e role or user.
+* :class:`Union[:class:`diskord.Role`, :class:`diskord.User`]`: Any mentionable i.e role or user.
 
 Option Choices
 ++++++++++++++
@@ -157,7 +157,7 @@ For example: ::
   async def buy(ctx, item: str, quantity: int = 1):
     await ctx.send(f'You bought {quantity} {item}(s)!')
 
-.. image:: /images/application_commands/slash_command_option_choices.png
+.. image:: images/application_commands/slash_command_option_choices.png
 
 Here, ``name`` is the name of choice that would be shown in Discord and ``value`` is the value of choice that it holds. The ``value`` would be passed to command function.
 
@@ -180,7 +180,7 @@ Example: ::
   async def push(ctx, remote: str = 'origin', branch: str = 'master'):
     await ctx.send(f'Pushed to {remote}/{branch}!')
 
-.. image:: /images/application_commands/slash_command_sub_command.png
+.. image:: images/application_commands/slash_command_sub_command.png
 
 Furthermore, you can also nest in subcommand groups that can hold subcommands.
 
@@ -287,7 +287,7 @@ Example: ::
         raise ValueError(f'Unknown value "{argument}" was passed.')
 
   @bot.slash_command()
-  @bot.slash_option('mode', converter=BooleanConverter):
+  @diskord.slash_option('mode', converter=BooleanConverter):
   async def toggle(ctx, mode):
     await ctx.send(f'The value is set to: {mode}')
 
@@ -296,4 +296,4 @@ Example: ::
     if isinstance(error, diskord.ApplicationCommandConversionError):
       await ctx.send(str(error.original))
 
-This was it for this manual, There's a lot more that you can find in the documentation!
+This was it for this quick overview, There's a lot more that you can find in the documentation!
