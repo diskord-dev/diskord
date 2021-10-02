@@ -543,7 +543,7 @@ class ApplicationCommand:
     """Represents an application command. This is base class for all application commands like
     slash commands, user commands etc.
 
-    Parameters
+    Attributes
     ----------
     checks: List[Callable[:class:`InteractionContext`, bool]]
         The list of checks this commands holds that will be checked before command's
@@ -959,9 +959,6 @@ class ApplicationCommand:
                         kwargs[resolved.arg] = value
                 
             else:
-                if context.command is None:
-                    context.command = self
-
                 value = await self._parse_option(interaction, option)
                 resolved = self.get_option(name=option['name'])
 
@@ -970,6 +967,10 @@ class ApplicationCommand:
                     kwargs[resolved.arg] = converted    
                 else:
                     kwargs[resolved.arg] = value
+
+
+        if context.command is None:
+            context.command = self
 
         if not (await context.command.can_run(context)):
             raise ApplicationCommandCheckFailure(f'checks functions for application command {context.command._name} failed.')
