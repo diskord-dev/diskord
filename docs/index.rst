@@ -74,3 +74,4 @@ If you're looking for something related to the project itself, it's here.
   migrating
   whats_new
   version_guarantees
+  application_commands

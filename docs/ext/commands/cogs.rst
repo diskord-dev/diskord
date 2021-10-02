@@ -11,6 +11,7 @@ The gist:
 
 - Each cog is a Python class that subclasses :class:`.commands.Cog`.
 - Every command is marked with the :func:`.commands.command` decorator.
+- Every application command is marked with :func:`diskord.slash_command`, :func:`diskord.user_command` or :func:`diskord.message_command`.
 - Every listener is marked with the :meth:`.commands.Cog.listener` decorator.
 - Cogs are then registered with the :meth:`.Bot.add_cog` call.
 - Cogs are subsequently removed with the :meth:`.Bot.remove_cog` call.

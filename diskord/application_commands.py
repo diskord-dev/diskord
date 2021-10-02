@@ -584,7 +584,7 @@ class ApplicationCommand:
             # https://discord.com/developers/docs/interactions/application-commands#user-commands
             # https://discord.com/developers/docs/interactions/application-commands#message-commands
 
-            self.description = ''
+            self._description = ''
 
 
         try:
@@ -1655,7 +1655,7 @@ class ContextMenuCommand(ApplicationCommand):
         }
 
 
-class UserCommand(ApplicationCommand):
+class UserCommand(ContextMenuCommand):
     """Represents a user command.
 
     A user command can be used by right-clicking a user in discord and choosing the
@@ -1670,7 +1670,7 @@ class UserCommand(ApplicationCommand):
         self._type = ApplicationCommandType.user
         super().__init__(callback, **attrs)
 
-class MessageCommand(ApplicationCommand):
+class MessageCommand(ContextMenuCommand):
     """Represents a message command.
 
     A message command can be used by right-clicking a message in discord and choosing
