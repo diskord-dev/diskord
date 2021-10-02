@@ -67,29 +67,29 @@ Certain methods, attributes or parameters etc. have been removed or deprecated i
 favor of some other methods. The below table comprehensively lists some removed things with
 reasons and the methods to be replaced with:
 
-+--------------------------------------------------------------+----------------------------------------+-----------------------------------+
-|         Deprecated                                           |        In favor of                     |        Extra info (if any)        |
-+--------------------------------------------------------------+----------------------------------------+-----------------------------------+
-|        ``Client.logout()``                                   |   :meth:`Client.close()`               |                 -                 |
-+--------------------------------------------------------------+----------------------------------------+-----------------------------------+
-| ``Guild/Client.request_offline_members``                     |   :meth:`Guild.chunk()`                |                 -                 |
-+--------------------------------------------------------------+----------------------------------------+-----------------------------------+
-| ``ExtensionNotFound.original``                               |      none (See info)                   |  Had no use and was unnecessary.  |
-+--------------------------------------------------------------+----------------------------------------+-----------------------------------+
-| ``on_private_channel_create``, ``on_private_channel_delete`` |      none (See info)                   |  Bots no longer get these events. |
-+--------------------------------------------------------------+----------------------------------------+-----------------------------------+
-| ``commands.HelpCommand.clean_prefix``                        | :attr:`commands.Context.clean_prefix`  |                 -                 |
-+--------------------------------------------------------------+----------------------------------------+-----------------------------------+
-| ``fetch_offline_members`` parameter in :class:`Client`       | :attr:`Client.chunk_guilds_at_startup` |  Was deprecated since v1.5.       |
-+--------------------------------------------------------------+----------------------------------------+-----------------------------------+
-| ``User.permissions_in``, ``Member.permissions_in``           | :meth:`~GuildChannel.permissions_for`  |                 -                 |
-+--------------------------------------------------------------+----------------------------------------+-----------------------------------+
-| ``Sticker.preview_image``                                    |      none (See info)                   | Discord no longer provides this.  |
-+--------------------------------------------------------------+----------------------------------------+-----------------------------------+
-| ``commands.Bot.self_bot``                                    |      none (See info)                   | Userbots are no longer supported  |
-+--------------------------------------------------------------+----------------------------------------+-----------------------------------+
-| ``Sticker.tags``                                             |  :attr:`StandardSticker.tags`          |                 -                 |
-+--------------------------------------------------------------+----------------------------------------+-----------------------------------+
++--------------------------------------------------------------+-------------------------------------------+-----------------------------------+
+|         Deprecated                                           |        In favor of                        |        Extra info (if any)        |
++--------------------------------------------------------------+-------------------------------------------+-----------------------------------+
+|        ``Client.logout()``                                   |   :meth:`Client.close()`                  |                 -                 |
++--------------------------------------------------------------+-------------------------------------------+-----------------------------------+
+| ``Guild/Client.request_offline_members``                     |   :meth:`Guild.chunk()`                   |                 -                 |
++--------------------------------------------------------------+-------------------------------------------+-----------------------------------+
+| ``ExtensionNotFound.original``                               |      none (See info)                      |  Had no use and was unnecessary.  |
++--------------------------------------------------------------+-------------------------------------------+-----------------------------------+
+| ``on_private_channel_create``, ``on_private_channel_delete`` |      none (See info)                      |  Bots no longer get these events. |
++--------------------------------------------------------------+-------------------------------------------+-----------------------------------+
+| ``commands.HelpCommand.clean_prefix``                        | :attr:`~commands.Context.clean_prefix`    |                 -                 |
++--------------------------------------------------------------+-------------------------------------------+-----------------------------------+
+| ``fetch_offline_members`` parameter in :class:`Client`       | :attr:`Client.chunk_guilds_at_startup`    |  Was deprecated since v1.5.       |
++--------------------------------------------------------------+-------------------------------------------+-----------------------------------+
+| ``User.permissions_in``, ``Member.permissions_in``           | :meth:`abc.GuildChannel.permissions_for`  |                 -                 |
++--------------------------------------------------------------+-------------------------------------------+-----------------------------------+
+| ``Sticker.preview_image``                                    |      none (See info)                      | Discord no longer provides this.  |
++--------------------------------------------------------------+-------------------------------------------+-----------------------------------+
+| ``commands.Bot.self_bot``                                    |      none (See info)                      | Userbots are no longer supported  |
++--------------------------------------------------------------+-------------------------------------------+-----------------------------------+
+| ``Sticker.tags``                                             |  :attr:`StandardSticker.tags`             |                 -                 |
++--------------------------------------------------------------+-------------------------------------------+-----------------------------------+
 
 
 Renaming and fixes
@@ -97,12 +97,13 @@ Renaming and fixes
 
 Certain things are renamed and fixed in v2.x, Here's a list:
 
-* ``~commands.MissingPermissions.missing_perms`` -> :attr:`~commands.MissingPermissions.missing_permissions`
+* ``commands.MissingPermissions.missing_perms`` -> :attr:`~ext.commands.MissingPermissions.missing_permissions`
 * ``Color.blurple`` -> ``Color.og_blurple`` [*]
 * ``StickerType``, an enum of sticker formats, is renamed to :class:`StickerFormatType`. [**]
 * ``Reaction.custom_emoji`` property -> :meth:`Reaction.is_custom_emoji` method.
 * :attr:`Message.type` for replies are now :attr:`MessageType.reply`
-* All getters and fetchers methods now take arguments as positional-only. i.e `Client.get_member(id=...)` is no longer supported, you must specify id as positional argument. i.e `Client.get_member(id)`
+* All getters and fetchers methods now take arguments as positional-only. 
+i.e ``Client.get_member(id=...)`` is no longer supported, you must specify id as positional argument. i.e ``Client.get_member(id)``
 * :attr:`IntegrationAccount.id` is now :class:`str`, instead of :class:`int`, due to Discord changes.
 
 
@@ -214,12 +215,12 @@ TL;DR: Most Methods and attributes that returned :class:`TextChannel`, etc can n
 
 * :meth:`Client.get_channel` can now return :class:`Thread`.
 * :meth:`Client.fetch_channel` and :meth:`Guild.fetch_channel` can now return :class:`Thread`.
-* :attr:`~NSFWChannelRequired.channel` can now return :class:`Thread`.
-* :attr:`~ChannelNotReadable.argument` can now return :class:`Thread`.
+* :attr:`ext.commands.NSFWChannelRequired.channel` can now return :class:`Thread`.
+* :attr:`ext.commands.ChannelNotReadable.argument` can now return :class:`Thread`.
 * :attr:`Message.channel` can now return :class:`Thread`.
 
-:func:`on_member_update` and :func:`on_presence_update` separation
-------------------------------------------------------------------
+Splitting up of status activity listeners
+-----------------------------------------
 
 :func:`on_member_update` event is no longer dispatched for status/activity changes. 
 Use :func:`on_presence_update` instead.
@@ -231,6 +232,8 @@ These are not breaking changes but few major additions in v2.x.
 
 * Threads support
 * Application Commands i.e Slash commands, Context menu commands etc.
+  * Partial support for application command extensions i.e Checks, Converters
+  
 * Full Stickers Support
 * Message Components and interactions
 * Stage instances support
