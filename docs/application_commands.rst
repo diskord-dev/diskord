@@ -21,7 +21,7 @@ To use application commands, You must add your bot to the server with ``applicat
 
 It's simple, You just have to generate an OAuth URL with ``bot`` and ``application.commands`` scope and invite the bot.  
 
-.. image:: /images/application_commands/application_commands_scope.png
+.. image:: /images/application_commands_scope.png
 
 Creating Basic Slash Command
 ----------------------------
@@ -43,8 +43,8 @@ Example: ::
 
 Now we have created a basic slash command:
 
-.. image:: /images/application_commands/slash_command.png
-.. image:: /images/application_commands/slash_command_result.png
+.. image:: /images/slash_command.png
+.. image:: /images/slash_command_result.png
 
 .. note::
     Global Application commands take up to 2 hours to be registered in Discord.
@@ -66,7 +66,7 @@ Example: ::
   async def slap(ctx, user):
     await ctx.send(f'{ctx.author.name} slapped {user.name}')
   
-.. image:: /images/application_commands/user_command.png
+.. image:: /images/user_command.png
 
 Message Commands
 ----------------
@@ -79,7 +79,7 @@ Example: ::
   async def say(ctx, message):
     await ctx.send(f'{ctx.author.name} said: {message.content}')
   
-.. image:: /images/application_commands/message_command.png
+.. image:: /images/message_command.png
 
 Now it's time to go a little deep in application commands. Specifically, Slash commands.
 
@@ -97,8 +97,8 @@ Example: ::
   async def highfive(ctx, member: diskord.Member):
     await ctx.send(f'{ctx.author.name} highfived {member.name}!')
 
-.. image:: /images/application_commands/slash_command_option.png
-.. image:: /images/application_commands/slash_command_option_member.png
+.. image:: /images/slash_command_option.png
+.. image:: /images/slash_command_option_member.png
 
 Option Types & Requirement setting
 ++++++++++++++++++++++++++++++++++++
@@ -120,7 +120,7 @@ For example: ::
 
 In above example, the ``quantity`` option is set as an integer and only integer can be passed to it and it is optional because we set the default value to ``1``, Not providing this option would default it's value to ``1``.
 
-.. image:: /images/application_commands/slash_command_option_typing.png
+.. image:: /images/slash_command_option_typing.png
 
 Available types are as follows, You can annotate your options with these types to get different results:
 
@@ -157,7 +157,7 @@ For example: ::
   async def buy(ctx, item: str, quantity: int = 1):
     await ctx.send(f'You bought {quantity} {item}(s)!')
 
-.. image:: /images/application_commands/slash_command_option_choices.png
+.. image:: /images/slash_command_option_choices.png
 
 Here, ``name`` is the name of choice that would be shown in Discord and ``value`` is the value of choice that it holds. The ``value`` would be passed to command function.
 
@@ -180,7 +180,7 @@ Example: ::
   async def push(ctx, remote: str = 'origin', branch: str = 'master'):
     await ctx.send(f'Pushed to {remote}/{branch}!')
 
-.. image:: /images/application_commands/slash_command_sub_command.png
+.. image:: /images/slash_command_sub_command.png
 
 Furthermore, you can also nest in subcommand groups that can hold subcommands.
 
@@ -202,7 +202,7 @@ Example: ::
   async def remove(ctx):
     await ctx.send('removed a todo.')
 
-.. image:: /images/application_commands/slash_sub_command_group.png
+.. image:: /images/slash_sub_command_group.png
 
 Checks
 ------
