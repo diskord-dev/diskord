@@ -248,14 +248,8 @@ class Role(Hashable):
         self.managed: bool = data.get('managed', False)
         self.mentionable: bool = data.get('mentionable', False)
         self.tags: Optional[RoleTags]
-        self._icon: Optional[Asset] = data.get('icon')
-        
-        # TODO:
-        # try:
-        #     self.unicode_emoji: Optional[PartialEmoji] = PartialEmoji.from_str(str(data['unicode_emoji']))
-        # except KeyError:
-        #     self.unicode_emoji: Optional[PartialEmoji] = None
-
+        self._icon: Optional[str] = data.get('icon')
+        self._unicode_emoji: Optional[str] = data.get('unicode_emoji')
 
         try:
             self.tags = RoleTags(data['tags'])
@@ -346,6 +340,18 @@ class Role(Hashable):
                 self._icon,
                 'role',
                 )
+
+    @property
+    def unicode_emoji(self) -> Optional[PartialEmoji]:
+        """Optional[:class:`PartialEmoji`]: The unicode emoji that represents the role icon,
+        Could be ``None``.
+
+        .. versionadded:: 2.5
+        """
+        if self._unicode_emoji is None:
+            return None
+
+        return PartialEmoji.from_str(self._unicode_emoji)
 
 
     async def _move(self, position: int, reason: Optional[str]) -> None:
