@@ -5,26 +5,26 @@ import typing
 import diskord
 from diskord.ext import commands
 
-intents = discord.Intents.default()
+intents = diskord.Intents.default()
 intents.members = True
 
 bot = commands.Bot('!', intents=intents)
 
 
 @bot.command()
-async def userinfo(ctx: commands.Context, user: discord.User):
+async def userinfo(ctx: commands.Context, user: diskord.User):
     # In the command signature above, you can see that the `user`
-    # parameter is typehinted to `discord.User`. This means that
+    # parameter is typehinted to `diskord.User`. This means that
     # during command invocation we will attempt to convert
-    # the value passed as `user` to a `discord.User` instance.
-    # The documentation notes what can be converted, in the case of `discord.User`
+    # the value passed as `user` to a `diskord.User` instance.
+    # The documentation notes what can be converted, in the case of `diskord.User`
     # you pass an ID, mention or username (discrim optional)
     # E.g. 80088516616269824, @Danny or Danny#0007
 
     # NOTE: typehinting acts as a converter within the `commands` framework only.
     # In standard Python, it is use for documentation and IDE assistance purposes.
 
-    # If the conversion is successful, we will have a `discord.User` instance
+    # If the conversion is successful, we will have a `diskord.User` instance
     # and can do the following:
     user_id = user.id
     username = user.name
@@ -43,7 +43,7 @@ class ChannelOrMemberConverter(commands.Converter):
     async def convert(self, ctx: commands.Context, argument: str):
         # In this example we have made a custom converter.
         # This checks if an input is convertible to a
-        # `discord.Member` or `discord.TextChannel` instance from the
+        # `diskord.Member` or `diskord.TextChannel` instance from the
         # input the user has given us using the pre-existing converters
         # that the library provides.
 
@@ -84,19 +84,19 @@ async def notify(ctx: commands.Context, target: ChannelOrMemberConverter):
     await target.send(f'Hello, {target.name}!')
 
 @bot.command()
-async def ignore(ctx: commands.Context, target: typing.Union[discord.Member, discord.TextChannel]):
+async def ignore(ctx: commands.Context, target: typing.Union[diskord.Member, diskord.TextChannel]):
     # This command signature utilises the `typing.Union` typehint.
     # The `commands` framework attempts a conversion of each type in this Union *in order*.
-    # So, it will attempt to convert whatever is passed to `target` to a `discord.Member` instance.
-    # If that fails, it will attempt to convert it to a `discord.TextChannel` instance.
-    # See: https://discordpy.readthedocs.io/en/latest/ext/commands/commands.html#typing-union
+    # So, it will attempt to convert whatever is passed to `target` to a `diskord.Member` instance.
+    # If that fails, it will attempt to convert it to a `diskord.TextChannel` instance.
+    # See: https://diskordpy.readthedocs.io/en/latest/ext/commands/commands.html#typing-union
     # NOTE: If a Union typehint converter fails it will raise `commands.BadUnionArgument`
     # instead of `commands.BadArgument`.
 
     # To check the resulting type, `isinstance` is used
-    if isinstance(target, discord.Member):
+    if isinstance(target, diskord.Member):
         await ctx.send(f'Member found: {target.mention}, adding them to the ignore list.')
-    elif isinstance(target, discord.TextChannel): # this could be an `else` but for completeness' sake.
+    elif isinstance(target, diskord.TextChannel): # this could be an `else` but for completeness' sake.
         await ctx.send(f'Channel found: {target.mention}, adding it to the ignore list.')
 
 # Built-in type converters.
@@ -104,7 +104,7 @@ async def ignore(ctx: commands.Context, target: typing.Union[discord.Member, dis
 async def multiply(ctx: commands.Context, number: int, maybe: bool):
     # We want an `int` and a `bool` parameter here.
     # `bool` is a slightly special case, as shown here:
-    # See: https://discordpy.readthedocs.io/en/latest/ext/commands/commands.html#bool
+    # See: https://diskordpy.readthedocs.io/en/latest/ext/commands/commands.html#bool
 
     if maybe is True:
         return await ctx.send(number * 2)

@@ -14,7 +14,7 @@ class MyContext(commands.Context):
         try:
             # this will react to the command author's message
             await self.message.add_reaction(emoji)
-        except discord.HTTPException:
+        except diskord.HTTPException:
             # sometimes errors occur during this, for example
             # maybe you don't have permission to do that
             # we don't mind, so we can just ignore them

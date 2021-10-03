@@ -13,7 +13,7 @@ async def top(ctx):
 
 @top.sub_command()
 async def sub(ctx):
-  await ctx.send('a subcommand!')
+  await ctx.respond('a subcommand!')
 
 # the usage would be "/top sub"
 
@@ -29,7 +29,7 @@ async def group(ctx):
 
 @group.sub_command(ctx)
 async def groupcmd(ctx):
-  await ctx.send('i am in a group!')
+  await ctx.respond('i am in a group!')
   
 # the usage would be /grouptop group groupcmd
 bot.run('token')

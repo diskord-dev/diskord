@@ -2,7 +2,7 @@ from diskord.ext import tasks
 
 import diskord
 
-class MyClient(discord.Client):
+class MyClient(diskord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

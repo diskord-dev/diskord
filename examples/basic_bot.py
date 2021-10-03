@@ -4,12 +4,12 @@ import diskord
 from diskord.ext import commands
 import random
 
-description = '''An example bot to showcase the discord.ext.commands extension
+description = '''An example bot to showcase the diskord.ext.commands extension
 module.
 
 There are a number of utility commands being showcased here.'''
 
-intents = discord.Intents.default()
+intents = diskord.Intents.default()
 intents.members = True
 
 bot = commands.Bot(command_prefix='?', description=description, intents=intents)
@@ -48,7 +48,7 @@ async def repeat(ctx, times: int, content='repeating...'):
         await ctx.send(content)
 
 @bot.command()
-async def joined(ctx, member: discord.Member):
+async def joined(ctx, member: diskord.Member):
     """Says when a member joined."""
     await ctx.send(f'{member.name} joined in {member.joined_at}')
 

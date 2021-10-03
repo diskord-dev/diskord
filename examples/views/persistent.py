@@ -10,20 +10,20 @@ import diskord
 # prevent conflicts with other buttons the bot sends.
 # For this example the custom_id is prefixed with the name of the bot.
 # Note that custom_ids can only be up to 100 characters long.
-class PersistentView(discord.ui.View):
+class PersistentView(diskord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label='Green', style=discord.ButtonStyle.green, custom_id='persistent_view:green')
-    async def green(self, button: discord.ui.Button, interaction: discord.Interaction):
+    @diskord.ui.button(label='Green', style=diskord.ButtonStyle.green, custom_id='persistent_view:green')
+    async def green(self, button: diskord.ui.Button, interaction: diskord.Interaction):
         await interaction.response.send_message('This is green.', ephemeral=True)
 
-    @discord.ui.button(label='Red', style=discord.ButtonStyle.red, custom_id='persistent_view:red')
-    async def red(self, button: discord.ui.Button, interaction: discord.Interaction):
+    @diskord.ui.button(label='Red', style=diskord.ButtonStyle.red, custom_id='persistent_view:red')
+    async def red(self, button: diskord.ui.Button, interaction: diskord.Interaction):
         await interaction.response.send_message('This is red.', ephemeral=True)
 
-    @discord.ui.button(label='Grey', style=discord.ButtonStyle.grey, custom_id='persistent_view:grey')
-    async def grey(self, button: discord.ui.Button, interaction: discord.Interaction):
+    @diskord.ui.button(label='Grey', style=diskord.ButtonStyle.grey, custom_id='persistent_view:grey')
+    async def grey(self, button: diskord.ui.Button, interaction: diskord.Interaction):
         await interaction.response.send_message('This is grey.', ephemeral=True)
 
 

@@ -10,16 +10,16 @@ async def on_ready():
 # slash commands can be used by writing "/<command>" in the chat
 @bot.slash_command()
 async def ping(ctx):
-  await ctx.send('pong')
+  await ctx.respond('pong')
 
 # message commands can be used by right clicking a user > apps > command  
 @bot.user_command()
 async def slap(ctx, user):
-  await ctx.send(f'{ctx.author.name} slapped {user.name}')
+  await ctx.respond(f'{ctx.author.name} slapped {user.name}')
 
 # message commands can be used by right clicking a message > apps > command
 @bot.message_command()
 async def say(ctx, message):
-  await ctx.send(f'{ctx.author.name} requested to say: {message.content}')
+  await ctx.respond(f'{ctx.author.name} requested to say: {message.content}')
 
 bot.run('token')
