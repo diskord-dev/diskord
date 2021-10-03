@@ -591,7 +591,7 @@ class ApplicationCommand:
 
 
         try:
-            checks = self._callback.__commands_checks__
+            checks = self.callback.__commands_checks__
             checks.reverse()
         except AttributeError:
             checks = attrs.get('checks', [])
