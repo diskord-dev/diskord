@@ -167,7 +167,7 @@ class Option:
         converter: 'Converter' = None,
         **attrs,
     ):
-        self._callback: Callable[..., Any] = attrs.get('callback')
+        self.callback: Callable[..., Any] = attrs.get('callback')
         self._name = name
         self._description = description or "No description"
         self._required = required
@@ -1013,7 +1013,7 @@ class SlashCommandChild(Option):
 
 
         try:
-            checks = self._callback.__commands_checks__
+            checks = self.callback.__commands_checks__
             checks.reverse()
         except AttributeError:
             checks = kwargs.get('checks', [])
