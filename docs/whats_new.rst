@@ -11,9 +11,9 @@ Changelog
 This page keeps a detailed human friendly rendering of what's new and changed
 in specific versions.
 
-.. _vp2p5p2:
+.. _vp2p6p0:
 
-v2.5.2
+v2.6.0
 --------
 
 * Typehint the missing part
