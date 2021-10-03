@@ -2139,7 +2139,7 @@ class Client:
 
             @bot.slash_command(description='My cool slash command.')
             async def test(ctx):
-                await ctx.send('Hello world')
+                await ctx.respond('Hello world')
         """
         def inner(func: Callable):
             if not inspect.iscoroutinefunction(func):
@@ -2159,7 +2159,7 @@ class Client:
 
             @bot.user_command()
             async def test(ctx, user):
-                await ctx.send('Hello world')
+                await ctx.respond('Hello world')
         """
         def inner(func: Callable):
             if not inspect.iscoroutinefunction(func):
@@ -2177,7 +2177,7 @@ class Client:
 
             @bot.message_command()
             async def test(ctx, message):
-                await ctx.send('Hello world')
+                await ctx.respond('Hello world')
         """
         def inner(func: Callable):
             if not inspect.iscoroutinefunction(func):
