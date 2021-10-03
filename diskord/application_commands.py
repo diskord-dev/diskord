@@ -972,9 +972,9 @@ class ApplicationCommand:
 
         args.insert(0, context)
         if context.command.cog is not None:
-            await context.command.callback(context.command.cog, *args, **kwargs)
-        else:
-            await context.command.callback(*args, **kwargs)
+            args.insert(0, context.command.cog)
+
+        await context.command.callback(*args, **kwargs)
 
     def __repr__(self):
         # More attributes here?
