@@ -866,18 +866,22 @@ class InteractionContext:
 
     # actions
 
+    @utils.copy_doc(InteractionResponse.send_message)
     @property
     def respond(self) -> Callable:
         return self.interaction.response.send_message
 
+    @utils.copy_doc(GuildChannel.send)
     @property
-    def send(self) -> Callable:
-        return self.respond
+    def send(self) -> Callable[..., Message]:
+        return self.channel.send
 
+    @utils.copy_doc(InteractionResponse.defer)
     @property
     def defer(self) -> Callable:
         return self.interaction.response.defer
 
+    @utils.copy_doc(Interaction.followup)
     @property
     def followup(self) -> Callable:
         return self.interaction.followup
