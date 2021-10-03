@@ -139,6 +139,14 @@ class Client:
         :func:`on_connect`, Otherwise :func:`sync_application_commands` will be called.
 
         This defaults to ``False`` and is strongly recommended to be ``False``.
+    application_commands_guild_ids: List[:class:`int`]
+        The list of guilds in which all application commands would be registered.
+        If this is provided, Then it would essentially prevent the creation of global
+        application commands.
+
+        This parameter's sole purpose is debugging, it can come in handy when
+        testing application commands as global commands take upto 2 hours to register
+        while guild commands registration is instant.
     max_messages: Optional[:class:`int`]
         The maximum number of messages to store in the internal message cache.
         This defaults to ``1000``. Passing in ``None`` disables the message cache.
@@ -234,6 +242,8 @@ class Client:
         self._listeners: Dict[str, List[Tuple[asyncio.Future, Callable[..., bool]]]] = {}
         self.shard_id: Optional[int] = options.get('shard_id')
         self.shard_count: Optional[int] = options.get('shard_count')
+        self.overwrite_application_commands: bool = options.pop('overwrite_application_commands', False)
+        self.application_commands_guild_ids: List[int] = options.pop('application_commands_guild_ids', [])
 
         connector: Optional[aiohttp.BaseConnector] = options.pop('connector', None)
         proxy: Optional[str] = options.pop('proxy', None)
@@ -258,7 +268,6 @@ class Client:
         self._connection._get_client = lambda: self
 
         self._pending_commands: List[ApplicationCommand] = []
-        self.overwrite_application_commands: bool = options.pop('overwrite_application_commands', False)
 
 
         if VoiceClient.warn_nacl:
@@ -2002,6 +2011,16 @@ class Client:
             process will not be interrupted. Defaults to ``True``
         """
         _log.info('Synchronizing internal cache commands.')
+        if not self._pending_commands:
+            # since we don't have any commands pending to register then
+            # we just return
+            return
+
+        if self.application_commands_guild_ids:
+            for command in self._pending_commands:
+                if not command.guild_ids:
+                    command.guild_ids = self.application_commands_guild_ids
+
         commands = await self.http.get_global_commands(self.user.id)
         non_registered = []
 
@@ -2081,6 +2100,11 @@ class Client:
         """
         # This needs a refactor as current implementation is kind of hacky and can
         # be unstable.
+
+        if self.application_commands_guild_ids:
+            for command in self._pending_commands:
+                if not command.guild_ids:
+                    command.guild_ids = self.application_commands_guild_ids
 
         _log.info('Registering %s application commands.' % str(len(self._pending_commands)))
 
