@@ -850,7 +850,7 @@ class ApplicationCommand:
         if not interaction.data['type'] == self.type.value:
             raise TypeError(f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}')
 
-        if self.type == ApplicationCommandType.user.value:
+        if self.type.value == ApplicationCommandType.user.value:
             if interaction.guild:
                 user = interaction.guild.get_member(int(interaction.data['target_id']))
             else:
@@ -876,7 +876,7 @@ class ApplicationCommand:
             args.append(user)
             context.command = self
 
-        elif self.type == ApplicationCommandType.message.value:
+        elif self.type.value == ApplicationCommandType.message.value:
             data = interaction.data['resolved']['messages'][interaction.data['target_id']]
             if interaction.guild:
                 message = Message(
@@ -964,11 +964,11 @@ class ApplicationCommand:
         if not (await context.command.can_run(context)):
             raise ApplicationCommandCheckFailure(f'checks functions for application command {context.command._name} failed.')
 
+        args.insert(0, context)
         if context.command.cog is not None:
-            args.append(context.command.cog)
-        
-        args.append(context)
-        await context.command.callback(*args, **kwargs)
+            await context.command.callback(context.command.cog, *args, **kwargs)
+        else:
+            await context.command.callback(*args, **kwargs)
 
     def __repr__(self):
         # More attributes here?
@@ -1140,7 +1140,7 @@ class SlashCommandGroup(SlashCommandChild):
         @role.sub_command(description="Clears the permissions of the role.")
         @diskord.slash_option('role', description='The role to clear permissions of.')
         async def clear(ctx, role: discord.Role):
-            await ctx.send('Permissions cleared!')
+            await ctx.respond('Permissions cleared!')
 
 
     In above example, ``/permissions`` is a slash command and ``role`` is a subcommand group
@@ -1252,7 +1252,7 @@ class SlashCommandGroup(SlashCommandChild):
 
             @group.sub_command(description='This is a cool command inside a command group.')
             async def subcommand(ctx):
-                await ctx.send('Hello world!')
+                await ctx.respond('Hello world!')
 
         Parameters
         ----------
@@ -1280,7 +1280,7 @@ class SlashSubCommand(SlashCommandChild):
 
         @git.sub_command(description='This is git push!')
         async def push(ctx):
-            await ctx.send('Pushed!')
+            await ctx.respond('Pushed!')
 
     The usage of above command would be like ``/git push``.
 
@@ -1592,7 +1592,7 @@ class SlashCommand(ApplicationCommand):
 
             @git.sub_command(description='This is git push!')
             async def push(ctx):
-                await ctx.send('Pushed!')
+                await ctx.respond('Pushed!')
 
         Options and other features can be added to the subcommands.
         """
@@ -1617,7 +1617,7 @@ class SlashCommand(ApplicationCommand):
 
             @group.sub_command(description='This is a cool command inside a command group.')
             async def subcommand(ctx):
-                await ctx.send('Hello world!')
+                await ctx.respond('Hello world!')
         """
         def inner(func: Callable):
             return self.add_child(SlashCommandGroup(func, **attrs))
@@ -1686,7 +1686,7 @@ def slash_option(name: str,  **attrs) -> Option:
         @diskord.slash_option('reason', description='Reason to high-five')
 
         async def highfive(ctx, member: diskord.Member, reason = 'No reason!'):
-            await ctx.send(f'{ctx.author.name} high-fived {member.name} for {reason}')
+            await ctx.respond(f'{ctx.author.name} high-fived {member.name} for {reason}')
 
     .. warning::
         The callback function must contain the argument and properly annotated or TypeError
@@ -1738,7 +1738,7 @@ def slash_command(**options) -> SlashCommand:
 
         @diskord.slash_command(description='My cool slash command.')
         async def test(ctx):
-            await ctx.send('Hello world')
+            await ctx.respond('Hello world')
     """
     def inner(func: Callable):
         if not inspect.iscoroutinefunction(func):
@@ -1757,7 +1757,7 @@ def user_command(**options) -> SlashCommand:
 
         @diskord.user_command()
         async def test(ctx, user):
-            await ctx.send('Hello world')
+            await ctx.respond('Hello world')
     """
     def inner(func: Callable):
         if not inspect.iscoroutinefunction(func):
@@ -1775,7 +1775,7 @@ def message_command(**options) -> SlashCommand:
 
         @diskord.message_command()
         async def test(ctx, message):
-            await ctx.send('Hello world')
+            await ctx.respond('Hello world')
 
     Parameters
     ----------
@@ -1800,7 +1800,7 @@ def application_command_permission(*, guild_id: int, user_id: int = None, role_i
         @diskord.application_command_permission(guild_id=12345, user_id=1234, permission=False)
         @diskord.application_command_permission(guild_id=12345, role_id=123456, permission=True)
         async def command(ctx):
-            await ctx.send('Hello world')
+            await ctx.respond('Hello world')
 
     In above command, The user with ID ``1234`` would not be able to use to command
     and anyone with role of ID ``123456`` will be able to use the command in the guild

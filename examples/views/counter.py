@@ -13,17 +13,17 @@ class CounterBot(commands.Bot):
 
 
 # Define a simple View that gives us a counter button
-class Counter(discord.ui.View):
+class Counter(diskord.ui.View):
 
     # Define the actual button
     # When pressed, this increments the number displayed until it hits 5.
     # When it hits 5, the counter button is disabled and it turns green.
     # note: The name of the function does not matter to the library
-    @discord.ui.button(label='0', style=discord.ButtonStyle.red)
-    async def count(self, button: discord.ui.Button, interaction: discord.Interaction):
+    @diskord.ui.button(label='0', style=diskord.ButtonStyle.red)
+    async def count(self, button: diskord.ui.Button, interaction: diskord.Interaction):
         number = int(button.label) if button.label else 0
         if number + 1 >= 5:
-            button.style = discord.ButtonStyle.green
+            button.style = diskord.ButtonStyle.green
             button.disabled = True
         button.label = str(number + 1)
 

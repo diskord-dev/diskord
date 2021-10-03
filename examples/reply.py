@@ -1,6 +1,6 @@
 import diskord
 
-class MyClient(discord.Client):
+class MyClient(diskord.Client):
     async def on_ready(self):
         print(f'Logged in as {self.user} (ID: {self.user.id})')
         print('------')

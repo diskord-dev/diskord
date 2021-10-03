@@ -69,7 +69,7 @@ client = diskord.Client()
 
 @client.slash_command(description='Ping-Pong!')
 async def ping(ctx):
-    await ctx.send('Pong!')
+    await ctx.respond('Pong!')
 
 client.run('token')
 ```
@@ -83,7 +83,7 @@ bot = commands.Bot(command_prefix='>')
 
 @bot.command()
 async def ping(ctx):
-    await ctx.send('pong')
+    await ctx.respond('pong')
 
 bot.run('token')
 ```

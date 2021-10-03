@@ -14,7 +14,7 @@ async def on_ready():
 # in command function that represents this option.
 @diskord.slash_option('text', description='The text to say!')
 async def say(ctx, text):
-  await ctx.send(f'{ctx.author.name} said: {text}')
+  await ctx.respond(f'{ctx.author.name} said: {text}')
 
 # We can do similar for users, roles, channels etc.
 @diskord.slash_command()
@@ -23,7 +23,7 @@ async def say(ctx, text):
 # annotating user as "diskord.User" will make option type a user and same for "int"
 # setting a default value to an argument will make that option optional.
 async def slap(ctx, user: diskord.User, amount: int = 1): 
-  await ctx.send(f'{ctx.author.name} slapped {user.name}, {amount} times!')
+  await ctx.respond(f'{ctx.author.name} slapped {user.name}, {amount} times!')
   
 # available types are:
 # diskord.Role: For role

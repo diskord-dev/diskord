@@ -37,7 +37,7 @@ Example: ::
   
   @bot.slash_command()
   async def hello(ctx):
-    await ctx.send('Hello from slash command!')
+    await ctx.respond('Hello from slash command!')
   
   bot.run('token')
 
@@ -64,7 +64,7 @@ Example: ::
   
   @bot.user_command()
   async def slap(ctx, user):
-    await ctx.send(f'{ctx.author.name} slapped {user.name}')
+    await ctx.respond(f'{ctx.author.name} slapped {user.name}')
   
 .. image:: /images/user_command.png
 
@@ -77,7 +77,7 @@ Example: ::
   
   @bot.message_command()
   async def say(ctx, message):
-    await ctx.send(f'{ctx.author.name} said: {message.content}')
+    await ctx.respond(f'{ctx.author.name} said: {message.content}')
   
 .. image:: /images/message_command.png
 
@@ -95,7 +95,7 @@ Example: ::
   @bot.slash_command()
   @diskord.slash_option('member', description='The member to highfive.')
   async def highfive(ctx, member: diskord.Member):
-    await ctx.send(f'{ctx.author.name} highfived {member.name}!')
+    await ctx.respond(f'{ctx.author.name} highfived {member.name}!')
 
 .. image:: /images/slash_command_option.png
 .. image:: /images/slash_command_option_member.png
@@ -116,7 +116,7 @@ For example: ::
   @diskord.slash_option('item', description='The item to purchase.')
   @diskord.slash_option('quantity', description='The quantity of item.')
   async def buy(ctx, item: str, quantity: int = 1):
-    await ctx.send(f'You bought {quantity} {item}!')
+    await ctx.respond(f'You bought {quantity} {item}!')
 
 In above example, the ``quantity`` option is set as an integer and only integer can be passed to it and it is optional because we set the default value to ``1``, Not providing this option would default it's value to ``1``.
 
@@ -155,7 +155,7 @@ For example: ::
   ])
   @diskord.slash_option('quantity', description='The quantity of item.')
   async def buy(ctx, item: str, quantity: int = 1):
-    await ctx.send(f'You bought {quantity} {item}(s)!')
+    await ctx.respond(f'You bought {quantity} {item}(s)!')
 
 .. image:: /images/slash_command_option_choices.png
 
@@ -178,7 +178,7 @@ Example: ::
   @diskord.slash_option('remote')
   @diskord.slash_option('branch')
   async def push(ctx, remote: str = 'origin', branch: str = 'master'):
-    await ctx.send(f'Pushed to {remote}/{branch}!')
+    await ctx.respond(f'Pushed to {remote}/{branch}!')
 
 .. image:: /images/slash_command_sub_command.png
 
@@ -196,11 +196,11 @@ Example: ::
   
   @list.sub_command()
   async def add(ctx):
-    await ctx.send('Added a todo.')
+    await ctx.respond('Added a todo.')
   
   @list.sub_command()
   async def remove(ctx):
-    await ctx.send('removed a todo.')
+    await ctx.respond('removed a todo.')
 
 .. image:: /images/slash_command_sub_command_group.png
 
@@ -221,7 +221,7 @@ Example: ::
   @commands.has_permissions(manage_messages=True)
   @diskord.slash_option('message', description='The message to echo!')
   async def echo(ctx, message: str):
-    await ctx.send('\'+message)
+    await ctx.respond('\'+message)
 
 Above command will only be ran if the user has "MANAGE MESSAGES" permissions in the guild.
 
@@ -241,7 +241,7 @@ Example: ::
   @bot.slash_command()
   @is_me()
   async def secret_command(ctx):
-    await ctx.send('This is secret command!')
+    await ctx.respond('This is secret command!')
 
 Handling Check Errors
 +++++++++++++++++++++
@@ -253,7 +253,7 @@ Example: ::
   @bot.event
   async def on_application_command_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
-      await ctx.send('Cannot run the command before you do not have required permissions.')
+      await ctx.respond('Cannot run the command before you do not have required permissions.')
     else:
       raise error
 
@@ -289,11 +289,11 @@ Example: ::
   @bot.slash_command()
   @diskord.slash_option('mode', converter=BooleanConverter):
   async def toggle(ctx, mode):
-    await ctx.send(f'The value is set to: {mode}')
+    await ctx.respond(f'The value is set to: {mode}')
 
   @bot.event
   async def on_application_command_error(ctx, error):
     if isinstance(error, diskord.ApplicationCommandConversionError):
-      await ctx.send(str(error.original))
+      await ctx.respond(str(error.original))
 
 This was it for this quick overview, There's a lot more that you can find in the documentation!
