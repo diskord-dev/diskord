@@ -11,6 +11,26 @@ Changelog
 This page keeps a detailed human friendly rendering of what's new and changed
 in specific versions.
 
+.. _vp2p5p1:
+
+v2.5.1
+--------
+
+* Fix TypeError while invocation of context menu commands.
+
+.. _vp2p5p0:
+
+
+v2.5.0
+--------
+* Support for Application Commands
+* Partial Support for Application Commands extensions.
+* Support for role icons
+* Support guild welcome screen
+* Add raw_thread_delete event
+* Add raw_typing events
+
+
 .. _vp2p0p0:
 
 v2.0.0
