@@ -874,7 +874,7 @@ class InteractionContext:
     @property
     # @utils.copy_doc(PartialMessageable.send)
     def send(self) -> Callable[..., Message]:
-        return self.channel.send
+        return self.respond
 
     @property
     # @utils.copy_doc(InteractionResponse.defer)
