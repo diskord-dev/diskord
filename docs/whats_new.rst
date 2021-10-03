@@ -18,6 +18,7 @@ v2.5.1
 
 * Typehint the missing part
 * :meth:`InteractionContext.send` no longer responds to interaction. It is now equivalent to :meth:`Messageable.send`
+* Converters in slash command options can now be determined by the annotation similar to ext.commands.
 
 .. _vp2p5p0:
 

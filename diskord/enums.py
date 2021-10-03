@@ -634,10 +634,11 @@ class OptionType(Enum, comparable=True):
             return try_enum(cls, type_)
 
         if isinstance(type_, type) and option is not None:
-            bases = [base.__name__ for base in type_.__bases__]
-            if 'Converter' in bases:
-                option.converter = type_
-                return cls.string
+            if option.converter is None:
+                bases = [base.__name__ for base in type_.__bases__]
+                if 'Converter' in bases:
+                    option.converter = type_
+                    return cls.string
 
 
         if type_ == str:
