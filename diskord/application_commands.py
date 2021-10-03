@@ -58,6 +58,7 @@ if TYPE_CHECKING:
         ApplicationCommandOption as ApplicationCommandOptionPayload,
         ApplicationCommandOptionChoice as ApplicationCommandOptionChoicePayload,
         ApplicationCommandPermissions as ApplicationCommandPermissionsPayload,
+        BaseGuildApplicationCommandPermissions
     )
 
 __all__ = (
@@ -700,6 +701,15 @@ class ApplicationCommand:
         registered. If command has no cog, then ``None`` is returned.
         """
         return self._cog
+
+    # editing permissions
+
+    def edit_permissions(self, guild_id: int, permissions: List[ApplicationCommandPermission]):
+        payload = BaseGuildApplicationCommandPermissions
+        payload.permissions = permissions
+
+        self._bot.http.edit_application_command_permissions(self._application_id, guild_id, self._id, payload)
+        self._permissions = [ApplicationCommandGuildPermissions(command_id=self._id, application_id=self._application_id, guild_id=guild_id, permissions=permissions)]
 
     # checks management
 
