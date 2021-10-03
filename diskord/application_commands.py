@@ -156,6 +156,8 @@ class Option:
     channel_types: List[:class:`ChannelType`]
         The channel types to show, If :attr:`Option.type` is :attr:`OptionType.channel`.
         This is determined by the annotation of the option in callback function.
+    extras: :class:`dict`
+        A dict of user provided extras to attach to the Command.
     """
     def __init__(self, *,
         name: str,
@@ -175,6 +177,7 @@ class Option:
         self._choices: List[OptionChoice] = choices
         if self._choices is None:
             self._choices = []
+        self.extras: Dict[str, Any] = attrs.get('extras', {})
 
         self.arg = arg or self.name
         self._options: List[Option] = []
@@ -549,6 +552,8 @@ class ApplicationCommand:
 
     callback: Callable[..., Any]
         the callback function of this command.
+    extras: :class:`dict`
+        A dict of user provided extras to attach to the Command.
     """
     def __init__(self, callback: Callable, **attrs: Any):
         self.callback = callback
@@ -562,6 +567,7 @@ class ApplicationCommand:
         self._application_id = None
         self._version = None
         self._client = self._bot = None
+        self.extras: Dict[str, Any] = attrs.get('extras', {})
 
         try:
             permissions = callback.__application_command_permissions__
