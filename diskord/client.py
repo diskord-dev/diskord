@@ -1730,6 +1730,10 @@ class Client:
             raise TypeError('command parameter must be an instance of ApplicationCommand.')
 
         command.client = self
+        
+        if self.application_commands_guild_ids:
+            command.guild_ids = self.application_commands_guild_ids
+
         self._pending_commands.append(command)
 
 
@@ -2016,11 +2020,6 @@ class Client:
             # we just return
             return
 
-        if self.application_commands_guild_ids:
-            for command in self._pending_commands:
-                if not command.guild_ids:
-                    command.guild_ids = self.application_commands_guild_ids
-
         commands = await self.http.get_global_commands(self.user.id)
         non_registered = []
 
@@ -2101,10 +2100,9 @@ class Client:
         # This needs a refactor as current implementation is kind of hacky and can
         # be unstable.
 
-        if self.application_commands_guild_ids:
-            for command in self._pending_commands:
-                if not command.guild_ids:
-                    command.guild_ids = self.application_commands_guild_ids
+        if not self._pending_commands:
+            # since we don't have any commands pending, we will do nothing and return
+            return
 
         _log.info('Registering %s application commands.' % str(len(self._pending_commands)))
 
