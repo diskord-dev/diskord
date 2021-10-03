@@ -850,7 +850,7 @@ class ApplicationCommand:
         if not interaction.data['type'] == self.type.value:
             raise TypeError(f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}')
 
-        if self.type == ApplicationCommandType.user.value:
+        if self.type.value == ApplicationCommandType.user.value:
             if interaction.guild:
                 user = interaction.guild.get_member(int(interaction.data['target_id']))
             else:
@@ -876,7 +876,7 @@ class ApplicationCommand:
             args.append(user)
             context.command = self
 
-        elif self.type == ApplicationCommandType.message.value:
+        elif self.type.value == ApplicationCommandType.message.value:
             data = interaction.data['resolved']['messages'][interaction.data['target_id']]
             if interaction.guild:
                 message = Message(
@@ -964,11 +964,11 @@ class ApplicationCommand:
         if not (await context.command.can_run(context)):
             raise ApplicationCommandCheckFailure(f'checks functions for application command {context.command._name} failed.')
 
+        args.insert(0, context)
         if context.command.cog is not None:
-            args.append(context.command.cog)
-        
-        args.append(context)
-        await context.command.callback(*args, **kwargs)
+            await context.command.callback(context.command.cog, *args, **kwargs)
+        else:
+            await context.command.callback(*args, **kwargs)
 
     def __repr__(self):
         # More attributes here?
