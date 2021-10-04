@@ -156,8 +156,6 @@ class Option:
     channel_types: List[:class:`ChannelType`]
         The channel types to show, If :attr:`Option.type` is :attr:`OptionType.channel`.
         This is determined by the annotation of the option in callback function.
-    extras: :class:`dict`
-        A dict of user provided extras to attach to the Command.
     """
     def __init__(self, *,
         name: str,
@@ -177,7 +175,6 @@ class Option:
         self._choices: List[OptionChoice] = choices
         if self._choices is None:
             self._choices = []
-        self.extras: Dict[str, Any] = attrs.get('extras', {})
 
         self.arg = arg or self.name
         self._options: List[Option] = []
@@ -578,18 +575,6 @@ class ApplicationCommand:
             perm._command = self
 
         self._permissions: List[ApplicationCommandGuildPermissions] = []
-
-        if self._type in (
-            ApplicationCommandType.user,
-            ApplicationCommandType.message,
-        ):
-            # Message and User Commands do not have any description.
-            # Ref:
-            # https://discord.com/developers/docs/interactions/application-commands#user-commands
-            # https://discord.com/developers/docs/interactions/application-commands#message-commands
-
-            self._description = ''
-
 
         try:
             checks = self.callback.__commands_checks__
@@ -997,6 +982,8 @@ class SlashCommandChild(Option):
 
     callback: Callable[..., Any]
         The callback function for this child.
+    extras: :class:`dict`
+        A dict of user provided extras to attach to the Command.
     """
     def __init__(self, callback: Callable,
         type: SlashChildType, *,
@@ -1010,6 +997,7 @@ class SlashCommandChild(Option):
             type=type,
         )
         self.callback = callback
+        self.extras: Dict[str, Any] = attrs.get('extras', {})
         self._parent = None
 
 
@@ -1379,10 +1367,7 @@ class SlashSubCommand(SlashCommandChild):
 
         return option
 
-SlashChildType = Union[
-    Literal[OptionType.sub_command.value],
-    Literal[OptionType.sub_command_group.value]
-    ]
+SlashChildType = Union[OptionType.sub_command, OptionType.sub_command_group]
 
 
 class SlashCommand(ApplicationCommand):
