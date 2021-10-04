@@ -1367,7 +1367,7 @@ class SlashSubCommand(SlashCommandChild):
 
         return option
 
-SlashChildType = Union[OptionType.sub_command, OptionType.sub_command_group]
+SlashChildType = Union[Literal[OptionType.sub_command.value], Literal[OptionType.sub_command_group.value]]
 
 
 class SlashCommand(ApplicationCommand):
@@ -1628,6 +1628,10 @@ class SlashCommand(ApplicationCommand):
 class ContextMenuCommand(ApplicationCommand):
     """Represents a context menu command."""
     # This command is intentionally not documented
+
+    def __init__(self, callback: Callable[..., Any], **attrs: Any):
+        super().__init__(callback, **attrs)
+        self._description = ''
 
     def to_dict(self) -> dict:
         return {
