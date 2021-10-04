@@ -91,7 +91,7 @@ class OptionChoice:
     value: :class:`str`
         A user-set value of the choice. Will be passed in the command's callback.
     """
-    def __init__(self, *, name: str, value: str):
+    def __init__(self, *, name: str, value: Union[str, int, float]):
         self.name = name
         self.value = value
 
