@@ -50,6 +50,7 @@ from .enums import (
 from .errors import ApplicationCommandError, ApplicationCommandCheckFailure, ApplicationCommandConversionError
 from .user import User
 from .member import Member
+from .message import Message
 from .interactions import InteractionContext
 
 if TYPE_CHECKING:
