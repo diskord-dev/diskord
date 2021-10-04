@@ -574,7 +574,7 @@ class ApplicationCommand:
         for perm in permissions:
             perm._command = self
 
-        self._permissions: List[ApplicationCommandGuildPermissions] = []
+        self._permissions: List[ApplicationCommandGuildPermissions] = permissions
 
         try:
             checks = self.callback.__commands_checks__
