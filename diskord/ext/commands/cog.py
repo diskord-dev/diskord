@@ -28,7 +28,7 @@ import diskord.utils
 
 from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, TYPE_CHECKING, Tuple, TypeVar, Type
 
-from diskord import ApplicationCommand, Option
+from diskord import ApplicationCommand, Option, SlashCommandChild
 from ._types import _BaseCommand
 
 if TYPE_CHECKING:
@@ -143,7 +143,11 @@ class CogMeta(type):
                         raise TypeError(no_bot_cog.format(base, elem))
 
                     commands[elem] = value
-                elif isinstance(value, ApplicationCommand):
+
+                # we don't want to add slash childrens which are essentially just options according
+                # to discord api in the application commands mapping.
+
+                elif isinstance(value, ApplicationCommand) and not isinstance(value, SlashCommandChild):
                     if is_static_method:
                         raise TypeError(f'Command in method {base}.{elem!r} must not be staticmethod.')
                     if elem.startswith(('cog_', 'bot_')):
@@ -506,7 +510,7 @@ class Cog(metaclass=CogMeta):
                     bot.remove_command(command.name)
 
             for command in self.__cog_application_commands__:
-                if not isinstance(command, Option):
+                if not isinstance(command, SlashCommandChild):
                     registered = command.id in bot._connection._application_commands
                     if registered:
                         bot.remove_application_command(command.id)

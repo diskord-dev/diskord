@@ -50,6 +50,7 @@ from .enums import (
 from .errors import ApplicationCommandError, ApplicationCommandCheckFailure, ApplicationCommandConversionError
 from .user import User
 from .member import Member
+from .message import Message
 from .interactions import InteractionContext
 
 if TYPE_CHECKING:
@@ -78,7 +79,259 @@ __all__ = (
     'message_command',
     'application_command_permission',
 )
+
+### --- Types Start --- ###
+
 Check = Callable[[InteractionContext, 'Context'], bool]
+
+### --- Types End --- ###
+
+
+
+### --- Mixins Start --- ###
+
+class ChildrenMixin:
+    """A mixin that implements children for slash commands or slash subcommand groups. 
+
+    This is not meant to be initalized manually and is here for documentation purposes.
+    """
+    @property
+    def children(self) -> List[SlashSubCommand]:
+        """List[:class:`SlashSubCommand`]: The list of sub-commands this group has."""
+        return self._children
+
+
+    def get_child(self, **attrs: Any) -> Optional[SlashCommandChild]:
+        """Gets a child that matches the provided traits.
+
+        Parameters
+        ----------
+        **attrs:
+            The attributes of the child.
+
+        Returns
+        -------
+        Optional[:class:`SlashCommandChild`]
+            The option that matched the traits. ``None`` if not found.
+        """
+        return utils.get(self._children, **attrs)
+
+    def add_child(self, child: SlashCommandChild) -> SlashSubCommand:
+        """Adds a child to this command.
+
+        This is just a lower-level of :func:`SlashCommandGroup.sub_command` decorator.
+        For general usage, Consider using it instead.
+
+        Parameters
+        ----------
+        child: :class:`SlashCommandChild`
+            The child to append.
+
+        Returns
+        -------
+        :class:`SlashCommandChild`
+            The appended child.
+        """
+        child._parent = self
+        self._options.append(child)
+        self._children.append(child)
+
+        if not hasattr(child.callback, '__application_command_params__'):
+            child.callback.__application_command_params__ = {}
+
+        for opt in child.callback.__application_command_params__.values():
+            child.append_option(opt)
+
+        return child
+
+    def remove_child(self, **attrs: Any) -> Optional[SlashCommandChild]:
+        """Removes a child from command that matches the provided traits.
+
+        If child is not found, ``None`` would be returned.
+
+        Parameters
+        ----------
+        **attrs:
+            The attributes of the child.
+
+        Returns
+        -------
+        Optional[:class:`SlashCommandChild`]
+            The removed child. ``None`` if not found.
+        """
+        child = utils.get(self._children, **attrs)
+        if child:
+            self._children.remove(child)
+
+        return child
+
+class OptionsMixin:
+    """A mixin that implements basic slash commands and subcommands options."""
+
+    @property
+    def options(self):
+        return self._options
+
+    # Option management
+
+    def get_option(self, **attrs: Any) -> Optional[Option]:
+        """Gets an option that matches the provided traits.
+
+        Parameters
+        ----------
+        **attrs:
+            The attributes of the :class:`Option`.
+
+        Returns
+        -------
+        Optional[:class:`Option`]
+            The option that matched the traits. ``None`` if not found.
+        """
+        return utils.get(self._options, **attrs)
+
+    def add_option(self, index: int = -1, **attrs: Any) -> Option:
+        """Adds an option to command.
+
+        To append an option, Use :func:`SlashSubCommand.append_option`.
+
+        Parameters
+        ----------
+        index: :class:`int`
+            The index to insert at. Defaults to ``-1`` aka end of options list.
+        **attrs:
+            The attributes of the :class:`Option`.
+
+        Returns
+        -------
+        :class:`Option`
+            The added option.
+        """
+        option = Option(**attrs)
+        option._parent = self
+        self._options.insert(index, option)
+        return option
+
+    def append_option(self, option: Option) -> Option:
+        """Appends an option to end of options list.
+
+        Parameters
+        ----------
+        option: :class:`Option`
+            The option to append.
+
+        Returns
+        -------
+        :class:`Option`
+            The appended option.
+        """
+        option._parent = self
+        self._options.append(option)
+        return option
+
+    def remove_option(self, **attrs: Any) -> Optional[Option]:
+        """Removes the option that matches the provided traits.
+
+        If option is not found, ``None`` would be returned.
+
+        Parameters
+        ----------
+        **attrs:
+            The attributes of the :class:`Option`.
+
+        Returns
+        -------
+        Optional[:class:`Option`]
+            The removed option. ``None`` if not found.
+        """
+        option = utils.get(self._options, **attrs)
+        if option:
+            self._options.remove(option)
+
+        return option
+
+class ChecksMixin:
+    """A mixin that implements checks for application commands."""
+
+    def add_check(self, predicate: Check):
+        """
+        Adds a check to the command.
+
+        This is the non-decorator interface to :func:`.check`.
+
+        .. versionadded:: 2.0
+
+        Parameters
+        -----------
+        predicate
+            The function that will be used as a check.
+        """
+        self.checks.append(predicate)
+        return predicate
+
+    def remove_check(self, func: Check) -> None:
+        """Removes a check from the command.
+
+        This function is idempotent and will not raise an exception
+        if the function is not in the command's checks.
+
+        .. versionadded:: 2.0
+
+        Parameters
+        -----------
+        func
+            The function to remove from the checks.
+        """
+
+        try:
+            self.checks.remove(func)
+        except ValueError:
+            pass
+
+    async def can_run(self, ctx: InteractionContext) -> bool:
+        """|coro|
+
+        Checks if the command can be executed by checking all the predicates
+        inside the :attr:`~ApplicationCommand.checks` attribute.
+
+        Parameters
+        -----------
+        ctx: :class:`InteractionContext`
+            The ctx of the command currently being invoked.
+
+        Raises
+        -------
+        :class:`ApplicationCommandError`
+            Any command error that was raised during a check call will be propagated
+            by this function.
+
+        Returns
+        --------
+        :class:`bool`
+            A boolean indicating if the command can be invoked.
+        """
+        if hasattr(ctx.bot, 'can_run'):
+            if not await ctx.bot.can_run(ctx):
+                raise ApplicationCommandCheckFailure(f'The global check functions for command {self.qualified_name} failed.')
+
+        cog = self.cog
+        if cog is not None:
+            local_check = type(cog)._get_overridden_method(cog.cog_check)
+            if local_check is not None:
+                ret = await utils.maybe_coroutine(local_check, ctx)
+                if not ret:
+                    return False
+
+        predicates = self.checks
+        if not predicates:
+            # since we have no checks, then we just return True.
+            return True
+
+        return await utils.async_all(predicate(ctx) for predicate in predicates)  # type: ignore
+
+### --- Mixins End --- ###
+
+
+### --- Options Start --- ### 
 
 class OptionChoice:
     """Represents an option choice for an application command's option.
@@ -121,7 +374,6 @@ class OptionChoice:
 
     def __str__(self):
         return self.name
-
 
 class Option:
     """Represents an option for an application slash command.
@@ -443,7 +695,10 @@ class Option:
 
         return dict_
 
+### --- Options End --- ###
 
+
+### --- Application Command Permissions Start --- ###
 
 class ApplicationCommandGuildPermissions:
     """Represents the permissions for an application command in a :class:`Guild`.
@@ -534,7 +789,12 @@ class ApplicationCommandPermission:
 
         return ret
 
-class ApplicationCommand:
+### --- Application Command Permissions End --- ###
+
+
+### --- Application Commands Start --- ###
+
+class ApplicationCommand(ChecksMixin):
     """Represents an application command. This is base class for all application commands like
     slash commands, user commands etc.
 
@@ -574,15 +834,14 @@ class ApplicationCommand:
         for perm in permissions:
             perm._command = self
 
-        self._permissions: List[ApplicationCommandGuildPermissions] = permissions
-
+        self.checks: List[Check]
         try:
-            checks = self.callback.__commands_checks__
-            checks.reverse()
+            self.checks = self.callback.__commands_checks__
+            self.checks.reverse()
         except AttributeError:
-            checks = attrs.get('checks', [])
+            self.checks = []
 
-        self.checks: List[Check] = checks
+        self._permissions: List[ApplicationCommandGuildPermissions] = permissions
 
     def is_global_command(self) -> bool:
         """:class:`bool`: Whether the command is global command or not."""
@@ -686,83 +945,6 @@ class ApplicationCommand:
         """
         return self._cog
 
-    # checks management
-
-    def add_check(self, predicate: Check):
-        """
-        Adds a check to the command.
-
-        This is the non-decorator interface to :func:`.check`.
-
-        .. versionadded:: 2.0
-
-        Parameters
-        -----------
-        predicate
-            The function that will be used as a check.
-        """
-        self.checks.append(predicate)
-        return predicate
-
-    def remove_check(self, func: Check) -> None:
-        """Removes a check from the command.
-
-        This function is idempotent and will not raise an exception
-        if the function is not in the command's checks.
-
-        .. versionadded:: 2.0
-
-        Parameters
-        -----------
-        func
-            The function to remove from the checks.
-        """
-
-        try:
-            self.checks.remove(func)
-        except ValueError:
-            pass
-
-    async def can_run(self, ctx: InteractionContext) -> bool:
-        """|coro|
-
-        Checks if the command can be executed by checking all the predicates
-        inside the :attr:`~ApplicationCommand.checks` attribute.
-
-        Parameters
-        -----------
-        ctx: :class:`InteractionContext`
-            The ctx of the command currently being invoked.
-
-        Raises
-        -------
-        :class:`ApplicationCommandError`
-            Any command error that was raised during a check call will be propagated
-            by this function.
-
-        Returns
-        --------
-        :class:`bool`
-            A boolean indicating if the command can be invoked.
-        """
-        if hasattr(ctx.bot, 'can_run'):
-            if not await ctx.bot.can_run(ctx):
-                raise ApplicationCommandCheckFailure(f'The global check functions for command {self.qualified_name} failed.')
-
-        cog = self.cog
-        if cog is not None:
-            local_check = type(cog)._get_overridden_method(cog.cog_check)
-            if local_check is not None:
-                ret = await utils.maybe_coroutine(local_check, ctx)
-                if not ret:
-                    return False
-
-        predicates = self.checks
-        if not predicates:
-            # since we have no checks, then we just return True.
-            return True
-
-        return await utils.async_all(predicate(ctx) for predicate in predicates)  # type: ignore
 
     async def _parse_option(self, interaction: Interaction, option: ApplicationCommandOptionPayload) -> Any:
         # This function isn't needed to be a coroutine function but it can be helpful in
@@ -968,46 +1150,177 @@ class ApplicationCommand:
     def __str__(self):
         return self.name
 
+### --- Application Commands End --- ###
 
-class SlashCommandChild(Option):
+
+### --- Context Menu Commands Start --- ###
+
+class ContextMenuCommand(ApplicationCommand):
+    """Represents a context menu command."""
+    # This class is intentionally not documented
+
+    def __init__(self, callback: Callable[..., Any], **attrs: Any):
+        super().__init__(callback, **attrs)
+        self._description = ''
+
+    def to_dict(self) -> dict:
+        return {
+            'name': self._name,
+            'description': self._description,
+            'type': self._type.value,
+        }
+
+class UserCommand(ContextMenuCommand):
+    """Represents a user command.
+
+    A user command can be used by right-clicking a user in discord and choosing the
+    command from "Apps" context menu
+
+    This class inherits from :class:`ApplicationCommand` so all attributes valid
+    there are valid here too.
+
+    In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.user`
     """
-    Base class for slash commands children like :class:`SlashCommandGroup` and
-    :class:`SlashSubCommand`.
+    def __init__(self, callback, **attrs):
+        self._type = ApplicationCommandType.user
+        super().__init__(callback, **attrs)
 
-    This class subclasses :class:`Option` so all attributes of option class are valid here.
+class MessageCommand(ContextMenuCommand):
+    """Represents a message command.
 
-    This class is not meant to be used in general and is here for documentation-purposes only.
+    A message command can be used by right-clicking a message in discord and choosing
+    the command from "Apps" context menu.
+
+    This class inherits from :class:`ApplicationCommand` so all attributes valid
+    there are valid here too.
+
+    In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.message`
+    """
+    def __init__(self, callback, **attrs):
+        self._type = ApplicationCommandType.message
+        super().__init__(callback, **attrs)
+
+### --- Context Menu Commands End --- ###
+
+
+
+### --- Slash Commands Start --- ###
+
+class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
+    """Represents a slash command.
+
+    A slash command is a user input command that a user can use by typing ``/`` in
+    the chat bar.
+
+    This class inherits from :class:`ApplicationCommand` so all attributes valid
+    there are valid here too.
+
+    In this class, The :attr:`SlashCommand.type` attribute will always be :attr:`ApplicationCommandType.slash`
+
+    Attributes
+    ----------
+    type: :class:`ApplicationCommandType`
+        The type of command, Always :attr:`ApplicationCommandType.slash`
+    options: List[:class:`Option`]
+        The list of options this command has.
+
+        .. tip::
+            To get only the children i.e sub-commands and sub-command groups,
+            Consider using :attr:`children`
+
+    children: List[:class:`.SlashCommandChild`]
+        The children of this commands i.e sub-commands and sub-command groups.
+    """
+    def __init__(self, callback, **attrs: Any):
+        self._type: ApplicationType = ApplicationCommandType.slash
+        self._options: List[Option] = []
+        self._children: List[SlashCommandChild] = []
+
+        super().__init__(callback, **attrs)
+
+    @property
+    def type(self) -> ApplicationCommandType:
+        """:class:`ApplicationCommandType`: The type of command. Always :attr:`ApplicatiionCommandType.slash`"""
+        return self._type
+
+    # decorators
+
+    def sub_command(self, **attrs):
+        """A decorator to register a subcommand within a slash command.
+
+        .. note::
+            Once a slash sub-command is registered the callback for parent command
+            would not work. For example:
+
+            ``/hello`` is not a valid command because it has two subcommands ``foo`` and ``world``
+            so ``/hello foo`` and ``/hello world`` are two valid commands.
+
+        Usage: ::
+
+            @bot.slash_command(description='A cool command that has subcommands.')
+            async def git(ctx):
+                pass
+
+            @git.sub_command(description='This is git push!')
+            async def push(ctx):
+                await ctx.respond('Pushed!')
+
+        Options and other features can be added to the subcommands.
+        """
+        def inner(func: Callable):
+            return self.add_child(SlashSubCommand(func, **attrs))
+
+        return inner
+
+    def sub_command_group(self, **attrs):
+        """A decorator to register a subcommand group within a slash command.
+
+
+        Usage: ::
+
+            @bot.slash_command(description='A cool command that has subcommand groups.')
+            async def command(ctx):
+                pass
+
+            @command.sub_command_group(description='This is a cool group.')
+            async def group(ctx):
+                pass
+
+            @group.sub_command(description='This is a cool command inside a command group.')
+            async def subcommand(ctx):
+                await ctx.respond('Hello world!')
+        """
+        def inner(func: Callable):
+            return self.add_child(SlashCommandGroup(func, **attrs))
+
+        return inner
+
+    def to_dict(self) -> dict:
+        dict_ = {
+            'name': self._name,
+            'type': self._type.value,
+            'options': [option.to_dict() for option in reversed(self.options)],
+            'description': self._description,
+        }
+
+        return dict_
+
+class SlashCommandChild(SlashCommand):
+    """
+    Base class for slash commands children. Current examples are
+
+    * :class:`SlashCommandGroup`
+    * :class:`SlashSubCommand`
+
+    This class subclasses :class:`SlashCommand` so all attributes of option class are valid here.
+
+    This class is not meant to be initalized manually and is here for documentation-purposes only.
     For general use, Use the subclasses of this class like  :class:`SlashCommandGroup` and
     :class:`SlashSubCommand`.
-
-    callback: Callable[..., Any]
-        The callback function for this child.
-    extras: :class:`dict`
-        A dict of user provided extras to attach to the Command.
     """
-    def __init__(self, callback: Callable,
-        type: SlashChildType, *,
-        name: str = None,
-        description: str = None,
-        **kwargs
-    ):
-        super().__init__(
-            name=name or callback.__name__,
-            description=description or callback.__doc__ or 'No description.',
-            type=type,
-        )
-        self.callback = callback
-        self.extras: Dict[str, Any] = kwargs.get('extras', {})
-        self._parent = None
-
-
-        try:
-            checks = self.callback.__commands_checks__
-            checks.reverse()
-        except AttributeError:
-            checks = kwargs.get('checks', [])
-
-        self.checks: List[Check] = checks
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self._parent: SlashCommand = None # type: ignore
 
     @property
     def guild_ids(self) -> List[int]:
@@ -1115,7 +1428,6 @@ class SlashCommandChild(Option):
             'options': [option.to_dict() for option in reversed(self.options)],
         }
 
-
 class SlashCommandGroup(SlashCommandChild):
     """Represents a subcommand group of a slash command.
 
@@ -1148,86 +1460,9 @@ class SlashCommandGroup(SlashCommandChild):
     also valid in this class.
     """
     def __init__(self, callback: Callable, **attrs: Any):
-        super().__init__(
-            callback,
-            OptionType.sub_command_group,
-            **attrs
-        )
-        self._children = []
-
-    # parent attributes
-
-    @property
-    def children(self) -> List[SlashSubCommand]:
-        """List[:class:`SlashSubCommand`]: The list of sub-commands this group has."""
-        return self._children
-
-    # children management
-
-    def get_child(self, **attrs: Any) -> Optional[SlashCommandChild]:
-        """Gets a child that matches the provided traits.
-
-        Parameters
-        ----------
-        **attrs:
-            The attributes of the child.
-
-        Returns
-        -------
-        Optional[:class:`SlashCommandChild`]
-            The option that matched the traits. ``None`` if not found.
-        """
-        return utils.get(self._children, **attrs)
-
-    def add_child(self, child: SlashCommandChild) -> SlashSubCommand:
-        """Adds a child to this command.
-
-        This is just a lower-level of :func:`SlashCommandGroup.sub_command` decorator.
-        For general usage, Consider using it instead.
-
-        Parameters
-        ----------
-        child: :class:`SlashCommandChild`
-            The child to append.
-
-        Returns
-        -------
-        :class:`SlashCommandChild`
-            The appended child.
-        """
-        child._parent = self
-        self._options.append(child)
-        self._children.append(child)
-
-        if not hasattr(child.callback, '__application_command_params__'):
-            child.callback.__application_command_params__ = {}
-
-        for opt in child.callback.__application_command_params__.values():
-            child.append_option(opt)
-
-        return child
-
-    def remove_child(self, **attrs: Any) -> Optional[SlashCommandChild]:
-        """Removes a child from command that matches the provided traits.
-
-        If child is not found, ``None`` would be returned.
-
-        Parameters
-        ----------
-        **attrs:
-            The attributes of the child.
-
-        Returns
-        -------
-        Optional[:class:`SlashCommandChild`]
-            The removed child. ``None`` if not found.
-        """
-        child = utils.get(self._children, **attrs)
-        if child:
-            self._children.remove(child)
-
-        return child
-
+        super().__init__(callback, **attrs)
+        self._type = OptionType.sub_command_group
+        self._children: List[SlashCommandChild] = []
 
     # decorators
 
@@ -1258,8 +1493,6 @@ class SlashCommandGroup(SlashCommandChild):
 
         return inner
 
-
-
 class SlashSubCommand(SlashCommandChild):
     """Represents a subcommand of a slash command.
 
@@ -1282,394 +1515,13 @@ class SlashSubCommand(SlashCommandChild):
     also valid in this class.
     """
     def __init__(self, callback: Callable, **attrs: Any):
-        super().__init__(
-            callback,
-            OptionType.sub_command.value,
-            **attrs
-        )
-        self._parent: Union[SlashCommand, SlashCommandGroup] = None # type: ignore
-
-
-    # Option management
-
-    def get_option(self, **attrs: Any) -> Optional[Option]:
-        """Gets an option that matches the provided traits.
-
-        Parameters
-        ----------
-        **attrs:
-            The attributes of the :class:`Option`.
-
-        Returns
-        -------
-        Optional[:class:`Option`]
-            The option that matched the traits. ``None`` if not found.
-        """
-        return utils.get(self._options, **attrs)
-
-    def add_option(self, index: int = -1, **attrs: Any) -> Option:
-        """Adds an option to command.
-
-        To append an option, Use :func:`SlashSubCommand.append_option`.
-
-        Parameters
-        ----------
-        index: :class:`int`
-            The index to insert at. Defaults to ``-1`` aka end of options list.
-        **attrs:
-            The attributes of the :class:`Option`.
-
-        Returns
-        -------
-        :class:`Option`
-            The added option.
-        """
-        option = Option(**attrs)
-        option._parent = self
-        self._options.insert(index, option)
-        return option
-
-    def append_option(self, option: Option) -> Option:
-        """Appends an option to end of options list.
-
-        Parameters
-        ----------
-        option: :class:`Option`
-            The option to append.
-
-        Returns
-        -------
-        :class:`Option`
-            The appended option.
-        """
-        option._parent = self
-        self._options.append(option)
-        return option
-
-    def remove_option(self, **attrs: Any) -> Optional[Option]:
-        """Removes the option that matches the provided traits.
-
-        If option is not found, ``None`` would be returned.
-
-        Parameters
-        ----------
-        **attrs:
-            The attributes of the :class:`Option`.
-
-        Returns
-        -------
-        Optional[:class:`Option`]
-            The removed option. ``None`` if not found.
-        """
-        option = utils.get(self._options, **attrs)
-        if option:
-            self._options.remove(option)
-
-        return option
-
-SlashChildType = Union[Literal[OptionType.sub_command.value], Literal[OptionType.sub_command_group.value]]
-
-
-class SlashCommand(ApplicationCommand):
-    """Represents a slash command.
-
-    A slash command is a user input command that a user can use by typing ``/`` in
-    the chat bar.
-
-    This class inherits from :class:`ApplicationCommand` so all attributes valid
-    there are valid here too.
-
-    In this class, The :attr:`SlashCommand.type` attribute will always be :attr:`ApplicationCommandType.slash`
-
-    Attributes
-    ----------
-    type: :class:`ApplicationCommandType`
-        The type of command, Always :attr:`ApplicationCommandType.slash`
-    options: List[:class:`Option`]
-        The list of options this command has.
-
-        .. tip::
-            To get only the children i.e sub-commands and sub-command groups,
-            Consider using :attr:`children`
-
-    children: List[:class:`SlashSubCommand`, `SlashCommandGroup`]
-        The children of this commands i.e sub-commands and sub-command groups.
-    """
-    def __init__(self, callback, **attrs: Any):
-        self._type: ApplicationType = ApplicationCommandType.slash
-        self._options: List[Option] = []
-        self._children: List[SlashCommandChild] = []
-
-        # To stay consistent with the discord.ext.commands models, I added this
-        # parent attribute here which will always be None in case of this.
-        # this is not documented for obvious reason.
-        self.parent = None
-
         super().__init__(callback, **attrs)
+        self._type = OptionType.sub_command
 
-    @property
-    def type(self) -> ApplicationCommandType:
-        """:class:`ApplicationCommandType`: The type of command. Always :attr:`ApplicatiionCommandType.slash`"""
-        return self._type
+### --- Slash Commands End --- ###
 
-    @property
-    def options(self) -> List[Option]:
-        """List[:class:`Option`]: The list of options this command has."""
-        return self._options
 
-    @property
-    def children(self) -> List[Option]:
-        """List[:class:`SlashSubCommand`, :class:`SlashCommandGroup`]: The list of children this command has."""
-        return self._children
-
-    # Option management
-
-    def get_option(self, **attrs: Any) -> Optional[Option]:
-        """Gets an option that matches the provided traits.
-
-        Parameters
-        ----------
-        **attrs:
-            The attributes of the :class:`Option`.
-
-        Returns
-        -------
-        Optional[:class:`Option`]
-            The option that matched the traits. ``None`` if not found.
-        """
-        return utils.get(self._options, **attrs)
-
-    def add_option(self, index: int = -1, **attrs) -> Option:
-        """Adds an option to command.
-
-        To append an option, Use :func:`Option.append_option`.
-
-        Parameters
-        ----------
-        index: :class:`int`
-            The index to insert at. Defaults to ``-1`` aka end of options list.
-        **attrs:
-            The attributes of the :class:`Option`.
-
-        Returns
-        -------
-        :class:`Option`
-            The added choice.
-        """
-        option = Option(**attrs)
-        option._parent = self
-        self._options.insert(index, option)
-        return option
-
-    def append_option(self, option: Option) -> Option:
-        """Appends an option to end of options list.
-
-        Parameters
-        ----------
-        option: :class:`Option`
-            The option to append.
-
-        Returns
-        -------
-        :class:`Option`
-            The appended option.
-        """
-        option._parent = self
-        self._options.append(option)
-        return option
-
-    def remove_option(self, **attrs) -> Optional[Option]:
-        """Removes the option that matches the provided traits.
-
-        If option is not found, ``None`` would be returned.
-
-        Parameters
-        ----------
-        **attrs:
-            The attributes of the :class:`Option`.
-
-        Returns
-        -------
-        Optional[:class:`Option`]
-            The removed choice. ``None`` if not found.
-        """
-        option = utils.get(self._options, **attrs)
-        if option:
-            self._options.remove(option)
-
-        return option
-
-    # children management
-
-    def get_child(self, **attrs) -> Optional[SlashCommandChild]:
-        """Gets a child that matches the provided traits.
-
-        Parameters
-        ----------
-        **attrs:
-            The attributes of the child.
-
-        Returns
-        -------
-        Optional[:class:`SlashCommandChild`]
-            The option that matched the traits. ``None`` if not found.
-        """
-        return utils.get(self._children, **attrs)
-
-    def add_child(self, child: SlashCommandChild) -> SlashSubCommand:
-        """Adds a child to this command.
-
-        Parameters
-        ----------
-        child: :class:`SlashCommandChild`
-            The child to add.
-
-        Returns
-        -------
-        :class:`SlashCommandChild`
-            The appended child.
-        """
-        child._parent = self
-        self._options.append(child)
-        self._children.append(child)
-
-        if not hasattr(child.callback, '__application_command_params__'):
-            child.callback.__application_command_params__ = {}
-
-        for opt in child.callback.__application_command_params__.values():
-            child.append_option(opt)
-
-        return child
-
-    def remove_child(self, **attrs) -> Optional[SlashCommandChild]:
-        """Removes a child from command that matches the provided traits.
-
-        If child is not found, ``None`` would be returned.
-
-        Parameters
-        ----------
-        **attrs:
-            The attributes of the child.
-
-        Returns
-        -------
-        Optional[:class:`SlashCommandChild`]
-            The removed child. ``None`` if not found.
-        """
-        child = utils.get(self._children, **attrs)
-        if child:
-            self._children.remove(child)
-
-        return child
-
-
-    # decorators
-
-    def sub_command(self, **attrs):
-        """A decorator to register a subcommand within a slash command.
-
-        .. note::
-            Once a slash sub-command is registered the callback for parent command
-            would not work. For example:
-
-            ``/hello`` is not a valid command because it has two subcommands ``foo`` and ``world``
-            so ``/hello foo`` and ``/hello world`` are two valid commands.
-
-        Usage: ::
-
-            @bot.slash_command(description='A cool command that has subcommands.')
-            async def git(ctx):
-                pass
-
-            @git.sub_command(description='This is git push!')
-            async def push(ctx):
-                await ctx.respond('Pushed!')
-
-        Options and other features can be added to the subcommands.
-        """
-        def inner(func: Callable):
-            return self.add_child(SlashSubCommand(func, **attrs))
-
-        return inner
-
-    def sub_command_group(self, **attrs):
-        """A decorator to register a subcommand group within a slash command.
-
-
-        Usage: ::
-
-            @bot.slash_command(description='A cool command that has subcommand groups.')
-            async def command(ctx):
-                pass
-
-            @command.sub_command_group(description='This is a cool group.')
-            async def group(ctx):
-                pass
-
-            @group.sub_command(description='This is a cool command inside a command group.')
-            async def subcommand(ctx):
-                await ctx.respond('Hello world!')
-        """
-        def inner(func: Callable):
-            return self.add_child(SlashCommandGroup(func, **attrs))
-
-        return inner
-
-    def to_dict(self) -> dict:
-        dict_ = {
-            'name': self._name,
-            'type': self._type.value,
-            'options': [option.to_dict() for option in reversed(self.options)],
-            'description': self._description,
-        }
-
-        return dict_
-
-class ContextMenuCommand(ApplicationCommand):
-    """Represents a context menu command."""
-    # This command is intentionally not documented
-
-    def __init__(self, callback: Callable[..., Any], **attrs: Any):
-        super().__init__(callback, **attrs)
-        self._description = ''
-
-    def to_dict(self) -> dict:
-        return {
-            'name': self._name,
-            'description': self._description,
-            'type': self._type.value,
-        }
-
-
-class UserCommand(ContextMenuCommand):
-    """Represents a user command.
-
-    A user command can be used by right-clicking a user in discord and choosing the
-    command from "Apps" context menu
-
-    This class inherits from :class:`ApplicationCommand` so all attributes valid
-    there are valid here too.
-
-    In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.user`
-    """
-    def __init__(self, callback, **attrs):
-        self._type = ApplicationCommandType.user
-        super().__init__(callback, **attrs)
-
-class MessageCommand(ContextMenuCommand):
-    """Represents a message command.
-
-    A message command can be used by right-clicking a message in discord and choosing
-    the command from "Apps" context menu.
-
-    This class inherits from :class:`ApplicationCommand` so all attributes valid
-    there are valid here too.
-
-    In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.message`
-    """
-    def __init__(self, callback, **attrs):
-        self._type = ApplicationCommandType.message
-        super().__init__(callback, **attrs)
+### --- Decorators Start --- ###
 
 def slash_option(name: str,  **attrs) -> Option:
     """A decorator-based interface to add options to a slash command.
@@ -1846,3 +1698,5 @@ def application_command_permission(*, guild_id: int, user_id: int = None, role_i
         return func
 
     return inner
+
+### --- Decorators End --- ###
