@@ -26,6 +26,7 @@ Additions
 Improvements
 ~~~~~~~~~~~~
 
+* :func:`Client.register_application_commands` has been renamed to :func:`Client.clean_register_application_commands` while another function has been added with previous name that is called in :func:`on_interaction` and handles the application commands registration.
 * Typehint the most of missing part
 * Many performance fixes and optimizations to application commands.
 
