@@ -147,12 +147,7 @@ class WelcomeScreen:
         ...
 
     @overload
-    async def edit(self, *, 
-            description: Optional[str] = ...,
-            welcome_channels: Optional[List[WelcomeScreenChannel]] = ...,
-            enabled: Optional[bool] = ...,
-            reason: Optional[str] = ...,
-        ) -> None:
+    async def edit(self) -> None:
         ...
 
     async def edit(self, **options):
