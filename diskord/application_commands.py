@@ -997,7 +997,7 @@ class SlashCommandChild(Option):
             type=type,
         )
         self.callback = callback
-        self.extras: Dict[str, Any] = attrs.get('extras', {})
+        self.extras: Dict[str, Any] = kwargs.get('extras', {})
         self._parent = None
 
 
