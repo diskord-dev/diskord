@@ -2042,6 +2042,9 @@ class Client:
 
 
         # Deleting the command that weren't found in internal cache
+        # this parameter is set to False by default because of the fact that
+        # it can be very expensive to delete the commands on every restart and would
+        # lead to easy ratelimit.
         if delete_unregistered_commands:
             for command in non_registered:
                 if command.get('guild_id'):
