@@ -4561,6 +4561,10 @@ The following exceptions are thrown by the library.
 
 .. autoexception:: ApplicationCommandError
 
+.. autoexception:: ApplicationCommandCheckFailure
+
+.. autoexception:: ApplicationCommandConversionError
+
 .. autoexception:: diskord.opus.OpusError
 
 .. autoexception:: diskord.opus.OpusNotLoaded
@@ -4580,6 +4584,8 @@ Exception Hierarchy
                 - :exc:`PrivilegedIntentsRequired`
                 - :exc:`InteractionResponded`
                 - :exc:`ApplicationCommandError`
+                    - :exc:`ApplicationCommandCheckFailure`
+                    - :exc:`ApplicationCommandConversionError`
             - :exc:`NoMoreItems`
             - :exc:`GatewayNotFound`
             - :exc:`HTTPException`

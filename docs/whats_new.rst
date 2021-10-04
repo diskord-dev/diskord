@@ -16,9 +16,18 @@ in specific versions.
 v2.6.0
 --------
 
-* Typehint the missing part
-* :meth:`InteractionContext.send` no longer responds to interaction. It is now equivalent to :meth:`Messageable.send`
+Additions
+~~~~~~~~~
+
 * Converters in slash command options can now be determined by the annotation similar to ext.commands.
+* Add :attr:`ApplicationCommand.extras` (:issue:`11`)
+* Add :attr:`Client.application_commands_guild_ids`
+
+Improvements
+~~~~~~~~~~~~
+
+* Typehint the most of missing part
+* Many performance fixes and optimizations to application commands.
 
 .. _vp2p5p1:
 
