@@ -20,7 +20,7 @@ DEALINGS IN THE SOFTWARE.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Union, overload
+from typing import TYPE_CHECKING, List, Union, overload, Optional
 from .utils import _get_as_snowflake, get
 from .partial_emoji import _EmojiTag
 
@@ -81,7 +81,7 @@ class WelcomeScreenChannel:
 
     
     @classmethod
-    def _from_dict(cls, data: WelcomeScreenChannelPayload, guild: Guild) -> WelcomeChannel:
+    def _from_dict(cls, data: WelcomeScreenChannelPayload, guild: Guild) -> WelcomeScreenChannel:
         channel_id = _get_as_snowflake(data, 'channel_id')
         channel = guild.get_channel(channel_id)
         description = data.get('description')
@@ -140,14 +140,19 @@ class WelcomeScreen:
         self,
         *,
         description: Optional[str] = ...,
-        welcome_channels: Optional[List[WelcomeChannel]] = ...,
+        welcome_channels: Optional[List[WelcomeScreenChannel]] = ...,
         enabled: Optional[bool] = ...,
         reason: Optional[str] = ...,
     ) -> None:
         ...
 
     @overload
-    async def edit(self) -> None:
+    async def edit(self, *, 
+            description: Optional[str] = ...,
+            welcome_channels: Optional[List[WelcomeScreenChannel]] = ...,
+            enabled: Optional[bool] = ...,
+            reason: Optional[str] = ...,
+        ) -> None:
         ...
 
     async def edit(self, **options):
@@ -166,8 +171,8 @@ class WelcomeScreen:
             await welcome_screen.edit(
                 description='This is a very cool community server!',
                 welcome_channels=[
-                    WelcomeChannel(channel=rules_channel, description='Read the rules!', emoji='👨‍🏫'),
-                    WelcomeChannel(channel=announcements_channel, description='Watch out for announcements!', emoji=custom_emoji),
+                    WelcomeScreenChannel(channel=rules_channel, description='Read the rules!', emoji='👨‍🏫'),
+                    WelcomeScreenChannel(channel=announcements_channel, description='Watch out for announcements!', emoji=custom_emoji),
                 ]
             )
         
@@ -179,7 +184,7 @@ class WelcomeScreen:
         
         description: Optional[:class:`str`]
             The new description of welcome screen.
-        welcome_channels: Optional[List[:class:`WelcomeChannel`]]
+        welcome_channels: Optional[List[:class:`WelcomeScreenChannel`]]
             The welcome channels. The order of the channels would be same as the passed list order.
         enabled: Optional[:class:`bool`]
             Whether the welcome screen should be displayed.

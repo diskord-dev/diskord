@@ -84,6 +84,7 @@ if TYPE_CHECKING:
         threads,
         voice,
         sticker,
+        welcome_screen,
     )
     from .types.snowflake import Snowflake, SnowflakeList
 

@@ -66,6 +66,8 @@ from .message import Message
 from .member import Member
 from .application_commands import (
     ApplicationCommand,
+    ApplicationCommandGuildPermissions,
+    ApplicationCommandPermission,
     SlashCommand,
     UserCommand,
     MessageCommand,
