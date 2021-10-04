@@ -3100,7 +3100,7 @@ class Guild(Hashable):
             The required command.
         """
         for command in self._application_commands:
-            if command.id == command_id and self.id in command.guild_ids:
+            if command.id == command_id and self.id == command.guild_id:
                 return command
 
     def remove_application_command(self, command_id: int, /):
@@ -3118,10 +3118,10 @@ class Guild(Hashable):
         command_id: :class:`int`
             The ID of the command to remove.
         """
-        from .interactions import ApplicationCommand # due to circular import
+        from .application_commands import ApplicationCommand # due to circular import
 
         for command in self._state._application_commands:
-            if command.id == command_id and self.id in command.guild_ids:
+            if command.id == command_id and self.id == command.guild_id:
                 try:
                     return self._state._application_commands.remove(command)
                 except ValueError:
