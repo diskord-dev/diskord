@@ -686,17 +686,18 @@ class OptionType(Enum, comparable=True):
                     ],
                 'StageChannel': ChannelType.stage_voice
             }
-            unwrap = unwrap_function(option._callback)
+            unwrap = unwrap_function(option.callback)
             try:
                 globalns = unwrap.__globals__
             except AttributeError:
                 globalns = {}
 
-            params = get_signature_parameters(option._callback, globalns)
-            param = params.get(option._arg)
+            params = get_signature_parameters(option.callback, globalns)
+            param = params.get(option.arg)
     
             if get_origin(param.annotation) is Union:
                 args = [arg.__name__ for arg in param.annotation.__args__]
+
                 # now we have the name of all the channel types that were in typing.Union
                 for arg in args:
                     try:
@@ -704,15 +705,13 @@ class OptionType(Enum, comparable=True):
                     except KeyError:
                         # unknown type in typing.Union? ignore it.
                         pass
-                    else:
-                        return cls.channel
             else:
                 try:
                     option._channel_types.append(channel_types_map[param.annotation.__name__])
                 except KeyError:
                     pass
-                else:
-                    return cls.channel
+            
+            return cls.channel
         
         return cls.string
 

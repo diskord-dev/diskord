@@ -1731,8 +1731,8 @@ class Client:
 
         command.client = self
         
-        if self.application_commands_guild_ids and not command.guild_ids:
-            command.guild_ids = self.application_commands_guild_ids
+        if self.application_commands_guild_ids and not command._guild_ids:
+            command._guild_ids = self.application_commands_guild_ids
 
         self._pending_commands.append(command)
 
