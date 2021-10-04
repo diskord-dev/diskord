@@ -168,6 +168,10 @@ class ChildrenMixin:
 class OptionsMixin:
     """A mixin that implements basic slash commands and subcommands options."""
 
+    @property
+    def options(self):
+        return self._options
+
     # Option management
 
     def get_option(self, **attrs: Any) -> Optional[Option]:
@@ -247,6 +251,7 @@ class OptionsMixin:
 
 class ChecksMixin:
     """A mixin that implements checks for application commands."""
+
     def add_check(self, predicate: Check):
         """
         Adds a check to the command.
@@ -1237,16 +1242,6 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
     def type(self) -> ApplicationCommandType:
         """:class:`ApplicationCommandType`: The type of command. Always :attr:`ApplicatiionCommandType.slash`"""
         return self._type
-
-    @property
-    def options(self) -> List[Option]:
-        """List[:class:`Option`]: The list of options this command has."""
-        return self._options
-
-    @property
-    def children(self) -> List[Option]:
-        """List[:class:`SlashSubCommand`, :class:`SlashCommandGroup`]: The list of children this command has."""
-        return self._children
 
     # decorators
 
