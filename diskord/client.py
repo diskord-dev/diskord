@@ -135,7 +135,7 @@ class Client:
         Whether to overwrite the previously registered commands with new ones or simply
         synchronise them.
 
-        If this is ``True``, :func:`register_application_commands` will be called in
+        If this is ``True``, :func:`clean_register_application_commands` will be called in
         :func:`on_connect`, Otherwise :func:`sync_application_commands` will be called.
 
         This defaults to ``False`` and is strongly recommended to be ``False``.
@@ -1842,15 +1842,18 @@ class Client:
 
     async def fetch_application_command(self, command_id, /, *, guild_id: int = MISSING) -> ApplicationCommand:
         """Fetches a global or guild application command.
+        
+        The :attr:`~ApplicationCommand.callback` and :attr:`ApplicationCommand.guild_ids` 
+        attribute of returned command can be ``None`` if the fetched command is not found in 
+        the client's internal cache.
+
 
         .. note::
             This method is an API call, Use :func:`get_application_command` to get
             commands from internal cache.
 
         .. note::
-            The ``callback`` and ``guild_ids`` attribute of returned command can be ``None``
-            if the fetched command is not found in the client's internal cache.
-
+            
         Parameters
         ----------
 
@@ -1868,7 +1871,7 @@ class Client:
         else:
             command = await self.http.get_global_command(self.user.id, command_id)
 
-        resolved = ApplicationCommand(None)._from_data(command) # type: ignore
+        resolved = ApplicationCommand(lambda: None)._from_data(command) # type: ignore
         cached = self.get_application_command(int(command['id']))
         if cached:
             resolved._guild_ids = cached.guild_ids
@@ -1883,7 +1886,7 @@ class Client:
 
         This function shouldn't generally be used as it is automatically called
         under-the-hood while commands are being registered in :func:`sync_application_commands`
-        or :func:`register_application_commands`
+        or :func:`clean_register_application_commands`
 
         This function takes no parameters.
 
@@ -1988,7 +1991,7 @@ class Client:
         Updates the internal cache of application commands with the ones that are already
         registered on the API.
 
-        Unlike :func:`register_application_commands`, This doesn't bulk overwrite the
+        Unlike :func:`clean_register_application_commands`, This doesn't bulk overwrite the
         registered commands. Instead, it fetches the registered commands and sync the
         internal cache with the new commands.
 
@@ -2076,11 +2079,11 @@ class Client:
         _log.info('Application commands have been synchronised with the internal cache successfully.')
 
 
-    async def register_application_commands(self, *, ignore_guild_register_fail: bool = True):
+    async def clean_register_application_commands(self, *, ignore_guild_register_fail: bool = True):
         """|coro|
 
-        Register all the application commands that were added using :func:`Client.add_pending_command`
-        or decorators.
+        Overwrites all the application commands and registers the ones that were added 
+        using :func:`Client.add_pending_command` or decorators.
 
         This method cleans up previously registered commands and registers all the commands
         that were added using :func:`Client.add_pending_command`.
@@ -2151,6 +2154,11 @@ class Client:
 
         _log.info('Registered %s commands successfully.' % str(len(self._pending_commands)))
 
+    async def register_application_commands(self):
+        if self.overwrite_application_commands:
+            await self.clean_register_application_commands()
+        else:
+            await self.sync_application_commands()
 
     # Decorators
 
@@ -2215,8 +2223,7 @@ class Client:
     async def process_application_commands(self, interaction: Interaction) -> Any:
         """|coro|
 
-        Handles an application command interaction. This function holds the application
-        command main processing logic.
+        Handles an application command interaction.
 
         This function is used under-the-hood to handle all the application commands interactions.
 
@@ -2310,10 +2317,7 @@ class Client:
     # Events
 
     async def on_connect(self):
-        if not self.overwrite_application_commands:
-            await self.sync_application_commands()
-        else:
-            await self.register_application_commands()
+        await self.register_application_commands()
 
     async def on_interaction(self, interaction: Interaction):
         await self.process_application_commands(interaction)
