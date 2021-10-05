@@ -91,7 +91,7 @@ Arguments Handling
 
 Just like the traditional commands system, Slash commands also support arguments handling and Diskord provides a pythonic way of handling slash command options.
 
-Slash commands options are registered using `.slash_option` decorator.
+Slash commands options are registered using :func:`~diskord.slash_option` decorator.
 
 Example: ::
     
@@ -253,7 +253,7 @@ Example: ::
 Handling Check Errors
 +++++++++++++++++++++
 
-Unlike normal commands, The errors of application commands are passed to :func:`on_application_command_error`
+Unlike normal commands, The errors of application commands are passed to :func:`~diskord.on_application_command_error`
 
 Example: ::
 
@@ -277,7 +277,7 @@ Converters
 
 You can use converters with options of slash commands to run some custom conversion on option value and then pass it to the function.
 
-The converters for application commands are directly derived from :ref:`ext_commands`, Please refer to the manual of :class:`ext.commands.Converter` for more info.
+The converters for application commands are directly derived from :ref:`ext_commands`, Please refer to the manual of :class:`~diskord.ext.commands.Converter` for more info.
 
 This can be helpful in certain use-cases.
 
