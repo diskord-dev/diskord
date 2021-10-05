@@ -15,7 +15,7 @@ Getting Started
 
 Diskord provides an easy to use and Pythonic interface to register and work with application commands.
 
-Unlike text commands, Application commands are compatible in both :class:`ext.commands.Bot` and :class:`Client` as they are part of Discord API.
+Unlike text commands, Application commands are compatible in both :class:`diskord.ext.commands.Bot` and :class:`diskord.Client` as they are part of Discord API.
 
 To use application commands, You must add your bot to the server with ``application.commands`` scope.
 
