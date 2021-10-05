@@ -26,7 +26,19 @@ from __future__ import annotations
 import inspect
 import diskord.utils
 
-from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, TYPE_CHECKING, Tuple, TypeVar, Type
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    TYPE_CHECKING,
+    Tuple,
+    TypeVar,
+    Type,
+)
 
 from diskord import ApplicationCommand, Option, SlashCommandChild
 from ._types import _BaseCommand
@@ -37,14 +49,15 @@ if TYPE_CHECKING:
     from .core import Command
 
 __all__ = (
-    'CogMeta',
-    'Cog',
+    "CogMeta",
+    "Cog",
 )
 
-CogT = TypeVar('CogT', bound='Cog')
-FuncT = TypeVar('FuncT', bound=Callable[..., Any])
+CogT = TypeVar("CogT", bound="Cog")
+FuncT = TypeVar("FuncT", bound=Callable[..., Any])
 
 MISSING: Any = diskord.utils.MISSING
+
 
 class CogMeta(type):
     """A metaclass for defining a cog.
@@ -105,6 +118,7 @@ class CogMeta(type):
                 async def bar(self, ctx):
                     pass # hidden -> False
     """
+
     __cog_name__: str
     __cog_settings__: Dict[str, Any]
     __cog_commands__: List[Command]
@@ -112,18 +126,18 @@ class CogMeta(type):
 
     def __new__(cls: Type[CogMeta], *args: Any, **kwargs: Any) -> CogMeta:
         name, bases, attrs = args
-        attrs['__cog_name__'] = kwargs.pop('name', name)
-        attrs['__cog_settings__'] = kwargs.pop('command_attrs', {})
+        attrs["__cog_name__"] = kwargs.pop("name", name)
+        attrs["__cog_settings__"] = kwargs.pop("command_attrs", {})
 
-        description = kwargs.pop('description', None)
+        description = kwargs.pop("description", None)
         if description is None:
-            description = inspect.cleandoc(attrs.get('__doc__', ''))
-        attrs['__cog_description__'] = description
+            description = inspect.cleandoc(attrs.get("__doc__", ""))
+        attrs["__cog_description__"] = description
 
         commands = {}
         application_commands = {}
         listeners = {}
-        no_bot_cog = 'Commands or listeners must not start with cog_ or bot_ (in method {0.__name__}.{1})'
+        no_bot_cog = "Commands or listeners must not start with cog_ or bot_ (in method {0.__name__}.{1})"
 
         new_cls = super().__new__(cls, name, bases, attrs, **kwargs)
         for base in reversed(new_cls.__mro__):
@@ -138,8 +152,10 @@ class CogMeta(type):
                     value = value.__func__
                 if isinstance(value, _BaseCommand):
                     if is_static_method:
-                        raise TypeError(f'Command in method {base}.{elem!r} must not be staticmethod.')
-                    if elem.startswith(('cog_', 'bot_')):
+                        raise TypeError(
+                            f"Command in method {base}.{elem!r} must not be staticmethod."
+                        )
+                    if elem.startswith(("cog_", "bot_")):
                         raise TypeError(no_bot_cog.format(base, elem))
 
                     commands[elem] = value
@@ -147,25 +163,31 @@ class CogMeta(type):
                 # we don't want to add slash childrens which are essentially just options according
                 # to discord api in the application commands mapping.
 
-                elif isinstance(value, ApplicationCommand) and not isinstance(value, SlashCommandChild):
+                elif isinstance(value, ApplicationCommand) and not isinstance(
+                    value, SlashCommandChild
+                ):
                     if is_static_method:
-                        raise TypeError(f'Command in method {base}.{elem!r} must not be staticmethod.')
-                    if elem.startswith(('cog_', 'bot_')):
+                        raise TypeError(
+                            f"Command in method {base}.{elem!r} must not be staticmethod."
+                        )
+                    if elem.startswith(("cog_", "bot_")):
                         raise TypeError(no_bot_cog.format(base, elem))
 
                     application_commands[elem] = value
 
                 elif inspect.iscoroutinefunction(value):
                     try:
-                        getattr(value, '__cog_listener__')
+                        getattr(value, "__cog_listener__")
                     except AttributeError:
                         continue
                     else:
-                        if elem.startswith(('cog_', 'bot_')):
+                        if elem.startswith(("cog_", "bot_")):
                             raise TypeError(no_bot_cog.format(base, elem))
                         listeners[elem] = value
 
-        new_cls.__cog_commands__ = list(commands.values()) # this will be copied in Cog.__new__
+        new_cls.__cog_commands__ = list(
+            commands.values()
+        )  # this will be copied in Cog.__new__
         new_cls.__cog_application_commands__ = list(application_commands.values())
 
         listeners_as_list = []
@@ -185,9 +207,11 @@ class CogMeta(type):
     def qualified_name(cls) -> str:
         return cls.__cog_name__
 
+
 def _cog_special_method(func: FuncT) -> FuncT:
     func.__cog_special_method__ = None
     return func
+
 
 class Cog(metaclass=CogMeta):
     """The base class that all cogs must inherit from.
@@ -199,6 +223,7 @@ class Cog(metaclass=CogMeta):
     When inheriting from this class, the options shown in :class:`CogMeta`
     are equally valid here.
     """
+
     __cog_name__: ClassVar[str]
     __cog_settings__: ClassVar[Dict[str, Any]]
     __cog_commands__: ClassVar[List[Command]]
@@ -216,10 +241,7 @@ class Cog(metaclass=CogMeta):
         # r.e type ignore, type-checker complains about overriding a ClassVar
         self.__cog_commands__ = tuple(c._update_copy(cmd_attrs) for c in cls.__cog_commands__)  # type: ignore
 
-        lookup = {
-            cmd.qualified_name: cmd
-            for cmd in self.__cog_commands__
-        }
+        lookup = {cmd.qualified_name: cmd for cmd in self.__cog_commands__}
 
         # Update the Command instances dynamically as well
         for command in self.__cog_commands__:
@@ -232,7 +254,6 @@ class Cog(metaclass=CogMeta):
                 # Update our parent's reference to our self
                 parent.remove_command(command.name)  # type: ignore
                 parent.add_command(command)  # type: ignore
-
 
         return self
 
@@ -264,7 +285,6 @@ class Cog(metaclass=CogMeta):
         """
         return [c for c in self.__cog_application_commands__]
 
-
     @property
     def qualified_name(self) -> str:
         """:class:`str`: Returns the cog's specified name, not the class name."""
@@ -288,6 +308,7 @@ class Cog(metaclass=CogMeta):
             A command or group from the cog.
         """
         from .core import GroupMixin
+
         for command in self.__cog_commands__:
             if command.parent is None:
                 yield command
@@ -302,12 +323,15 @@ class Cog(metaclass=CogMeta):
         List[Tuple[:class:`str`, :ref:`coroutine <coroutine>`]]
             The listeners defined in this cog.
         """
-        return [(name, getattr(self, method_name)) for name, method_name in self.__cog_listeners__]
+        return [
+            (name, getattr(self, method_name))
+            for name, method_name in self.__cog_listeners__
+        ]
 
     @classmethod
     def _get_overridden_method(cls, method: FuncT) -> Optional[FuncT]:
         """Return None if the method is not overridden. Otherwise returns the overridden method."""
-        return getattr(method.__func__, '__cog_special_method__', method)
+        return getattr(method.__func__, "__cog_special_method__", method)
 
     @classmethod
     def listener(cls, name: str = MISSING) -> Callable[[FuncT], FuncT]:
@@ -329,14 +353,16 @@ class Cog(metaclass=CogMeta):
         """
 
         if name is not MISSING and not isinstance(name, str):
-            raise TypeError(f'Cog.listener expected str but received {name.__class__.__name__!r} instead.')
+            raise TypeError(
+                f"Cog.listener expected str but received {name.__class__.__name__!r} instead."
+            )
 
         def decorator(func: FuncT) -> FuncT:
             actual = func
             if isinstance(actual, staticmethod):
                 actual = actual.__func__
             if not inspect.iscoroutinefunction(actual):
-                raise TypeError('Listener function must be a coroutine function.')
+                raise TypeError("Listener function must be a coroutine function.")
             actual.__cog_listener__ = True
             to_assign = name or actual.__name__
             try:
@@ -348,6 +374,7 @@ class Cog(metaclass=CogMeta):
             # to pick it up but the metaclass unfurls the function and
             # thus the assignments need to be on the actual function
             return func
+
         return decorator
 
     def has_error_handler(self) -> bool:
@@ -355,7 +382,7 @@ class Cog(metaclass=CogMeta):
 
         .. versionadded:: 1.7
         """
-        return not hasattr(self.cog_command_error.__func__, '__cog_special_method__')
+        return not hasattr(self.cog_command_error.__func__, "__cog_special_method__")
 
     @_cog_special_method
     def cog_unload(self) -> None:
@@ -470,7 +497,7 @@ class Cog(metaclass=CogMeta):
             command._cog = self
             if command.id is not None:
                 # if we're here then command is registered and synced and we
-                # just have to add it to application commands list and it 
+                # just have to add it to application commands list and it
                 # would start working as normal.
                 bot._connection._application_commands[int(command.id)] = command
                 continue
@@ -482,8 +509,6 @@ class Cog(metaclass=CogMeta):
                 for to_undo in self.__cog_application_commands__[:index]:
                     bot.remove_pending_command(to_undo)
                 raise e
-
-
 
         # check if we're overriding the default
         if cls.bot_check is not Cog.bot_check:

@@ -31,7 +31,20 @@ import sys
 import traceback
 import inspect
 import aiohttp
-from typing import Any, Callable, Coroutine, Dict, Generator, List, Optional, Sequence, TYPE_CHECKING, Tuple, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Sequence,
+    TYPE_CHECKING,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from .user import User, ClientUser
 from .invite import Invite
@@ -83,16 +96,17 @@ if TYPE_CHECKING:
     from .channel import DMChannel
     from .voice_client import VoiceProtocol
     from .interactions import Interaction
-    from .types.interactions import ApplicationCommandOption as ApplicationCommandPayload
+    from .types.interactions import (
+        ApplicationCommandOption as ApplicationCommandPayload,
+    )
 
 
-__all__ = (
-    'Client',
-)
+__all__ = ("Client",)
 
-Coro = TypeVar('Coro', bound=Callable[..., Coroutine[Any, Any, Any]])
+Coro = TypeVar("Coro", bound=Callable[..., Coroutine[Any, Any, Any]])
 
 _log = logging.getLogger(__name__)
+
 
 def _cancel_tasks(loop: asyncio.AbstractEventLoop) -> None:
     tasks = {t for t in asyncio.all_tasks(loop=loop) if not t.done()}
@@ -100,30 +114,34 @@ def _cancel_tasks(loop: asyncio.AbstractEventLoop) -> None:
     if not tasks:
         return
 
-    _log.info('Cleaning up after %d tasks.', len(tasks))
+    _log.info("Cleaning up after %d tasks.", len(tasks))
     for task in tasks:
         task.cancel()
 
     loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
-    _log.info('All tasks finished cancelling.')
+    _log.info("All tasks finished cancelling.")
 
     for task in tasks:
         if task.cancelled():
             continue
         if task.exception() is not None:
-            loop.call_exception_handler({
-                'message': 'Unhandled exception during Client.run shutdown.',
-                'exception': task.exception(),
-                'task': task
-            })
+            loop.call_exception_handler(
+                {
+                    "message": "Unhandled exception during Client.run shutdown.",
+                    "exception": task.exception(),
+                    "task": task,
+                }
+            )
+
 
 def _cleanup_loop(loop: asyncio.AbstractEventLoop) -> None:
     try:
         _cancel_tasks(loop)
         loop.run_until_complete(loop.shutdown_asyncgens())
     finally:
-        _log.info('Closing the event loop.')
+        _log.info("Closing the event loop.")
         loop.close()
+
 
 class Client:
     r"""
@@ -233,6 +251,7 @@ class Client:
     loop: :class:`asyncio.AbstractEventLoop`
         The event loop that the client uses for asynchronous operations.
     """
+
     def __init__(
         self,
         *,
@@ -241,28 +260,40 @@ class Client:
     ):
         # self.ws is set in the connect method
         self.ws: DiscordWebSocket = None  # type: ignore
-        self.loop: asyncio.AbstractEventLoop = asyncio.get_event_loop() if loop is None else loop
-        self._listeners: Dict[str, List[Tuple[asyncio.Future, Callable[..., bool]]]] = {}
-        self.shard_id: Optional[int] = options.get('shard_id')
-        self.shard_count: Optional[int] = options.get('shard_count')
-        self.overwrite_application_commands: bool = options.pop('overwrite_application_commands', False)
-        self.application_commands_guild_ids: List[int] = options.pop('application_commands_guild_ids', [])
+        self.loop: asyncio.AbstractEventLoop = (
+            asyncio.get_event_loop() if loop is None else loop
+        )
+        self._listeners: Dict[
+            str, List[Tuple[asyncio.Future, Callable[..., bool]]]
+        ] = {}
+        self.shard_id: Optional[int] = options.get("shard_id")
+        self.shard_count: Optional[int] = options.get("shard_count")
+        self.overwrite_application_commands: bool = options.pop(
+            "overwrite_application_commands", False
+        )
+        self.application_commands_guild_ids: List[int] = options.pop(
+            "application_commands_guild_ids", []
+        )
 
-        connector: Optional[aiohttp.BaseConnector] = options.pop('connector', None)
-        proxy: Optional[str] = options.pop('proxy', None)
-        proxy_auth: Optional[aiohttp.BasicAuth] = options.pop('proxy_auth', None)
-        unsync_clock: bool = options.pop('assume_unsync_clock', True)
-        self.http: HTTPClient = HTTPClient(connector, proxy=proxy, proxy_auth=proxy_auth, unsync_clock=unsync_clock, loop=self.loop)
+        connector: Optional[aiohttp.BaseConnector] = options.pop("connector", None)
+        proxy: Optional[str] = options.pop("proxy", None)
+        proxy_auth: Optional[aiohttp.BasicAuth] = options.pop("proxy_auth", None)
+        unsync_clock: bool = options.pop("assume_unsync_clock", True)
+        self.http: HTTPClient = HTTPClient(
+            connector,
+            proxy=proxy,
+            proxy_auth=proxy_auth,
+            unsync_clock=unsync_clock,
+            loop=self.loop,
+        )
 
-        self._handlers: Dict[str, Callable] = {
-            'ready': self._handle_ready
-        }
+        self._handlers: Dict[str, Callable] = {"ready": self._handle_ready}
 
         self._hooks: Dict[str, Callable] = {
-            'before_identify': self._call_before_identify_hook
+            "before_identify": self._call_before_identify_hook
         }
 
-        self._enable_debug_events: bool = options.pop('enable_debug_events', False)
+        self._enable_debug_events: bool = options.pop("enable_debug_events", False)
         self._connection: ConnectionState = self._get_state(**options)
         self._connection.shard_count = self.shard_count
         self._closed: bool = False
@@ -272,19 +303,26 @@ class Client:
 
         self._pending_commands: List[ApplicationCommand] = []
 
-
         if VoiceClient.warn_nacl:
             VoiceClient.warn_nacl = False
             _log.warning("PyNaCl is not installed, voice will NOT be supported")
 
     # internals
 
-    def _get_websocket(self, guild_id: Optional[int] = None, *, shard_id: Optional[int] = None) -> DiscordWebSocket:
+    def _get_websocket(
+        self, guild_id: Optional[int] = None, *, shard_id: Optional[int] = None
+    ) -> DiscordWebSocket:
         return self.ws
 
     def _get_state(self, **options: Any) -> ConnectionState:
-        return ConnectionState(dispatch=self.dispatch, handlers=self._handlers,
-                               hooks=self._hooks, http=self.http, loop=self.loop, **options)
+        return ConnectionState(
+            dispatch=self.dispatch,
+            handlers=self._handlers,
+            hooks=self._hooks,
+            http=self.http,
+            loop=self.loop,
+            **options,
+        )
 
     def _handle_ready(self) -> None:
         self._ready.set()
@@ -296,7 +334,7 @@ class Client:
         This could be referred to as the Discord WebSocket protocol latency.
         """
         ws = self.ws
-        return float('nan') if not ws else ws.latency
+        return float("nan") if not ws else ws.latency
 
     def is_ws_ratelimited(self) -> bool:
         """:class:`bool`: Whether the websocket is currently rate limited.
@@ -384,7 +422,13 @@ class Client:
         """:class:`bool`: Specifies if the client's internal cache is ready for use."""
         return self._ready.is_set()
 
-    async def _run_event(self, coro: Callable[..., Coroutine[Any, Any, Any]], event_name: str, *args: Any, **kwargs: Any) -> None:
+    async def _run_event(
+        self,
+        coro: Callable[..., Coroutine[Any, Any, Any]],
+        event_name: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         try:
             await coro(*args, **kwargs)
         except asyncio.CancelledError:
@@ -395,14 +439,20 @@ class Client:
             except asyncio.CancelledError:
                 pass
 
-    def _schedule_event(self, coro: Callable[..., Coroutine[Any, Any, Any]], event_name: str, *args: Any, **kwargs: Any) -> asyncio.Task:
+    def _schedule_event(
+        self,
+        coro: Callable[..., Coroutine[Any, Any, Any]],
+        event_name: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> asyncio.Task:
         wrapped = self._run_event(coro, event_name, *args, **kwargs)
         # Schedules the task
-        return asyncio.create_task(wrapped, name=f'discord.py: {event_name}')
+        return asyncio.create_task(wrapped, name=f"discord.py: {event_name}")
 
     def dispatch(self, event: str, *args: Any, **kwargs: Any) -> None:
-        _log.debug('Dispatching event %s', event)
-        method = 'on_' + event
+        _log.debug("Dispatching event %s", event)
+        method = "on_" + event
 
         listeners = self._listeners.get(event)
         if listeners:
@@ -449,18 +499,22 @@ class Client:
         overridden to have a different implementation.
         Check :func:`~discord.on_error` for more details.
         """
-        print(f'Ignoring exception in {event_method}', file=sys.stderr)
+        print(f"Ignoring exception in {event_method}", file=sys.stderr)
         traceback.print_exc()
 
     # hooks
 
-    async def _call_before_identify_hook(self, shard_id: Optional[int], *, initial: bool = False) -> None:
+    async def _call_before_identify_hook(
+        self, shard_id: Optional[int], *, initial: bool = False
+    ) -> None:
         # This hook is an internal hook that actually calls the public one.
         # It allows the library to have its own hook without stepping on the
         # toes of those who need to override their own hook.
         await self.before_identify_hook(shard_id, initial=initial)
 
-    async def before_identify_hook(self, shard_id: Optional[int], *, initial: bool = False) -> None:
+    async def before_identify_hook(
+        self, shard_id: Optional[int], *, initial: bool = False
+    ) -> None:
         """|coro|
 
         A hook that is called before IDENTIFYing a session. This is useful
@@ -506,7 +560,7 @@ class Client:
             passing status code.
         """
 
-        _log.info('logging in using static token')
+        _log.info("logging in using static token")
 
         data = await self.http.static_login(token.strip())
         self._connection.user = ClientUser(state=self._connection, data=data)
@@ -538,29 +592,35 @@ class Client:
 
         backoff = ExponentialBackoff()
         ws_params = {
-            'initial': True,
-            'shard_id': self.shard_id,
+            "initial": True,
+            "shard_id": self.shard_id,
         }
         while not self.is_closed():
             try:
                 coro = DiscordWebSocket.from_client(self, **ws_params)
                 self.ws = await asyncio.wait_for(coro, timeout=60.0)
-                ws_params['initial'] = False
+                ws_params["initial"] = False
                 while True:
                     await self.ws.poll_event()
             except ReconnectWebSocket as e:
-                _log.info('Got a request to %s the websocket.', e.op)
-                self.dispatch('disconnect')
-                ws_params.update(sequence=self.ws.sequence, resume=e.resume, session=self.ws.session_id)
+                _log.info("Got a request to %s the websocket.", e.op)
+                self.dispatch("disconnect")
+                ws_params.update(
+                    sequence=self.ws.sequence,
+                    resume=e.resume,
+                    session=self.ws.session_id,
+                )
                 continue
-            except (OSError,
-                    HTTPException,
-                    GatewayNotFound,
-                    ConnectionClosed,
-                    aiohttp.ClientError,
-                    asyncio.TimeoutError) as exc:
+            except (
+                OSError,
+                HTTPException,
+                GatewayNotFound,
+                ConnectionClosed,
+                aiohttp.ClientError,
+                asyncio.TimeoutError,
+            ) as exc:
 
-                self.dispatch('disconnect')
+                self.dispatch("disconnect")
                 if not reconnect:
                     await self.close()
                     if isinstance(exc, ConnectionClosed) and exc.code == 1000:
@@ -573,7 +633,12 @@ class Client:
 
                 # If we get connection reset by peer then try to RESUME
                 if isinstance(exc, OSError) and exc.errno in (54, 10054):
-                    ws_params.update(sequence=self.ws.sequence, initial=False, resume=True, session=self.ws.session_id)
+                    ws_params.update(
+                        sequence=self.ws.sequence,
+                        initial=False,
+                        resume=True,
+                        session=self.ws.session_id,
+                    )
                     continue
 
                 # We should only get this when an unhandled close code happens,
@@ -593,7 +658,9 @@ class Client:
                 # Always try to RESUME the connection
                 # If the connection is not RESUME-able then the gateway will invalidate the session.
                 # This is apparently what the official Discord client does.
-                ws_params.update(sequence=self.ws.sequence, resume=True, session=self.ws.session_id)
+                ws_params.update(
+                    sequence=self.ws.sequence, resume=True, session=self.ws.session_id
+                )
 
     async def close(self) -> None:
         """|coro|
@@ -690,10 +757,10 @@ class Client:
         try:
             loop.run_forever()
         except KeyboardInterrupt:
-            _log.info('Received signal to terminate bot and event loop.')
+            _log.info("Received signal to terminate bot and event loop.")
         finally:
             future.remove_done_callback(stop_loop_on_completion)
-            _log.info('Cleaning up tasks.')
+            _log.info("Cleaning up tasks.")
             _cleanup_loop(loop)
 
         if not future.cancelled():
@@ -722,9 +789,9 @@ class Client:
             self._connection._activity = None
         elif isinstance(value, BaseActivity):
             # ConnectionState._activity is typehinted as ActivityPayload, we're passing Dict[str, Any]
-            self._connection._activity = value.to_dict() # type: ignore
+            self._connection._activity = value.to_dict()  # type: ignore
         else:
-            raise TypeError('activity must derive from BaseActivity.')
+            raise TypeError("activity must derive from BaseActivity.")
 
     @property
     def status(self):
@@ -740,11 +807,11 @@ class Client:
     @status.setter
     def status(self, value):
         if value is Status.offline:
-            self._connection._status = 'invisible'
+            self._connection._status = "invisible"
         elif isinstance(value, Status):
             self._connection._status = str(value)
         else:
-            raise TypeError('status must derive from Status.')
+            raise TypeError("status must derive from Status.")
 
     @property
     def allowed_mentions(self) -> Optional[AllowedMentions]:
@@ -759,7 +826,9 @@ class Client:
         if value is None or isinstance(value, AllowedMentions):
             self._connection.allowed_mentions = value
         else:
-            raise TypeError(f'allowed_mentions must be AllowedMentions not {value.__class__!r}')
+            raise TypeError(
+                f"allowed_mentions must be AllowedMentions not {value.__class__!r}"
+            )
 
     @property
     def intents(self) -> Intents:
@@ -776,7 +845,9 @@ class Client:
         """List[:class:`~discord.User`]: Returns a list of all the users the bot can see."""
         return list(self._connection._users.values())
 
-    def get_channel(self, id: int, /) -> Optional[Union[GuildChannel, Thread, PrivateChannel]]:
+    def get_channel(
+        self, id: int, /
+    ) -> Optional[Union[GuildChannel, Thread, PrivateChannel]]:
         """Returns a channel or thread with the given ID.
 
         Parameters
@@ -791,7 +862,9 @@ class Client:
         """
         return self._connection.get_channel(id)
 
-    def get_partial_messageable(self, id: int, *, type: Optional[ChannelType] = None) -> PartialMessageable:
+    def get_partial_messageable(
+        self, id: int, *, type: Optional[ChannelType] = None
+    ) -> PartialMessageable:
         """Returns a partial messageable with the given channel ID.
 
         This is useful if you have a channel_id but don't want to do an API call
@@ -1037,8 +1110,10 @@ class Client:
 
         future = self.loop.create_future()
         if check is None:
+
             def _check(*args):
                 return True
+
             check = _check
 
         ev = event.lower()
@@ -1076,10 +1151,10 @@ class Client:
         """
 
         if not asyncio.iscoroutinefunction(coro):
-            raise TypeError('event registered must be a coroutine function')
+            raise TypeError("event registered must be a coroutine function")
 
         setattr(self, coro.__name__, coro)
-        _log.debug('%s has successfully been registered as an event', coro.__name__)
+        _log.debug("%s has successfully been registered as an event", coro.__name__)
         return coro
 
     async def change_presence(
@@ -1118,10 +1193,10 @@ class Client:
         """
 
         if status is None:
-            status_str = 'online'
+            status_str = "online"
             status = Status.online
         elif status is Status.offline:
-            status_str = 'invisible'
+            status_str = "invisible"
             status = Status.offline
         else:
             status_str = str(status)
@@ -1147,7 +1222,7 @@ class Client:
         *,
         limit: Optional[int] = 100,
         before: SnowflakeTime = None,
-        after: SnowflakeTime = None
+        after: SnowflakeTime = None,
     ) -> GuildIterator:
         """Retrieves an :class:`.AsyncIterator` that enables receiving your guilds.
 
@@ -1227,7 +1302,7 @@ class Client:
         """
         code = utils.resolve_template(code)
         data = await self.http.get_template(code)
-        return Template(data=data, state=self._connection) # type: ignore
+        return Template(data=data, state=self._connection)  # type: ignore
 
     async def fetch_guild(self, guild_id: int, /) -> Guild:
         """|coro|
@@ -1313,7 +1388,9 @@ class Client:
         region_value = str(region)
 
         if code:
-            data = await self.http.create_from_template(code, name, region_value, icon_base64)
+            data = await self.http.create_from_template(
+                code, name, region_value, icon_base64
+            )
         else:
             data = await self.http.create_guild(name, region_value, icon_base64)
         return Guild(data=data, state=self._connection)
@@ -1343,12 +1420,18 @@ class Client:
             The stage instance from the stage channel ID.
         """
         data = await self.http.get_stage_instance(channel_id)
-        guild = self.get_guild(int(data['guild_id']))
+        guild = self.get_guild(int(data["guild_id"]))
         return StageInstance(guild=guild, state=self._connection, data=data)  # type: ignore
 
     # Invite management
 
-    async def fetch_invite(self, url: Union[Invite, str], *, with_counts: bool = True, with_expiration: bool = True) -> Invite:
+    async def fetch_invite(
+        self,
+        url: Union[Invite, str],
+        *,
+        with_counts: bool = True,
+        with_expiration: bool = True,
+    ) -> Invite:
         """|coro|
 
         Gets an :class:`.Invite` from a discord.gg URL or ID.
@@ -1387,7 +1470,9 @@ class Client:
         """
 
         invite_id = utils.resolve_invite(url)
-        data = await self.http.get_invite(invite_id, with_counts=with_counts, with_expiration=with_expiration)
+        data = await self.http.get_invite(
+            invite_id, with_counts=with_counts, with_expiration=with_expiration
+        )
         return Invite.from_incomplete(state=self._connection, data=data)
 
     async def delete_invite(self, invite: Union[Invite, str]) -> None:
@@ -1464,8 +1549,8 @@ class Client:
             The bot's application information.
         """
         data = await self.http.application_info()
-        if 'rpc_origins' not in data:
-            data['rpc_origins'] = None
+        if "rpc_origins" not in data:
+            data["rpc_origins"] = None
         return AppInfo(self._connection, data)
 
     async def fetch_user(self, user_id: int, /) -> User:
@@ -1499,7 +1584,9 @@ class Client:
         data = await self.http.get_user(user_id)
         return User(state=self._connection, data=data)
 
-    async def fetch_channel(self, channel_id: int, /) -> Union[GuildChannel, PrivateChannel, Thread]:
+    async def fetch_channel(
+        self, channel_id: int, /
+    ) -> Union[GuildChannel, PrivateChannel, Thread]:
         """|coro|
 
         Retrieves a :class:`.abc.GuildChannel`, :class:`.abc.PrivateChannel`, or :class:`.Thread` with the specified ID.
@@ -1528,19 +1615,21 @@ class Client:
         """
         data = await self.http.get_channel(channel_id)
 
-        factory, ch_type = _threaded_channel_factory(data['type'])
+        factory, ch_type = _threaded_channel_factory(data["type"])
         if factory is None:
-            raise InvalidData('Unknown channel type {type} for channel ID {id}.'.format_map(data))
+            raise InvalidData(
+                "Unknown channel type {type} for channel ID {id}.".format_map(data)
+            )
 
         if ch_type in (ChannelType.group, ChannelType.private):
             # the factory will be a DMChannel or GroupChannel here
-            channel = factory(me=self.user, data=data, state=self._connection) # type: ignore
+            channel = factory(me=self.user, data=data, state=self._connection)  # type: ignore
         else:
             # the factory can't be a DMChannel or GroupChannel here
-            guild_id = int(data['guild_id']) # type: ignore
+            guild_id = int(data["guild_id"])  # type: ignore
             guild = self.get_guild(guild_id) or Object(id=guild_id)
             # GuildChannels expect a Guild, we may be passing an Object
-            channel = factory(guild=guild, state=self._connection, data=data) # type: ignore
+            channel = factory(guild=guild, state=self._connection, data=data)  # type: ignore
 
         return channel
 
@@ -1566,7 +1655,9 @@ class Client:
         data = await self.http.get_webhook(webhook_id)
         return Webhook.from_state(data, state=self._connection)
 
-    async def fetch_sticker(self, sticker_id: int, /) -> Union[StandardSticker, GuildSticker]:
+    async def fetch_sticker(
+        self, sticker_id: int, /
+    ) -> Union[StandardSticker, GuildSticker]:
         """|coro|
 
         Retrieves a :class:`.Sticker` with the specified ID.
@@ -1586,8 +1677,8 @@ class Client:
             The sticker you requested.
         """
         data = await self.http.get_sticker(sticker_id)
-        cls, _ = _sticker_factory(data['type'])  # type: ignore
-        return cls(state=self._connection, data=data) # type: ignore
+        cls, _ = _sticker_factory(data["type"])  # type: ignore
+        return cls(state=self._connection, data=data)  # type: ignore
 
     async def fetch_premium_sticker_packs(self) -> List[StickerPack]:
         """|coro|
@@ -1607,7 +1698,10 @@ class Client:
             All available premium sticker packs.
         """
         data = await self.http.list_premium_sticker_packs()
-        return [StickerPack(state=self._connection, data=pack) for pack in data['sticker_packs']]
+        return [
+            StickerPack(state=self._connection, data=pack)
+            for pack in data["sticker_packs"]
+        ]
 
     async def create_dm(self, user: Snowflake) -> DMChannel:
         """|coro|
@@ -1664,10 +1758,12 @@ class Client:
         """
 
         if not isinstance(view, View):
-            raise TypeError(f'expected an instance of View not {view.__class__!r}')
+            raise TypeError(f"expected an instance of View not {view.__class__!r}")
 
         if not view.is_persistent():
-            raise ValueError('View is not persistent. Items need to have a custom_id set and View must have no timeout')
+            raise ValueError(
+                "View is not persistent. Items need to have a custom_id set and View must have no timeout"
+            )
 
         self._connection.store_view(view, message_id)
 
@@ -1730,7 +1826,9 @@ class Client:
             The added command.
         """
         if not isinstance(command, ApplicationCommand):
-            raise TypeError('command parameter must be an instance of ApplicationCommand.')
+            raise TypeError(
+                "command parameter must be an instance of ApplicationCommand."
+            )
 
         command._client = self
 
@@ -1739,9 +1837,8 @@ class Client:
 
         self._pending_commands.append(command)
 
-
-        if not hasattr(command.callback, '__application_command_params__'):
-            command.callback.__application_command_params__ = {}        
+        if not hasattr(command.callback, "__application_command_params__"):
+            command.callback.__application_command_params__ = {}
 
         for opt in command.callback.__application_command_params__.values():
             command.append_option(opt)
@@ -1766,9 +1863,9 @@ class Client:
         except ValueError:
             return
 
-
-
-    def remove_application_command(self, command_id: int, /) -> Optional[ApplicationCommand]:
+    def remove_application_command(
+        self, command_id: int, /
+    ) -> Optional[ApplicationCommand]:
         """Removes an application command from registered application commands.
 
         Once an application command is removed using this method, It will not be invoked.
@@ -1789,7 +1886,9 @@ class Client:
         except KeyError:
             return
 
-    def get_application_command(self, command_id: int, /) -> Optional[ApplicationCommand]:
+    def get_application_command(
+        self, command_id: int, /
+    ) -> Optional[ApplicationCommand]:
         """Returns a bot's application command by it's ID.
 
         This function returns ``None`` if the application command is not found.
@@ -1806,14 +1905,17 @@ class Client:
         """
         return self._connection._application_commands.get(command_id)
 
-    async def delete_application_command(self,
-        command_id: int = MISSING, /, *,
+    async def delete_application_command(
+        self,
+        command_id: int = MISSING,
+        /,
+        *,
         guild_id: int = MISSING,
-        ):
+    ):
         """|coro|
 
         Deletes an application command. A shorthand for :meth:`ApplicationCommand.delete()`
-        
+
 
         This can be used to save an HTTP request for fetching an application command
         or if the command is not in the internal cache.
@@ -1832,11 +1934,13 @@ class Client:
         else:
             await self.http.delete_global_command(self.user.id, command_id)
 
-        self._connection._application_commands.pop(command_id, None) # type: ignore
+        self._connection._application_commands.pop(command_id, None)  # type: ignore
 
-    async def fetch_application_commands(self, guild_id: int = MISSING) -> List[PartialApplicationCommand]:
+    async def fetch_application_commands(
+        self, guild_id: int = MISSING
+    ) -> List[PartialApplicationCommand]:
         """|coro|
-    
+
         Fetches all the application commands registered globally or in a guild.
 
         Parameters
@@ -1854,12 +1958,15 @@ class Client:
         if guild_id is not MISSING:
             commands = await self.http.get_global_commands(application_id=self.user.id)
         else:
-            commands = await self.http.get_guild_commands(application_id=self.user.id, guild_id=guild_id)
+            commands = await self.http.get_guild_commands(
+                application_id=self.user.id, guild_id=guild_id
+            )
 
         return [PartialApplicationCommand(command, self) for command in commands]
 
-
-    async def fetch_application_command(self, command_id: int, /, *, guild_id: int = MISSING) -> PartialApplicationCommand:
+    async def fetch_application_command(
+        self, command_id: int, /, *, guild_id: int = MISSING
+    ) -> PartialApplicationCommand:
         """|coro|
 
         Fetches a global or guild application command.
@@ -1879,14 +1986,16 @@ class Client:
         else:
             await self.http.delete_global_command(self.user.id, command_id)
 
-    async def fetch_application_command(self, command_id, /, *, guild_id: int = MISSING) -> ApplicationCommand:
+    async def fetch_application_command(
+        self, command_id, /, *, guild_id: int = MISSING
+    ) -> ApplicationCommand:
         """Fetches a global or guild application command.
 
         .. note::
             This method is an API call, Use :func:`get_application_command` to get
             commands from internal cache.
 
-            
+
         Parameters
         ----------
         command_id: :class:`int`
@@ -1901,7 +2010,9 @@ class Client:
             The fetched command.
         """
         if guild_id is not MISSING:
-            command = await self.http.get_guild_command(self.user.id, guild_id, command_id)
+            command = await self.http.get_guild_command(
+                self.user.id, guild_id, command_id
+            )
         else:
             command = await self.http.get_global_command(self.user.id, command_id)
 
@@ -1930,20 +2041,22 @@ class Client:
             perms = [perm.to_dict() for perm in command._permissions]
 
             for perm in perms:
-                if not perm['guild_id'] in permissions:
-                    permissions[perm['guild_id']] = []
+                if not perm["guild_id"] in permissions:
+                    permissions[perm["guild_id"]] = []
 
                 # ensuring that permissions gets proper ids
-                perm['application_id'] = self.user.id
-                perm['command_id'] = command.id
+                perm["application_id"] = self.user.id
+                perm["command_id"] = command.id
 
-                permissions[perm['guild_id']].append({'id': perm['command_id'], 'permissions': perm['permissions']})
+                permissions[perm["guild_id"]].append(
+                    {"id": perm["command_id"], "permissions": perm["permissions"]}
+                )
 
         # finally, batch-editing the permissions
 
         for guild in permissions:
             payload = permissions[guild]
-            _log.info(f'Registering permissions: {payload}')
+            _log.info(f"Registering permissions: {payload}")
             await self.http.bulk_edit_guild_application_command_permissions(
                 guild_id=guild,
                 application_id=self.user.id,
@@ -1972,10 +2085,14 @@ class Client:
             guild_id=guild_id,
         )
         for perm in response:
-            perm['permissions'] = [ApplicationCommandPermission(**p) for p in perm['permissions']]
+            perm["permissions"] = [
+                ApplicationCommandPermission(**p) for p in perm["permissions"]
+            ]
         return ApplicationCommandGuildPermissions(**response)
 
-    async def fetch_application_command_permission(self, *, guild_id: int, command_id: int):
+    async def fetch_application_command_permission(
+        self, *, guild_id: int, command_id: int
+    ):
         """|coro|
 
         Fetches the permissions of an application command in a guild.
@@ -1997,15 +2114,19 @@ class Client:
             guild_id=guild_id,
             command_id=command_id,
         )
-        response['permissions'] = [ApplicationCommandPermission(**perm) for perm in response['permissions']]
+        response["permissions"] = [
+            ApplicationCommandPermission(**perm) for perm in response["permissions"]
+        ]
         return ApplicationCommandGuildPermissions(**response)
 
     # TODO: Add other API methods
 
-    async def sync_application_commands(self, *,
+    async def sync_application_commands(
+        self,
+        *,
         delete_unregistered_commands: bool = False,
         ignore_guild_register_fail: bool = True,
-        ):
+    ):
         """|coro|
 
         Updates the internal cache of application commands with the ones that are already
@@ -2037,7 +2158,7 @@ class Client:
             application command couldn't be upserted in a guild but the commands sync
             process will not be interrupted. Defaults to ``True``
         """
-        _log.info('Synchronizing internal cache commands.')
+        _log.info("Synchronizing internal cache commands.")
         if not self._pending_commands:
             # since we don't have any commands pending to register then
             # we just return
@@ -2050,16 +2171,17 @@ class Client:
         for command in commands:
             registered = utils.get(
                 [c for c in self._pending_commands if not c.guild_ids],
-                name=command['name'],
-                type=command['type']
-                )
+                name=command["name"],
+                type=command["type"],
+            )
             if registered is None:
                 non_registered.append(command)
                 continue
 
-            self._connection._application_commands[int(command['id'])] = registered._from_data(command)
+            self._connection._application_commands[
+                int(command["id"])
+            ] = registered._from_data(command)
             self._pending_commands.remove(registered)
-
 
         # Deleting the command that weren't found in internal cache
         # this parameter is set to False by default because of the fact that
@@ -2067,10 +2189,12 @@ class Client:
         # lead to easy ratelimit.
         if delete_unregistered_commands:
             for command in non_registered:
-                if command.get('guild_id'):
-                    await self.http.delete_guild_command(self.user.id, command['guild_id'], command['id'])
+                if command.get("guild_id"):
+                    await self.http.delete_guild_command(
+                        self.user.id, command["guild_id"], command["id"]
+                    )
                 else:
-                    await self.http.delete_global_command(self.user.id, command['id'])
+                    await self.http.delete_global_command(self.user.id, command["id"])
 
         # Registering the remaining commands
         while len(self._pending_commands):
@@ -2078,8 +2202,10 @@ class Client:
             command = self._pending_commands[index]
             if command.guild_ids:
                 for guild_id in command.guild_ids:
-                    try:            
-                        cmd = await self.http.upsert_guild_command(self.user.id, guild_id, command.to_dict())
+                    try:
+                        cmd = await self.http.upsert_guild_command(
+                            self.user.id, guild_id, command.to_dict()
+                        )
                     except Forbidden as e:
                         # the bot is missing application.commands scope so cannot
                         # make the command in the guild
@@ -2089,23 +2215,27 @@ class Client:
                         else:
                             raise e
             else:
-                data = command.to_dict()            
+                data = command.to_dict()
                 cmd = await self.http.upsert_global_command(self.user.id, data)
 
-            self._connection._application_commands[int(cmd['id'])] = command._from_data(cmd)
+            self._connection._application_commands[int(cmd["id"])] = command._from_data(
+                cmd
+            )
             self._pending_commands.pop(index)
-
 
         # finally, batch-editing the permissions
         await self.sync_application_commands_permissions()
 
-        _log.info('Application commands have been synchronised with the internal cache successfully.')
+        _log.info(
+            "Application commands have been synchronised with the internal cache successfully."
+        )
 
-
-    async def clean_register_application_commands(self, *, ignore_guild_register_fail: bool = True):
+    async def clean_register_application_commands(
+        self, *, ignore_guild_register_fail: bool = True
+    ):
         """|coro|
 
-        Overwrites all the application commands and registers the ones that were added 
+        Overwrites all the application commands and registers the ones that were added
         using :func:`Client.add_pending_command` or decorators.
 
         This method cleans up previously registered commands and registers all the commands
@@ -2130,7 +2260,10 @@ class Client:
             # since we don't have any commands pending, we will do nothing and return
             return
 
-        _log.info('Clean Registering %s application commands.' % str(len(self._pending_commands)))
+        _log.info(
+            "Clean Registering %s application commands."
+            % str(len(self._pending_commands))
+        )
 
         commands = []
 
@@ -2139,15 +2272,19 @@ class Client:
             data = command.to_dict()
             commands.append(data)
 
-
         cmds = await self.http.bulk_upsert_global_commands(self.user.id, commands)
 
         for cmd in cmds:
-            command = utils.get(self._pending_commands, name=cmd['name'], type=try_enum(ApplicationCommandType, int(cmd['type'])))
-            self._connection._application_commands[int(cmd['id'])] = command._from_data(cmd)
+            command = utils.get(
+                self._pending_commands,
+                name=cmd["name"],
+                type=try_enum(ApplicationCommandType, int(cmd["type"])),
+            )
+            self._connection._application_commands[int(cmd["id"])] = command._from_data(
+                cmd
+            )
 
             self._pending_commands.remove(command)
-
 
         # Registering the guild commands now
 
@@ -2163,7 +2300,9 @@ class Client:
 
         for guild in guilds:
             try:
-                cmds = await self.http.bulk_upsert_guild_commands(self.user.id, guild, guilds[guild])
+                cmds = await self.http.bulk_upsert_guild_commands(
+                    self.user.id, guild, guilds[guild]
+                )
             except Forbidden:
                 # bot doesn't has application.commands scope
                 if ignore_guild_register_fail:
@@ -2172,16 +2311,21 @@ class Client:
                 else:
                     raise e
             for cmd in cmds:
-                command = utils.get(self._pending_commands, name=cmd['name'], type=try_enum(ApplicationCommandType, int(cmd['type'])))
-                self._connection._application_commands[int(cmd['id'])] = command._from_data(cmd)
+                command = utils.get(
+                    self._pending_commands,
+                    name=cmd["name"],
+                    type=try_enum(ApplicationCommandType, int(cmd["type"])),
+                )
+                self._connection._application_commands[
+                    int(cmd["id"])
+                ] = command._from_data(cmd)
 
                 self._pending_commands.remove(command)
 
         # finally, batch-editing the permissions
         await self.sync_application_commands_permissions()
 
-
-        _log.info('Clean Registered commands successfully.')
+        _log.info("Clean Registered commands successfully.")
 
     async def register_application_commands(self):
         if self.overwrite_application_commands:
@@ -2200,11 +2344,12 @@ class Client:
             async def test(ctx):
                 await ctx.respond('Hello world')
         """
+
         def inner(func: Callable):
             if not inspect.iscoroutinefunction(func):
-                raise TypeError('Callback function must be a coroutine.')
+                raise TypeError("Callback function must be a coroutine.")
 
-            options['name'] = options.get('name') or func.__name__
+            options["name"] = options.get("name") or func.__name__
 
             command = SlashCommand(func, **options)
             return self.add_pending_command(command)
@@ -2220,9 +2365,10 @@ class Client:
             async def test(ctx, user):
                 await ctx.respond('Hello world')
         """
+
         def inner(func: Callable):
             if not inspect.iscoroutinefunction(func):
-                raise TypeError('Callback function must be a coroutine.')
+                raise TypeError("Callback function must be a coroutine.")
 
             command = UserCommand(func, **options)
             return self.add_pending_command(command)
@@ -2238,9 +2384,10 @@ class Client:
             async def test(ctx, message):
                 await ctx.respond('Hello world')
         """
+
         def inner(func: Callable):
             if not inspect.iscoroutinefunction(func):
-                raise TypeError('Callback function must be a coroutine.')
+                raise TypeError("Callback function must be a coroutine.")
 
             command = MessageCommand(func, **options)
             return self.add_pending_command(command)
@@ -2282,15 +2429,17 @@ class Client:
         if not interaction.is_application_command():
             return
 
-        command = self.get_application_command(int(interaction.data['id']))
+        command = self.get_application_command(int(interaction.data["id"]))
 
         if not command:
-            _log.info(f'Application command of type {interaction.data["type"]} referencing an unknown command {interaction.data["id"]}, Discarding.')
-            self.dispatch('unknown_application_command', interaction)
+            _log.info(
+                f'Application command of type {interaction.data["type"]} referencing an unknown command {interaction.data["id"]}, Discarding.'
+            )
+            self.dispatch("unknown_application_command", interaction)
             return
 
         context = self.get_application_context(interaction)
-        self.dispatch('application_command_run', context)
+        self.dispatch("application_command_run", context)
 
         try:
             await command.invoke(context)
@@ -2302,11 +2451,13 @@ class Client:
             # and have different implementation. there can be more complicated issues
             # if we merge the handlers or in general, these two unlike systems so there
             # is no possibility of them to be merged in one!
-            self.dispatch('application_command_error', context, error)
+            self.dispatch("application_command_error", context, error)
         else:
-            self.dispatch('application_command_completion', context)
+            self.dispatch("application_command_completion", context)
 
-    def get_application_context(self, interaction: Interaction, *, cls: InteractionContext = None) -> InteractionContext:
+    def get_application_context(
+        self, interaction: Interaction, *, cls: InteractionContext = None
+    ) -> InteractionContext:
         """
         Gets the :class:`InteractionContext` for an application command interaction.
 
@@ -2339,7 +2490,9 @@ class Client:
             cls = InteractionContext
         else:
             if not issubclass(cls, InteractionContext):
-                raise TypeError('cls parameter must be a subclass of InteractionContext.')
+                raise TypeError(
+                    "cls parameter must be a subclass of InteractionContext."
+                )
 
         return cls(self, interaction)
 
@@ -2350,4 +2503,3 @@ class Client:
 
     async def on_interaction(self, interaction: Interaction):
         await self.process_application_commands(interaction)
-

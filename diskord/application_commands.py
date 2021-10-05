@@ -47,7 +47,11 @@ from .enums import (
     OptionType,
     ApplicationCommandPermissionType,
 )
-from .errors import ApplicationCommandError, ApplicationCommandCheckFailure, ApplicationCommandConversionError
+from .errors import (
+    ApplicationCommandError,
+    ApplicationCommandCheckFailure,
+    ApplicationCommandConversionError,
+)
 from .user import User
 from .member import Member
 from .message import Message
@@ -62,45 +66,45 @@ if TYPE_CHECKING:
     )
 
 __all__ = (
-    'PartialApplicationCommand',
-    'ApplicationCommand',
-    'ApplicationCommandGuildPermissions',
-    'ApplicationCommandPermission',
-    'SlashCommand',
-    'SlashCommandChild',
-    'SlashSubCommand',
-    'SlashCommandGroup',
-    'UserCommand',
-    'MessageCommand',
-    'Option',
-    'OptionChoice',
-    'slash_option',
-    'slash_command',
-    'user_command',
-    'message_command',
-    'application_command_permission',
+    "PartialApplicationCommand",
+    "ApplicationCommand",
+    "ApplicationCommandGuildPermissions",
+    "ApplicationCommandPermission",
+    "SlashCommand",
+    "SlashCommandChild",
+    "SlashSubCommand",
+    "SlashCommandGroup",
+    "UserCommand",
+    "MessageCommand",
+    "Option",
+    "OptionChoice",
+    "slash_option",
+    "slash_command",
+    "user_command",
+    "message_command",
+    "application_command_permission",
 )
 
 ### --- Types Start --- ###
 
-Check = Callable[[InteractionContext, 'Context'], bool]
+Check = Callable[[InteractionContext, "Context"], bool]
 
 ### --- Types End --- ###
 
 
-
 ### --- Mixins Start --- ###
 
+
 class ChildrenMixin:
-    """A mixin that implements children for slash commands or slash subcommand groups. 
+    """A mixin that implements children for slash commands or slash subcommand groups.
 
     This is not meant to be initalized manually and is here for documentation purposes.
     """
+
     @property
     def children(self) -> List[SlashSubCommand]:
         """List[:class:`SlashSubCommand`]: The list of sub-commands this group has."""
         return self._children
-
 
     def get_child(self, **attrs: Any) -> Optional[SlashCommandChild]:
         """Gets a child that matches the provided traits.
@@ -137,7 +141,7 @@ class ChildrenMixin:
         self._options.append(child)
         self._children.append(child)
 
-        if not hasattr(child.callback, '__application_command_params__'):
+        if not hasattr(child.callback, "__application_command_params__"):
             child.callback.__application_command_params__ = {}
 
         for opt in child.callback.__application_command_params__.values():
@@ -165,6 +169,7 @@ class ChildrenMixin:
             self._children.remove(child)
 
         return child
+
 
 class OptionsMixin:
     """A mixin that implements basic slash commands and subcommands options."""
@@ -250,6 +255,7 @@ class OptionsMixin:
 
         return option
 
+
 class ChecksMixin:
     """A mixin that implements checks for application commands."""
 
@@ -310,9 +316,11 @@ class ChecksMixin:
         :class:`bool`
             A boolean indicating if the command can be invoked.
         """
-        if hasattr(ctx.bot, 'can_run'):
+        if hasattr(ctx.bot, "can_run"):
             if not await ctx.bot.can_run(ctx):
-                raise ApplicationCommandCheckFailure(f'The global check functions for command {self.qualified_name} failed.')
+                raise ApplicationCommandCheckFailure(
+                    f"The global check functions for command {self.qualified_name} failed."
+                )
 
         cog = self.cog
         if cog is not None:
@@ -329,10 +337,12 @@ class ChecksMixin:
 
         return await utils.async_all(predicate(ctx) for predicate in predicates)  # type: ignore
 
+
 ### --- Mixins End --- ###
 
 
-### --- Options Start --- ### 
+### --- Options Start --- ###
+
 
 class OptionChoice:
     """Represents an option choice for an application command's option.
@@ -345,6 +355,7 @@ class OptionChoice:
     value: :class:`str`
         A user-set value of the choice. Will be passed in the command's callback.
     """
+
     def __init__(self, *, name: str, value: Union[str, int, float]):
         self.name = name
         self.value = value
@@ -356,25 +367,22 @@ class OptionChoice:
         """:class:`Option`: The parent option of this choice."""
         return self._option
 
-
     def to_dict(self) -> dict:
         return {
-            'name': self.name,
-            'value': self.value,
+            "name": self.name,
+            "value": self.value,
         }
 
     @classmethod
     def from_dict(cls, dict_: ApplicationCommandOptionChoicePayload):
-        return cls(
-            name=dict_['name'],
-            value=dict_['value']
-        )
+        return cls(name=dict_["name"], value=dict_["value"])
 
     def __repr__(self):
-        return f'<OptionChoice name={self.name!r} value={self.value!r}>'
+        return f"<OptionChoice name={self.name!r} value={self.value!r}>"
 
     def __str__(self):
         return self.name
+
 
 class Option:
     """Represents an option for an application slash command.
@@ -404,36 +412,39 @@ class Option:
     choices: List[:class:`OptionChoice`]
         The list of choices this option has.
     converter: Optional[:class:`~ext.commands.Converter`]
-        The converter of this option. This is derived directly from converters in 
+        The converter of this option. This is derived directly from converters in
         commands extension. Read about :class:`ext.commands.Converter`
     channel_types: List[:class:`ChannelType`]
         The channel types to show, If :attr:`Option.type` is :attr:`OptionType.channel`.
         This is determined by the annotation of the option in callback function.
     """
-    def __init__(self, *,
+
+    def __init__(
+        self,
+        *,
         name: str,
         description: str = None,
         type: OptionType = str,
         choices: List[OptionChoice] = None,
         required: bool = True,
         arg: str = None,
-        converter: 'Converter' = None,
+        converter: "Converter" = None,
         **attrs,
     ):
-        self.callback: Callable[..., Any] = attrs.get('callback')
+        self.callback: Callable[..., Any] = attrs.get("callback")
         self._name = name
         self._description = description or "No description"
         self._required = required
-        self._channel_types: List[ChannelType] = attrs.get('channel_types', []) # type: ignore
+        self._channel_types: List[ChannelType] = attrs.get("channel_types", [])  # type: ignore
         self._choices: List[OptionChoice] = choices
         if self._choices is None:
             self._choices = []
 
         self.arg = arg or self.name
         self._options: List[Option] = []
-        self.converter: 'Converter' = converter # type: ignore
+        self.converter: "Converter" = converter  # type: ignore
 
-        self._parent: Union[ApplicationCommand, Option] = None # type: ignore
+        self._parent: Union[ApplicationCommand, Option] = None  # type: ignore
 
         if type in [OptionType.sub_command_group, OptionType.sub_command]:
             self._type = type
@@ -444,7 +455,7 @@ class Option:
                 self._type: OptionType = type
 
     def __repr__(self):
-        return f'<Option name={self._name!r} description={self._description!r}>'
+        return f"<Option name={self._name!r} description={self._description!r}>"
 
     def __str__(self):
         return self._name
@@ -457,17 +468,16 @@ class Option:
 
     @property
     def channel_types(self) -> List[ChannelType]:
-        """List[:class:`ChannelType`]: The channel types to show, If :attr:`Option.type` 
+        """List[:class:`ChannelType`]: The channel types to show, If :attr:`Option.type`
         is :attr:`OptionType.channel`.
 
         .. note::
             Though this is determined by the annotation of parameter that represents
-            this option in the callback function, It should be noted that due to how 
-            Discord's Enum work, For precise selection of channel types, Pass the list of 
+            this option in the callback function, It should be noted that due to how
+            Discord's Enum work, For precise selection of channel types, Pass the list of
             desired :class:`ChannelType` in ``channel_types`` parameter in :class:`Option`
         """
         return self._channel_types
-
 
     @property
     def description(self) -> str:
@@ -673,33 +683,35 @@ class Option:
 
     def to_dict(self) -> dict:
         dict_ = {
-            'type': self._type.value,
-            'name': self._name,
-            'description': self._description,
-            'choices': [choice.to_dict() for choice in self._choices],
-            'options': [option.to_dict() for option in reversed(self.options)],
+            "type": self._type.value,
+            "name": self._name,
+            "description": self._description,
+            "choices": [choice.to_dict() for choice in self._choices],
+            "options": [option.to_dict() for option in reversed(self.options)],
         }
 
         if not self.is_command_or_group():
             # Discord API doesn't allow passing required in the payload of
             # options that have type of 1 or 2.
-            dict_['required'] = self._required
+            dict_["required"] = self._required
 
         if self._channel_types:
-            dict_['channel_types'] = []
+            dict_["channel_types"] = []
             for t in self._channel_types:
                 if isinstance(t, list):
                     for st in t:
-                        dict_['channel_types'].append(st.value)
+                        dict_["channel_types"].append(st.value)
                 else:
-                    dict_['channel_types'].append(t.value)
+                    dict_["channel_types"].append(t.value)
 
         return dict_
+
 
 ### --- Options End --- ###
 
 
 ### --- Application Command Permissions Start --- ###
+
 
 class ApplicationCommandGuildPermissions:
     """Represents the permissions for an application command in a :class:`Guild`.
@@ -712,25 +724,26 @@ class ApplicationCommandGuildPermissions:
     permissions: List[:class:`ApplicationCommandGuildPermissions`]
         The list that the commands hold in the guild.
     """
-    def __init__(self, *,
+
+    def __init__(
+        self,
+        *,
         command_id: int,
         application_id: int,
         guild_id: int,
-        permissions: List[ApplicationCommandPermission]
-        ):
+        permissions: List[ApplicationCommandPermission],
+    ):
         self._command_id = command_id
         self._application_id = application_id
         self._guild_id = guild_id
         self._permissions = permissions
 
-        self._command: ApplicationCommand = None # type: ignore
-
+        self._command: ApplicationCommand = None  # type: ignore
 
     @property
     def command(self) -> ApplicationCommand:
         """:class:`ApplicationCommand`: The command these permissions belongs to."""
         return self._command
-
 
     @property
     def command_id(self) -> int:
@@ -749,11 +762,12 @@ class ApplicationCommandGuildPermissions:
 
     def to_dict(self) -> dict:
         return {
-            'command_id': self._command_id,
-            'application_id': self._application_id,
-            'guild_id': self._guild_id,
-            'permissions': [perm.to_dict() for perm in self._permissions],
+            "command_id": self._command_id,
+            "application_id": self._application_id,
+            "guild_id": self._guild_id,
+            "permissions": [perm.to_dict() for perm in self._permissions],
         }
+
 
 class ApplicationCommandPermission:
     """A class representing a specific permission for an application command.
@@ -776,32 +790,37 @@ class ApplicationCommandPermission:
         The permission for the command. If this is set to ``False`` the provided
         user or role will not be able to use the command. Defaults to ``False``
     """
-    def __init__(self, *, id: int, type: ApplicationCommandPermissionType, permission: bool):
+
+    def __init__(
+        self, *, id: int, type: ApplicationCommandPermissionType, permission: bool
+    ):
         self.id = id
         self.type = type
         self.permission = bool(permission)
 
     def to_dict(self):
         ret = {
-            'id': self.id,
-            'permission': self.permission,
-            'type': self.type.value,
+            "id": self.id,
+            "permission": self.permission,
+            "type": self.type.value,
         }
 
         return ret
+
 
 ### --- Application Command Permissions End --- ###
 
 
 ### --- Application Commands Start --- ###
 
+
 class PartialApplicationCommand:
     """Represents a *partial* application command.
 
     This class is usually returned by API calls or under circumstances when the
-    application command is not found in cache. Unlike :class:`.ApplicationCommand` 
-    This class doesn't has any ``callback`` attribute.  
-    
+    application command is not found in cache. Unlike :class:`.ApplicationCommand`
+    This class doesn't has any ``callback`` attribute.
+
     Attributes
     ----------
     name: :class:`str`
@@ -818,8 +837,9 @@ class PartialApplicationCommand:
     version: :class:`int`
         The auto incrementing version of this application command.
     application_id: :class:`int`
-        The ID of application this command belongs to. 
+        The ID of application this command belongs to.
     """
+
     def __init__(self, data: ApplicationCommandPayload, client: Client = None):
         self._client = self._bot = client
         self._from_data(data)
@@ -829,20 +849,19 @@ class PartialApplicationCommand:
             self._state = self._client._connection
 
     def _from_data(self, data: ApplicationCommandPayload) -> ApplicationCommand:
-        self._id: int = utils._get_as_snowflake(data, 'id')
-        self._application_id: int = utils._get_as_snowflake(data, 'application_id')
-        self._guild_id: int = utils._get_as_snowflake(data, 'guild_id')
-        self._version: int = utils._get_as_snowflake(data, 'version')
-        self._default_permission = data.get('default_permission', getattr(self, 'default_permission', True)) # type: ignore
+        self._id: int = utils._get_as_snowflake(data, "id")
+        self._application_id: int = utils._get_as_snowflake(data, "application_id")
+        self._guild_id: int = utils._get_as_snowflake(data, "guild_id")
+        self._version: int = utils._get_as_snowflake(data, "version")
+        self._default_permission = data.get("default_permission", getattr(self, "default_permission", True))  # type: ignore
 
-        if 'name' in data:
-            self._name = data.get('name')
-        if 'description' in data:
-            self._description = data.get('description')
+        if "name" in data:
+            self._name = data.get("name")
+        if "description" in data:
+            self._description = data.get("description")
 
         self._ensure_state()
         return self
-
 
     @property
     def name(self) -> str:
@@ -853,7 +872,6 @@ class PartialApplicationCommand:
     def description(self) -> str:
         """:class:`description`: The description of application command."""
         return self._description
-
 
     @property
     def guild_id(self) -> int:
@@ -909,15 +927,16 @@ class PartialApplicationCommand:
         """
         return self._version
 
-
-    async def edit(self, *, 
-        name: str = None, 
-        description: str = None, 
-        options: List[Option] = None, 
-        default_permission: bool = None
+    async def edit(
+        self,
+        *,
+        name: str = None,
+        description: str = None,
+        options: List[Option] = None,
+        default_permission: bool = None,
     ):
         """|coro|
-        
+
         Edits the application command.
 
         .. note::
@@ -947,13 +966,13 @@ class PartialApplicationCommand:
         payload: Dict[str, Any] = {}
 
         if name is not None:
-            payload['name'] = name
+            payload["name"] = name
         if description is not None:
-            payload['description'] = description
+            payload["description"] = description
         if options is not None:
-            payload['options'] = [option.to_dict() for option in options]
+            payload["options"] = [option.to_dict() for option in options]
         if default_permission is not None:
-            payload['default_permission'] = bool(default_permission)
+            payload["default_permission"] = bool(default_permission)
 
         if self.guild_id:
             ret = await self._state.http.edit_guild_command(
@@ -961,20 +980,20 @@ class PartialApplicationCommand:
                 guild_id=self.guild_id,
                 application_id=self._state.user.id,
                 payload=payload,
-                )
+            )
         else:
             ret = await self._state.http.edit_global_command(
                 command_id=self.id,
                 application_id=self._state.user.id,
                 payload=payload,
-                )
+            )
 
         return self._from_data(ret)
 
     async def delete(self):
         """|coro|
-        
-        Deletes the application command. This function also removes the command 
+
+        Deletes the application command. This function also removes the command
         from internal cache of application commands.
         """
         if self.guild_id:
@@ -982,20 +1001,20 @@ class PartialApplicationCommand:
                 command_id=self.id,
                 guild_id=self.guild_id,
                 application_id=self._state.user.id,
-                )
+            )
         else:
             ret = await self._client._connection.http.delete_global_command(
                 command_id=self.id,
                 application_id=self._state.user.id,
-                )
+            )
 
-        self._state._application_commands.pop(self.id, None) # type: ignore
+        self._state._application_commands.pop(self.id, None)  # type: ignore
 
 
 class ApplicationCommand(PartialApplicationCommand, ChecksMixin):
-    """Represents an application command. 
+    """Represents an application command.
 
-    This is base class for all application commands like slash commands, 
+    This is base class for all application commands like slash commands,
     user commands and message commands etc.
 
     Attributes
@@ -1004,18 +1023,21 @@ class ApplicationCommand(PartialApplicationCommand, ChecksMixin):
         The list of checks this commands holds that will be checked before command's
         invocation.
 
-        For more info on checks and how to register them, See :func:`~ext.commands.check` 
+        For more info on checks and how to register them, See :func:`~ext.commands.check`
         documentation as these checks actually come from there.
     extras: :class:`dict`
         A dict of user provided extras to attach to the Command.
     """
+
     def __init__(self, callback: Callable, **attrs: Any):
         self._callback = callback
-        self._guild_ids = attrs.pop('guild_ids', [])
-        self._description = attrs.pop('description', callback.__doc__) or 'No description'
-        self._name = attrs.pop('name', callback.__name__)
-        self._default_permission = attrs.pop('default_permission', True)
-        self.extras: Dict[str, Any] = attrs.pop('extras', {})
+        self._guild_ids = attrs.pop("guild_ids", [])
+        self._description = (
+            attrs.pop("description", callback.__doc__) or "No description"
+        )
+        self._name = attrs.pop("name", callback.__name__)
+        self._default_permission = attrs.pop("default_permission", True)
+        self.extras: Dict[str, Any] = attrs.pop("extras", {})
 
         self._cog = None
         self._client = self._bot = None
@@ -1054,8 +1076,8 @@ class ApplicationCommand(PartialApplicationCommand, ChecksMixin):
     def callback(self, value) -> None:
         self._callback = value
 
-        if not hasattr(value, '__application_command_params__'):
-            value.__application_command_params__ = {}        
+        if not hasattr(value, "__application_command_params__"):
+            value.__application_command_params__ = {}
 
         self._options = []
 
@@ -1088,30 +1110,34 @@ class ApplicationCommand(PartialApplicationCommand, ChecksMixin):
 
     def __repr__(self):
         # More attributes here?
-        return f'<ApplicationCommand name={self.name!r} description={self.description!r} guild_ids={self.guild_ids!r}'
+        return f"<ApplicationCommand name={self.name!r} description={self.description!r} guild_ids={self.guild_ids!r}"
 
     def __str__(self):
         return self.name
+
 
 ### --- Application Commands End --- ###
 
 
 ### --- Context Menu Commands Start --- ###
 
+
 class ContextMenuCommand(ApplicationCommand):
     """Represents a context menu command."""
+
     # This class is intentionally not documented
 
     def __init__(self, callback: Callable[..., Any], **attrs: Any):
         super().__init__(callback, **attrs)
-        self._description = ''
+        self._description = ""
 
     def to_dict(self) -> dict:
         return {
-            'name': self._name,
-            'description': self._description,
-            'type': self._type.value,
+            "name": self._name,
+            "description": self._description,
+            "type": self._type.value,
         }
+
 
 class UserCommand(ContextMenuCommand):
     """Represents a user command.
@@ -1124,6 +1150,7 @@ class UserCommand(ContextMenuCommand):
 
     In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.user`
     """
+
     def __init__(self, callback, **attrs):
         self._type = ApplicationCommandType.user
         super().__init__(callback, **attrs)
@@ -1142,23 +1169,25 @@ class UserCommand(ContextMenuCommand):
         interaction: Interaction = context.interaction
         args = [context]
 
-        if not interaction.data['type'] == self.type.value:
-            raise TypeError(f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}')
+        if not interaction.data["type"] == self.type.value:
+            raise TypeError(
+                f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}'
+            )
 
-        resolved = interaction.data['resolved']
+        resolved = interaction.data["resolved"]
         if interaction.guild:
-            member_with_user = resolved['members'][interaction.data['target_id']]
-            member_with_user['user'] = resolved['users'][interaction.data['target_id']]
+            member_with_user = resolved["members"][interaction.data["target_id"]]
+            member_with_user["user"] = resolved["users"][interaction.data["target_id"]]
             user = Member(
                 data=member_with_user,
                 guild=interaction.guild,
-                state=interaction.guild._state
-                )
+                state=interaction.guild._state,
+            )
         else:
             user = User(
                 state=context.client._connection,
-                data=resolved['users'][interaction.data['target_id']]
-                )
+                data=resolved["users"][interaction.data["target_id"]],
+            )
 
         args.append(user)
 
@@ -1166,6 +1195,7 @@ class UserCommand(ContextMenuCommand):
             args.insert(0, context.command.cog)
 
         await context.command.callback(*args)
+
 
 class MessageCommand(ContextMenuCommand):
     """Represents a message command.
@@ -1178,11 +1208,12 @@ class MessageCommand(ContextMenuCommand):
 
     In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.message`
     """
+
     def __init__(self, callback, **attrs):
         self._type = ApplicationCommandType.message
         super().__init__(callback, **attrs)
 
-    async def invoke(self, context: InteractionContext): 
+    async def invoke(self, context: InteractionContext):
         """|coro|
 
         Invokes the message command with provided invocation context.
@@ -1196,10 +1227,12 @@ class MessageCommand(ContextMenuCommand):
         interaction: Interaction = context.interaction
         args = [context]
 
-        if not interaction.data['type'] == self.type.value:
-            raise TypeError(f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}')
+        if not interaction.data["type"] == self.type.value:
+            raise TypeError(
+                f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}'
+            )
 
-        data = interaction.data['resolved']['messages'][interaction.data['target_id']]
+        data = interaction.data["resolved"]["messages"][interaction.data["target_id"]]
         if interaction.guild:
             message = Message(
                 state=interaction.guild._state,
@@ -1220,10 +1253,12 @@ class MessageCommand(ContextMenuCommand):
 
         await context.command.callback(*args)
 
+
 ### --- Context Menu Commands End --- ###
 
 
 ### --- Slash Commands Start --- ###
+
 
 class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
     """Represents a slash command.
@@ -1250,6 +1285,7 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
     children: List[:class:`.SlashCommandChild`]
         The children of this commands i.e sub-commands and sub-command groups.
     """
+
     def __init__(self, callback, **attrs: Any):
         self._type: ApplicationType = ApplicationCommandType.slash
         self._options: List[Option] = []
@@ -1262,53 +1298,54 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
         """:class:`ApplicationCommandType`: The type of command. Always :attr:`ApplicatiionCommandType.slash`"""
         return self._type
 
-    async def _parse_option(self, interaction: Interaction, option: ApplicationCommandOptionPayload) -> Any:
+    async def _parse_option(
+        self, interaction: Interaction, option: ApplicationCommandOptionPayload
+    ) -> Any:
         # This function isn't needed to be a coroutine function but it can be helpful in
         # future so, yes that's the reason it's an async function.
 
-        if option['type'] in (
-                OptionType.string.value,
-                OptionType.integer.value,
-                OptionType.boolean.value,
-                OptionType.number.value,
-            ):
-                value = option['value']
+        if option["type"] in (
+            OptionType.string.value,
+            OptionType.integer.value,
+            OptionType.boolean.value,
+            OptionType.number.value,
+        ):
+            value = option["value"]
 
-        elif option['type'] == OptionType.user.value:
+        elif option["type"] == OptionType.user.value:
             if interaction.guild:
-                value = interaction.guild.get_member(int(option['value']))
+                value = interaction.guild.get_member(int(option["value"]))
             else:
-                value = context.client.get_user(int(option['value']))
+                value = context.client.get_user(int(option["value"]))
 
             # value can be none in case when member intents are not available
 
             if value is None:
-                resolved = interaction.data['resolved']
+                resolved = interaction.data["resolved"]
                 if interaction.guild:
-                    member_with_user = resolved['members'][option['value']]
-                    member_with_user['user'] = resolved['users'][option['value']]
+                    member_with_user = resolved["members"][option["value"]]
+                    member_with_user["user"] = resolved["users"][option["value"]]
                     value = Member(
                         data=member_with_user,
                         guild=interaction.guild,
-                        state=interaction.guild._state
-                        )
+                        state=interaction.guild._state,
+                    )
                 else:
                     value = User(
                         state=context.client._connection,
-                        data=resolved['users'][option['value']]
-                        )
+                        data=resolved["users"][option["value"]],
+                    )
 
-        elif option['type'] == OptionType.channel.value:
-            value = interaction.guild.get_channel(int(option['value']))
+        elif option["type"] == OptionType.channel.value:
+            value = interaction.guild.get_channel(int(option["value"]))
 
-        elif option['type'] == OptionType.role.value:
-            value = interaction.guild.get_role(int(option['value']))
+        elif option["type"] == OptionType.role.value:
+            value = interaction.guild.get_role(int(option["value"]))
 
-        elif option['type'] == OptionType.mentionable.value:
-            value = (
-                interaction.guild.get_member(int(option['value'])) or
-                interaction.guild.get_role(int(option['value']))
-                )
+        elif option["type"] == OptionType.mentionable.value:
+            value = interaction.guild.get_member(
+                int(option["value"])
+            ) or interaction.guild.get_role(int(option["value"]))
 
         return value
 
@@ -1336,84 +1373,96 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
         interaction: Interaction = context.interaction
         args = [context]
 
-        if not interaction.data['type'] == self.type.value:
-            raise TypeError(f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}')
+        if not interaction.data["type"] == self.type.value:
+            raise TypeError(
+                f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}'
+            )
 
-        options = interaction.data.get('options', [])
+        options = interaction.data.get("options", [])
         kwargs = {}
 
         for option in options:
-            if option['type'] == OptionType.sub_command.value:
+            if option["type"] == OptionType.sub_command.value:
                 # We will use the name to get the child because
                 # subcommands do not have any ID. They are essentially
                 # just options of a command. And option names are unique
 
-                subcommand = self.get_child(name=option['name'])
+                subcommand = self.get_child(name=option["name"])
                 context.command = subcommand
-                
-                if not (await context.command.can_run(context)):
-                    raise ApplicationCommandCheckFailure(f'checks functions for application command {context.command._name} failed.')
 
-                sub_options = option.get('options', [])
+                if not (await context.command.can_run(context)):
+                    raise ApplicationCommandCheckFailure(
+                        f"checks functions for application command {context.command._name} failed."
+                    )
+
+                sub_options = option.get("options", [])
 
                 for sub_option in sub_options:
                     value = await self._parse_option(interaction, sub_option)
-                    resolved = subcommand.get_option(name=sub_option['name'])
+                    resolved = subcommand.get_option(name=sub_option["name"])
                     if resolved.converter is not None:
-                        converted = await self._run_converter(resolved.converter, context, value)
+                        converted = await self._run_converter(
+                            resolved.converter, context, value
+                        )
                         kwargs[resolved.arg] = converted
                     else:
                         kwargs[resolved.arg] = value
-                
-            elif option['type'] == OptionType.sub_command_group.value:
+
+            elif option["type"] == OptionType.sub_command_group.value:
                 # In case of sub-command groups interactions, The options array
                 # only has one element which is the subcommand that is being used
                 # so we essentially just have to get the first element of the options
                 # list and lookup the callback function for name of that element to
                 # get the subcommand object.
 
-                subcommand_raw = option['options'][0]
-                group = self.get_child(name=option['name'])
-                subcommand = group.get_child(name=subcommand_raw['name'])
+                subcommand_raw = option["options"][0]
+                group = self.get_child(name=option["name"])
+                subcommand = group.get_child(name=subcommand_raw["name"])
                 context.command = subcommand
 
                 if not (await context.command.can_run(context)):
-                    raise ApplicationCommandCheckFailure(f'checks functions for application command {context.command._name} failed.')
+                    raise ApplicationCommandCheckFailure(
+                        f"checks functions for application command {context.command._name} failed."
+                    )
 
-                sub_options = subcommand_raw.get('options', [])
+                sub_options = subcommand_raw.get("options", [])
 
                 for sub_option in sub_options:
                     value = await self._parse_option(interaction, sub_option)
-                    resolved = subcommand.get_option(name=sub_option['name'])
+                    resolved = subcommand.get_option(name=sub_option["name"])
 
                     if resolved.converter is not None:
-                        converted = await self._run_converter(resolved.converter, context, value)
-                        kwargs[resolved.arg] = converted    
+                        converted = await self._run_converter(
+                            resolved.converter, context, value
+                        )
+                        kwargs[resolved.arg] = converted
                     else:
                         kwargs[resolved.arg] = value
-                
+
             else:
                 value = await self._parse_option(interaction, option)
-                resolved = self.get_option(name=option['name'])
+                resolved = self.get_option(name=option["name"])
 
                 if resolved.converter is not None:
-                    converted = await self._run_converter(resolved.converter, context, value)
-                    kwargs[resolved.arg] = converted    
+                    converted = await self._run_converter(
+                        resolved.converter, context, value
+                    )
+                    kwargs[resolved.arg] = converted
                 else:
                     kwargs[resolved.arg] = value
-
 
         if context.command is None:
             context.command = self
 
         if not (await context.command.can_run(context)):
-            raise ApplicationCommandCheckFailure(f'checks functions for application command {context.command._name} failed.')
+            raise ApplicationCommandCheckFailure(
+                f"checks functions for application command {context.command._name} failed."
+            )
 
         if context.command.cog is not None:
             args.insert(0, context.command.cog)
 
         await context.command.callback(*args, **kwargs)
-
 
     # decorators
 
@@ -1439,6 +1488,7 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
 
         Options and other features can be added to the subcommands.
         """
+
         def inner(func: Callable):
             return self.add_child(SlashSubCommand(func, **attrs))
 
@@ -1462,6 +1512,7 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
             async def subcommand(ctx):
                 await ctx.respond('Hello world!')
         """
+
         def inner(func: Callable):
             return self.add_child(SlashCommandGroup(func, **attrs))
 
@@ -1469,13 +1520,14 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
 
     def to_dict(self) -> dict:
         dict_ = {
-            'name': self._name,
-            'type': self._type.value,
-            'options': [option.to_dict() for option in reversed(self.options)],
-            'description': self._description,
+            "name": self._name,
+            "type": self._type.value,
+            "options": [option.to_dict() for option in reversed(self.options)],
+            "description": self._description,
         }
 
         return dict_
+
 
 class SlashCommandChild(SlashCommand):
     """
@@ -1490,9 +1542,10 @@ class SlashCommandChild(SlashCommand):
     For general use, Use the subclasses of this class like  :class:`SlashCommandGroup` and
     :class:`SlashSubCommand`.
     """
+
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        self._parent: SlashCommand = None # type: ignore
+        self._parent: SlashCommand = None  # type: ignore
 
     @property
     def guild_ids(self) -> List[int]:
@@ -1509,13 +1562,14 @@ class SlashCommandChild(SlashCommand):
         """:class:`SlashCommand`: The parent command of this child command."""
         return self._parent
 
-    def to_dict(self) -> dict:            
+    def to_dict(self) -> dict:
         return {
-            'name': self._name,
-            'description': self._description,
-            'type': self._type.value,
-            'options': [option.to_dict() for option in reversed(self.options)],
+            "name": self._name,
+            "description": self._description,
+            "type": self._type.value,
+            "options": [option.to_dict() for option in reversed(self.options)],
         }
+
 
 class SlashCommandGroup(SlashCommandChild):
     """Represents a subcommand group of a slash command.
@@ -1548,6 +1602,7 @@ class SlashCommandGroup(SlashCommandChild):
     This class inherits :class:`SlashCommandChild` so all attributes valid there are
     also valid in this class.
     """
+
     def __init__(self, callback: Callable, **attrs: Any):
         super().__init__(callback, **attrs)
         self._type = OptionType.sub_command_group
@@ -1577,10 +1632,12 @@ class SlashCommandGroup(SlashCommandChild):
         **attrs:
             The parameters of :class:`SlashSubCommand`
         """
+
         def inner(func: Callable):
             return self.add_child(SlashSubCommand(func, **attrs))
 
         return inner
+
 
 class SlashSubCommand(SlashCommandChild):
     """Represents a subcommand of a slash command.
@@ -1603,16 +1660,19 @@ class SlashSubCommand(SlashCommandChild):
     This class inherits :class:`SlashCommandChild` so all attributes valid there are
     also valid in this class.
     """
+
     def __init__(self, callback: Callable, **attrs: Any):
         super().__init__(callback, **attrs)
         self._type = OptionType.sub_command
+
 
 ### --- Slash Commands End --- ###
 
 
 ### --- Decorators Start --- ###
 
-def slash_option(name: str,  **attrs) -> Option:
+
+def slash_option(name: str, **attrs) -> Option:
     """A decorator-based interface to add options to a slash command.
 
     Usage: ::
@@ -1628,14 +1688,15 @@ def slash_option(name: str,  **attrs) -> Option:
         The callback function must contain the argument and properly annotated or TypeError
         will be raised.
     """
+
     def inner(func):
         # Originally the Option object was inserted directly in
-        # annotations but that was problematic so it was changed to 
+        # annotations but that was problematic so it was changed to
         # this.
 
-        arg = attrs.pop('arg', name)
+        arg = attrs.pop("arg", name)
 
-        if not hasattr(func, '__application_command_params__'):
+        if not hasattr(func, "__application_command_params__"):
             func.__application_command_params__ = {}
 
         unwrap = unwrap_function(func)
@@ -1647,25 +1708,22 @@ def slash_option(name: str,  **attrs) -> Option:
         params = get_signature_parameters(func, globalns)
         param = params.get(arg)
 
-        required = attrs.pop('required', None)
+        required = attrs.pop("required", None)
         if required is None:
             required = param.default is inspect._empty
 
         type = params[arg].annotation
 
-        if type is inspect._empty: # no annotations were passed.
+        if type is inspect._empty:  # no annotations were passed.
             type = str
 
-        func.__application_command_params__[arg] = (
-            Option(
-                name=name, type=type, 
-                arg=arg, required=required, 
-                callback=func, **attrs
-                )
-            )
+        func.__application_command_params__[arg] = Option(
+            name=name, type=type, arg=arg, required=required, callback=func, **attrs
+        )
         return func
 
     return inner
+
 
 def slash_command(**options) -> SlashCommand:
     """A decorator that converts a function to :class:`SlashCommand`
@@ -1676,15 +1734,17 @@ def slash_command(**options) -> SlashCommand:
         async def test(ctx):
             await ctx.respond('Hello world')
     """
+
     def inner(func: Callable):
         if not inspect.iscoroutinefunction(func):
-            raise TypeError('Callback function must be a coroutine.')
+            raise TypeError("Callback function must be a coroutine.")
 
-        options['name'] = options.get('name') or func.__name__
+        options["name"] = options.get("name") or func.__name__
 
         return SlashCommand(func, **options)
 
     return inner
+
 
 def user_command(**options) -> SlashCommand:
     """A decorator that converts a function to :class:`UserCommand`
@@ -1695,14 +1755,16 @@ def user_command(**options) -> SlashCommand:
         async def test(ctx, user):
             await ctx.respond('Hello world')
     """
+
     def inner(func: Callable):
         if not inspect.iscoroutinefunction(func):
-            raise TypeError('Callback function must be a coroutine.')
-        options['name'] = options.get('name') or func.__name__
+            raise TypeError("Callback function must be a coroutine.")
+        options["name"] = options.get("name") or func.__name__
 
         return UserCommand(func, **options)
 
     return inner
+
 
 def message_command(**options) -> SlashCommand:
     """A decorator that converts a function to :class:`MessageCommand`
@@ -1718,16 +1780,20 @@ def message_command(**options) -> SlashCommand:
     **options:
         The options of :class:`MessageCommand`
     """
+
     def inner(func: Callable):
         if not inspect.iscoroutinefunction(func):
-            raise TypeError('Callback function must be a coroutine.')
-        options['name'] = options.get('name') or func.__name__
+            raise TypeError("Callback function must be a coroutine.")
+        options["name"] = options.get("name") or func.__name__
 
         return MessageCommand(func, **options)
 
     return inner
 
-def application_command_permission(*, guild_id: int, user_id: int = None, role_id: int = None, permission: bool = False):
+
+def application_command_permission(
+    *, guild_id: int, user_id: int = None, role_id: int = None, permission: bool = False
+):
     """A decorator that defines the permissions of :class:`ApplicationCommand`
 
     Usage: ::
@@ -1742,12 +1808,13 @@ def application_command_permission(*, guild_id: int, user_id: int = None, role_i
     and anyone with role of ID ``123456`` will be able to use the command in the guild
     with ID ``12345``.
     """
+
     def inner(func: Callable[..., Any]):
-        if not hasattr(func, '__application_command_permissions__'):
+        if not hasattr(func, "__application_command_permissions__"):
             func.__application_command_permissions__ = []
 
         if user_id is not None and role_id is not None:
-            raise TypeError('keyword paramters user_id and role_id cannot be mixed.')
+            raise TypeError("keyword paramters user_id and role_id cannot be mixed.")
 
         if user_id is not None:
             id = user_id
@@ -1756,7 +1823,6 @@ def application_command_permission(*, guild_id: int, user_id: int = None, role_i
         elif role_id is not None:
             id = role_id
             type = ApplicationCommandPermissionType.role
-
 
         for perm in func.__application_command_permissions__:
             if perm.guild_id == guild_id:
@@ -1769,23 +1835,23 @@ def application_command_permission(*, guild_id: int, user_id: int = None, role_i
                 )
                 return func
 
-        
         func.__application_command_permissions__.append(
             ApplicationCommandGuildPermissions(
                 guild_id=guild_id,
-                application_id=None, # type: ignore
-                command_id=None, # type: ignore
+                application_id=None,  # type: ignore
+                command_id=None,  # type: ignore
                 permissions=[
                     ApplicationCommandPermission(
                         id=id,
                         type=type,
                         permission=permission,
                     )
-                ]
+                ],
             )
         )
         return func
 
     return inner
+
 
 ### --- Decorators End --- ###
