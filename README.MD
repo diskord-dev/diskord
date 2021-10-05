@@ -83,7 +83,7 @@ bot = commands.Bot(command_prefix='>')
 
 @bot.command()
 async def ping(ctx):
-    await ctx.respond('pong')
+    await ctx.send('pong')
 
 bot.run('token')
 ```
