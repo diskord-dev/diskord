@@ -3798,6 +3798,14 @@ InteractionContext
 .. autoclass:: InteractionContext()
     :members:
 
+PartialApplicationCommand
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: PartialApplicationCommand
+
+.. autoclass:: PartialApplicationCommand()
+    :members:
+
 ApplicationCommand
 ~~~~~~~~~~~~~~~~~~
 
