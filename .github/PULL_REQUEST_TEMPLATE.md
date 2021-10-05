@@ -1,13 +1,7 @@
 <!-- Thanks for your contribution. It means a lot to us. Even a minor contribution makes impact. :) -->
 
 ## Summary
-<!-- Please explain your pull request here.
-
- Mention following things:
- - A brief description of Pull request
- - Does your PR fixes/implements an issue? Mention it!
- - Give some reasons for your change.
--->
+<!-- Please explain your pull request here. What does it do? Explain it in detail. -->
 
 ## Checklist
 
