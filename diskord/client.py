@@ -1733,7 +1733,7 @@ class Client:
             raise TypeError('command parameter must be an instance of ApplicationCommand.')
 
         command._client = self
-        
+
         if self.application_commands_guild_ids and not command._guild_ids:
             command._guild_ids = self.application_commands_guild_ids
 
@@ -1818,10 +1818,6 @@ class Client:
         This can be used to save an HTTP request for fetching an application command
         or if the command is not in the internal cache.
 
-        .. note::
-            This method is an API call. For removing a command from client internal cache,
-            Use :func:`remove_application_command` instead.
-
         Parameters
         ----------
 
@@ -1867,6 +1863,27 @@ class Client:
         """|coro|
 
         Fetches a global or guild application command.
+=======
+        guild_ids: List[:class:`int`]
+            The list of guilds IDs this command belongs to. If not global.
+
+        """
+        if guild_id and guild_ids:
+            raise TypeError('guild_id and guild_ids parameters cannot be mixed.')
+
+        if guild_id:
+            guild_ids = [guild_id]
+
+        if guild_ids:
+            for guild_id in guild_ids:
+                await self.http.delete_guild_command(self.user.id, guild_id, command_id)
+
+        else:
+            await self.http.delete_global_command(self.user.id, command_id)
+
+    async def fetch_application_command(self, command_id, /, *, guild_id: int = MISSING) -> ApplicationCommand:
+        """Fetches a global or guild application command.
+>>>>>>> f5e117b83a4c78267b0d33aa86e19a88948e7214
         
         The :attr:`~ApplicationCommand.callback` and :attr:`ApplicationCommand.guild_ids` 
         attribute of returned command can be ``None`` if the fetched command is not found in 
@@ -1887,7 +1904,6 @@ class Client:
 
         Returns
         -------
-
         :class:`PartialApplicationCommand`
             The fetched command.
         """
@@ -1898,6 +1914,13 @@ class Client:
 
         return PartialApplicationCommand(command, self)
         
+        resolved = ApplicationCommand(lambda: None)._from_data(command) # type: ignore
+        cached = self.get_application_command(int(command['id']))
+        if cached:
+            resolved._guild_ids = cached.guild_ids
+            resolved._callback  = cached.callback
+
+        return resolved
 
     async def sync_application_commands_permissions(self):
         """|coro|
@@ -2147,6 +2170,7 @@ class Client:
             self._connection._application_commands[int(cmd['id'])] = command._from_data(cmd)
 
             self._pending_commands.remove(command)
+
 
         # Registering the guild commands now
 

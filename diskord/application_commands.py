@@ -832,6 +832,61 @@ class PartialApplicationCommand:
     def _from_data(self, data: ApplicationCommandPayload) -> ApplicationCommand:
         self._ensure_state()
 
+=======
+class ApplicationCommand(ChecksMixin):
+    """Represents an application command. This is base class for all application commands like
+    slash commands, user commands etc.
+
+    Attributes
+    ----------
+    checks: List[Callable[:class:`InteractionContext`, bool]]
+        The list of checks this commands holds that will be checked before command's
+        invocation.
+
+        For more info on checks and how to register them, See :func:`~ext.commands.check` 
+        documentation as these checks actually come from there.
+
+    callback: Callable[..., Any]
+        the callback function of this command.
+    extras: :class:`dict`
+        A dict of user provided extras to attach to the Command.
+    """
+    def __init__(self, callback: Callable, **attrs: Any):
+        self.callback = callback
+        self._name = attrs.get('name') or callback.__name__
+        self._description = attrs.get('description', callback.__doc__) or 'No description'
+        self._guild_ids = attrs.get('guild_ids', [])
+        self._default_permission = attrs.get('default_permission', True)
+
+        self._cog = None
+        self._id = None
+        self._application_id = None
+        self._version = None
+        self._client = self._bot = None
+        self.extras: Dict[str, Any] = attrs.get('extras', {})
+
+        try:
+            permissions = callback.__application_command_permissions__
+        except AttributeError:
+            permissions = []  # type: ignore
+
+        for perm in permissions:
+            perm._command = self
+
+        self.checks: List[Check]
+        try:
+            self.checks = self.callback.__commands_checks__
+            self.checks.reverse()
+        except AttributeError:
+            self.checks = []
+
+        self._permissions: List[ApplicationCommandGuildPermissions] = permissions
+
+    def is_global_command(self) -> bool:
+        """:class:`bool`: Whether the command is global command or not."""
+        return bool(self._guild_ids)
+
+    def _from_data(self, data: ApplicationCommandPayload) -> ApplicationCommand:
         self._id: int = utils._get_as_snowflake(data, 'id')
         self._application_id: int = utils._get_as_snowflake(data, 'application_id')
         self._guild_id: int = utils._get_as_snowflake(data, 'guild_id')
@@ -850,29 +905,17 @@ class PartialApplicationCommand:
         return self
 
     @property
-    def name(self) -> str:
-        """:class:`str`: The name of application command."""
-        return self._name
+    def permissions(self) -> List[ApplicationCommandGuildPermissions]:
+        """List[:class:`ApplicationCommandGuildPermissions`]: List of permissions this command holds."""
+        return self._permissions
 
-    @property
-    def description(self) -> str:
-        """:class:`description`: The description of application command."""
-        return self._description
+    def guild_ids(self) -> List[int]:
+        """List[:class:`int`]: The list of guild IDs in which this command will/was register.
 
-    @property
-    def guild_id(self) -> Optional[int]:
-        """:class:`int`: The ID of the guild this command belongs to.
-
-        Every command is stored per-guild basis and this attribute represents that guild's ID.
-        To get the list of guild IDs in which this command was initially registered, use
-        :attr:`ApplicationCommand.guild_id`
+        Unlike :attr:`ApplicationCommand.guild_id` this is the list of guild IDs in which command
+        will register on the bot's connect.
         """
-        return self._guild_id
-
-    @property
-    def guild(self) -> Optional[Guild]:
-        """:class:`Guild`: The guild this command belongs to. This could be ``None`` if command is a global command."""
-        self._guild
+        return self._guild_ids
 
     @property
     def type(self) -> ApplicationCommandType:
@@ -911,90 +954,6 @@ class PartialApplicationCommand:
         :attr:`ApplicationCommand.id`
         """
         return self._version
-
-
-
-    async def edit(self, *, 
-        name: str = None, 
-        description: str = None, 
-        options: List[Option] = None, 
-        default_permission: bool = None
-    ):
-        """|coro|
-        
-        Edits the application command.
-
-        .. note::
-            If the command is a global command, Then updates would
-            take upto 1 hour to take affect in all guilds. Updates
-            for guilds commands is instant.
-
-        Parameters
-        ----------
-
-        name: :class:`str`
-            The new name of application command.
-        description: :class:`str`
-            The new description of application command.
-        options: :class:`Option`
-            The new options parameters of this command.
-        default_permission: :class:`bool`
-            The new default permission of the application command.
-            Setting this to ``False`` will disable the command by default
-            unless a permission overwrite is configured.
-
-        Returns
-        -------
-        :class:`ApplicationCommand`:
-            The updated command
-        """
-        payload: Dict[str, Any] = {}
-
-        if name is not None:
-            payload['name'] = name
-        if description is not None:
-            payload['description'] = description
-        if options is not None:
-            payload['options'] = [option.to_dict() for option in options]
-        if default_permission is not None:
-            payload['default_permission'] = bool(default_permission)
-
-        if self.guild_id:
-            ret = await self._state.http.edit_guild_command(
-                command_id=self.id,
-                guild_id=self.guild_id,
-                application_id=self._state.user.id,
-                payload=payload,
-                )
-        else:
-            ret = await self._state.http.edit_global_command(
-                command_id=self.id,
-                application_id=self._state.user.id,
-                payload=payload,
-                )
-
-        return self._from_data(ret)
-
-    async def delete(self):
-        """|coro|
-        
-        Deletes the application command. This function also removes the command 
-        from internal cache of application commands.
-        """
-        if self.guild_id:
-            ret = await self._client._connection.http.delete_guild_command(
-                command_id=self.id,
-                guild_id=self.guild_id,
-                application_id=self._state.user.id,
-                )
-        else:
-            ret = await self._client._connection.http.delete_global_command(
-                command_id=self.id,
-                application_id=self._state.user.id,
-                )
-
-        self._state._application_commands.pop(self.id, None) # type: ignore
-
 
 class ApplicationCommand(PartialApplicationCommand, ChecksMixin):
     """Represents an application command. 
@@ -1085,6 +1044,8 @@ class ApplicationCommand(PartialApplicationCommand, ChecksMixin):
         """
         return self._guild_ids
 
+=======
+>>>>>>> f5e117b83a4c78267b0d33aa86e19a88948e7214
     @property
     def cog(self):
         """
