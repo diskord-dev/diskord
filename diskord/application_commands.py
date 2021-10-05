@@ -798,7 +798,8 @@ class ApplicationCommandPermission:
 class PartialApplicationCommand:
     """Represents a *partial* application command.
 
-    This class is usually returned by API calls. Unlike :class:`.ApplicationCommand` 
+    This class is usually returned by API calls or under circumstances when the
+    application command is not found in cache. Unlike :class:`.ApplicationCommand` 
     This class doesn't has any ``callback`` attribute.  
     
     Attributes
@@ -832,7 +833,7 @@ class PartialApplicationCommand:
         self._application_id: int = utils._get_as_snowflake(data, 'application_id')
         self._guild_id: int = utils._get_as_snowflake(data, 'guild_id')
         self._version: int = utils._get_as_snowflake(data, 'version')
-        self._default_permission = data.get('default_permission', True)
+        self._default_permission = data.get('default_permission', getattr(self, 'default_permission', True)) # type: ignore
 
         if 'name' in data:
             self._name = data.get('name')
@@ -1043,8 +1044,6 @@ class ApplicationCommand(PartialApplicationCommand, ChecksMixin):
             self.checks = []
 
         self._permissions: List[ApplicationCommandGuildPermissions] = permissions
-
-
 
     @property
     def callback(self) -> Callable[..., Any]:

@@ -20,30 +20,32 @@ __path__ = __import__('pkgutil').extend_path(__path__, __name__)
 import logging
 from typing import NamedTuple, Literal
 
-from .client import *
-from .appinfo import *
-from .user import *
-from .emoji import *
-from .partial_emoji import *
+from . import utils, opus, abc, ui
 from .activity import *
-from .channel import *
-from .guild import *
+from .appinfo import *
+from .application_commands import *
+from .asset import *
+from .colour import *
+from .components import *
+from .client import *
+from .emoji import *
+from .errors import *
+from .file import *
 from .flags import *
+from .guild import *
+from .user import *
+from .partial_emoji import *
+from .channel import *
 from .member import *
 from .message import *
-from .asset import *
-from .errors import *
 from .permissions import *
 from .role import *
-from .file import *
-from .colour import *
 from .integrations import *
 from .invite import *
 from .template import *
 from .widget import *
 from .object import *
 from .reaction import *
-from . import utils, opus, abc, ui
 from .enums import *
 from .embeds import *
 from .mentions import *
@@ -57,10 +59,8 @@ from .team import *
 from .sticker import *
 from .stage_instance import *
 from .interactions import *
-from .components import *
 from .threads import *
 from .welcome_screen import *
-from .application_commands import *
 
 
 class VersionInfo(NamedTuple):
