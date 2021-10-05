@@ -832,7 +832,6 @@ class PartialApplicationCommand:
     def _from_data(self, data: ApplicationCommandPayload) -> ApplicationCommand:
         self._ensure_state()
 
-=======
 class ApplicationCommand(ChecksMixin):
     """Represents an application command. This is base class for all application commands like
     slash commands, user commands etc.
@@ -1044,8 +1043,6 @@ class ApplicationCommand(PartialApplicationCommand, ChecksMixin):
         """
         return self._guild_ids
 
-=======
->>>>>>> f5e117b83a4c78267b0d33aa86e19a88948e7214
     @property
     def cog(self):
         """

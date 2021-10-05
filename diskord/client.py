@@ -1863,41 +1863,34 @@ class Client:
         """|coro|
 
         Fetches a global or guild application command.
-=======
-        guild_ids: List[:class:`int`]
+
+        Parameters
+        ----------
+        command_id: :class:`int`
+            The ID of command to fetch.
+
+        guild_id: :class:`int`
             The list of guilds IDs this command belongs to. If not global.
 
         """
-        if guild_id and guild_ids:
-            raise TypeError('guild_id and guild_ids parameters cannot be mixed.')
-
-        if guild_id:
-            guild_ids = [guild_id]
-
-        if guild_ids:
-            for guild_id in guild_ids:
-                await self.http.delete_guild_command(self.user.id, guild_id, command_id)
+        if guild_id is not MISSING:
+            await self.http.delete_guild_command(self.user.id, guild_id, command_id)
 
         else:
             await self.http.delete_global_command(self.user.id, command_id)
 
     async def fetch_application_command(self, command_id, /, *, guild_id: int = MISSING) -> ApplicationCommand:
         """Fetches a global or guild application command.
->>>>>>> f5e117b83a4c78267b0d33aa86e19a88948e7214
-        
-        The :attr:`~ApplicationCommand.callback` and :attr:`ApplicationCommand.guild_ids` 
-        attribute of returned command can be ``None`` if the fetched command is not found in 
-        the client's internal cache.
-
 
         .. note::
             This method is an API call, Use :func:`get_application_command` to get
             commands from internal cache.
 
-        .. note::
             
         Parameters
         ----------
+        command_id: :class:`int`
+            The ID of command.
 
         guild_id: :class:`int`
             The guild which command belongs to, If not global.
@@ -1913,14 +1906,6 @@ class Client:
             command = await self.http.get_global_command(self.user.id, command_id)
 
         return PartialApplicationCommand(command, self)
-        
-        resolved = ApplicationCommand(lambda: None)._from_data(command) # type: ignore
-        cached = self.get_application_command(int(command['id']))
-        if cached:
-            resolved._guild_ids = cached.guild_ids
-            resolved._callback  = cached.callback
-
-        return resolved
 
     async def sync_application_commands_permissions(self):
         """|coro|
