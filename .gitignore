@@ -12,6 +12,7 @@ docs/crowdin.py
 *.wav
 *.jpg
 *.flac
+*.png
 *.mo
 *.test.*
 build/
