@@ -90,7 +90,8 @@ bot.run('token')
 You can find more examples in the examples directory.
 
 ## Links
-* [Documentation](https://diskord.readthedocs.io/en/latest/index.html)
+* [Latest Documentation](https://diskord.readthedocs.io/en/latest/index.html)
+* [Development Documentation](https://diskord.readthedocs.io/en/master/index.html)
 * [Official Discord Server](https://dsc.gg/diskord-dev)
 * [Discord API](https://discord.gg/discord-api)
 * [Developer Portal](https://developer.discord.com/applications)
