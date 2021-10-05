@@ -33,7 +33,7 @@ Example: ::
   import diskord
   from diskord.ext import commands
 
-  bot = commands.Bot(command_prefix='$')
+  bot = commands.Bot(command_prefix='$', application_commands_guild_ids=[guild_id])
   
   @bot.slash_command()
   async def hello(ctx):
@@ -41,16 +41,19 @@ Example: ::
   
   bot.run('token')
 
+Replace ``guild_id`` with the ID of server you are creating command in.  
+
+.. note::
+  We added a guild ID here because global application commands take up to 2 hours to be registered in
+  Discord. For testing purposes, you can pass in ``application_commands_guild_ids`` parameter with the
+  list of IDs of guilds that you want to register command in. Guilds commands registration is instant.
+
+  You can remove this parameter once you want to register global commands. 
+
 Now we have created a basic slash command:
 
 .. image:: /images/slash_command.png
 .. image:: /images/slash_command_result.png
-
-.. note::
-    Global Application commands take up to 2 hours to be registered in Discord.
-    For testing purposes, you can pass in ``guild_ids`` parameter
-    with the list of IDs of guilds that you want to register command in. Guilds commands
-    registration is instant. 
 
 It can be used by typing ``/`` in chat and selecting ``hello`` from commands
 selection menu.
@@ -138,7 +141,11 @@ Available types are as follows, You can annotate your options with these types t
 * :class:`diskord.StageChannel`: A stage voice channel in a guild.
 * :class:`diskord.Thread`: A thread within a text channel in a guild.
 * :class:`diskord.Role`: A role in a guild.
-* Union[:class:`diskord.Role`, :class:`diskord.User`]: Any mentionable i.e role or user.
+* typing.Union[:class:`diskord.Role`, :class:`diskord.User`]: Any mentionable i.e role or user.
+
+.. note:: 
+  typing.Union can be used on channel types to filter channel types. For example: 
+  ``Union[diskord.VoiceChannel, diskord.TextChannel]`` would only show voice channels and text channels.
 
 Option Choices
 ++++++++++++++
@@ -190,15 +197,15 @@ Example: ::
   async def todo(ctx):
     pass
   
-  @todo.sub_command_group()
-  async def list(ctx):
+  @todo.sub_command_group(name='list')
+  async def list_(ctx):
     pass
   
-  @list.sub_command()
+  @list_.sub_command()
   async def add(ctx):
     await ctx.respond('Added a todo.')
   
-  @list.sub_command()
+  @list_.sub_command()
   async def remove(ctx):
     await ctx.respond('removed a todo.')
 
@@ -287,8 +294,8 @@ Example: ::
         raise ValueError(f'Unknown value "{argument}" was passed.')
 
   @bot.slash_command()
-  @diskord.slash_option('mode', converter=BooleanConverter):
-  async def toggle(ctx, mode):
+  @diskord.slash_option('mode'):
+  async def toggle(ctx, mode: BooleanConverter):
     await ctx.respond(f'The value is set to: {mode}')
 
   @bot.event
