@@ -43,7 +43,7 @@ class ChannelOrMemberConverter(commands.Converter):
     async def convert(self, ctx: commands.Context, argument: str):
         # In this example we have made a custom converter.
         # This checks if an input is convertible to a
-        # `diskord.Member` or `diskord.TextChannel` instance from the
+        # `diskord.Member` or `diskord.GuildChannel` instance from the
         # input the user has given us using the pre-existing converters
         # that the library provides.
 
@@ -58,10 +58,10 @@ class ChannelOrMemberConverter(commands.Converter):
         else:
             return member
 
-        # Do the same for TextChannel...
-        textchannel_converter = commands.TextChannelConverter()
+        # Do the same for GuildChannel...
+        guild_channel_converter = commands.GuildChannelConverter()
         try:
-            channel = await textchannel_converter.convert(ctx, argument)
+            channel = await guild_channel_converter.convert(ctx, argument)
         except commands.ChannelNotFound:
             pass
         else:
@@ -70,7 +70,7 @@ class ChannelOrMemberConverter(commands.Converter):
         # If the value could not be converted we can raise an error
         # so our error handlers can deal with it in one place.
         # The error has to be CommandError derived, so BadArgument works fine here.
-        raise commands.BadArgument(f'No Member or TextChannel could be converted from "{argument}"')
+        raise commands.BadArgument(f'No Member or GuildChannel could be converted from "{argument}"')
 
 
 
@@ -84,11 +84,11 @@ async def notify(ctx: commands.Context, target: ChannelOrMemberConverter):
     await target.send(f'Hello, {target.name}!')
 
 @bot.command()
-async def ignore(ctx: commands.Context, target: typing.Union[diskord.Member, diskord.TextChannel]):
+async def ignore(ctx: commands.Context, target: typing.Union[diskord.Member, diskord.GuildChannel]):
     # This command signature utilises the `typing.Union` typehint.
     # The `commands` framework attempts a conversion of each type in this Union *in order*.
     # So, it will attempt to convert whatever is passed to `target` to a `diskord.Member` instance.
-    # If that fails, it will attempt to convert it to a `diskord.TextChannel` instance.
+    # If that fails, it will attempt to convert it to a `diskord.GuildChannel` instance.
     # See: https://diskordpy.readthedocs.io/en/latest/ext/commands/commands.html#typing-union
     # NOTE: If a Union typehint converter fails it will raise `commands.BadUnionArgument`
     # instead of `commands.BadArgument`.
@@ -96,7 +96,7 @@ async def ignore(ctx: commands.Context, target: typing.Union[diskord.Member, dis
     # To check the resulting type, `isinstance` is used
     if isinstance(target, diskord.Member):
         await ctx.send(f'Member found: {target.mention}, adding them to the ignore list.')
-    elif isinstance(target, diskord.TextChannel): # this could be an `else` but for completeness' sake.
+    elif isinstance(target, diskord.GuildChannel): # this could be an `else` but for completeness' sake.
         await ctx.send(f'Channel found: {target.mention}, adding it to the ignore list.')
 
 # Built-in type converters.
