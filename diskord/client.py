@@ -1953,11 +1953,7 @@ class Client:
     async def fetch_application_command_permissions(self, guild_id: int, /):
         """|coro|
 
-        Fetches the permissions of an application command in a guild.
-
-        .. note::
-            This function is an API call, Use :func:`get_application_command_permissions`
-            for general usage.
+        Fetches the permissions of all application commands in a guild.
 
         Parameters
         ----------
@@ -1983,10 +1979,6 @@ class Client:
         """|coro|
 
         Fetches the permissions of an application command in a guild.
-
-        .. note::
-            This function is an API call, Use :func:`get_application_command_permissions`
-            for general usage.
 
         Parameters
         ----------
@@ -2138,7 +2130,7 @@ class Client:
             # since we don't have any commands pending, we will do nothing and return
             return
 
-        _log.info('Registering %s application commands.' % str(len(self._pending_commands)))
+        _log.info('Clean Registering %s application commands.' % str(len(self._pending_commands)))
 
         commands = []
 
@@ -2189,7 +2181,7 @@ class Client:
         await self.sync_application_commands_permissions()
 
 
-        _log.info('Registered %s commands successfully.' % str(len(self._pending_commands)))
+        _log.info('Clean Registered commands successfully.')
 
     async def register_application_commands(self):
         if self.overwrite_application_commands:
