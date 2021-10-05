@@ -945,6 +945,181 @@ class ApplicationCommand(ChecksMixin):
         """
         return self._cog
 
+    def __repr__(self):
+        # More attributes here?
+        return f'<ApplicationCommand name={self.name!r} description={self.description!r} guild_ids={self.guild_ids!r}'
+
+    def __str__(self):
+        return self.name
+
+### --- Application Commands End --- ###
+
+
+### --- Context Menu Commands Start --- ###
+
+class ContextMenuCommand(ApplicationCommand):
+    """Represents a context menu command."""
+    # This class is intentionally not documented
+
+    def __init__(self, callback: Callable[..., Any], **attrs: Any):
+        super().__init__(callback, **attrs)
+        self._description = ''
+
+    def to_dict(self) -> dict:
+        return {
+            'name': self._name,
+            'description': self._description,
+            'type': self._type.value,
+        }
+
+class UserCommand(ContextMenuCommand):
+    """Represents a user command.
+
+    A user command can be used by right-clicking a user in discord and choosing the
+    command from "Apps" context menu
+
+    This class inherits from :class:`ApplicationCommand` so all attributes valid
+    there are valid here too.
+
+    In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.user`
+    """
+    def __init__(self, callback, **attrs):
+        self._type = ApplicationCommandType.user
+        super().__init__(callback, **attrs)
+
+    async def invoke(self, context: InteractionContext):
+        """|coro|
+
+        Invokes the user command with provided invocation context.
+
+        Parameters
+        ----------
+        context: :class:`InteractionContext`
+            The interaction invocation context.
+        """
+        context.command = self
+        interaction: Interaction = context.interaction
+        args = [context]
+
+        if not interaction.data['type'] == self.type.value:
+            raise TypeError(f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}')
+
+        resolved = interaction.data['resolved']
+        if interaction.guild:
+            member_with_user = resolved['members'][interaction.data['target_id']]
+            member_with_user['user'] = resolved['users'][interaction.data['target_id']]
+            user = Member(
+                data=member_with_user,
+                guild=interaction.guild,
+                state=interaction.guild._state
+                )
+        else:
+            user = User(
+                state=context.client._connection,
+                data=resolved['users'][interaction.data['target_id']]
+                )
+
+        args.append(user)
+
+        if context.command.cog is not None:
+            args.insert(0, context.command.cog)
+
+        await context.command.callback(*args)
+
+class MessageCommand(ContextMenuCommand):
+    """Represents a message command.
+
+    A message command can be used by right-clicking a message in discord and choosing
+    the command from "Apps" context menu.
+
+    This class inherits from :class:`ApplicationCommand` so all attributes valid
+    there are valid here too.
+
+    In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.message`
+    """
+    def __init__(self, callback, **attrs):
+        self._type = ApplicationCommandType.message
+        super().__init__(callback, **attrs)
+
+    async def invoke(self, context: InteractionContext): 
+        """|coro|
+
+        Invokes the message command with provided invocation context.
+
+        Parameters
+        ----------
+        context: :class:`InteractionContext`
+            The interaction invocation context.
+        """
+        context.command = self
+        interaction: Interaction = context.interaction
+        args = [context]
+
+        if not interaction.data['type'] == self.type.value:
+            raise TypeError(f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}')
+
+        data = interaction.data['resolved']['messages'][interaction.data['target_id']]
+        if interaction.guild:
+            message = Message(
+                state=interaction.guild._state,
+                channel=interaction.channel,
+                data=data,
+            )
+        else:
+            message = Message(
+                state=context.client._connection,
+                channel=interaction.user,
+                data=data,
+            )
+
+        args.append(message)
+
+        if context.command.cog is not None:
+            args.insert(0, context.command.cog)
+
+        await context.command.callback(*args)
+
+### --- Context Menu Commands End --- ###
+
+
+### --- Slash Commands Start --- ###
+
+class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
+    """Represents a slash command.
+
+    A slash command is a user input command that a user can use by typing ``/`` in
+    the chat bar.
+
+    This class inherits from :class:`ApplicationCommand` so all attributes valid
+    there are valid here too.
+
+    In this class, The :attr:`SlashCommand.type` attribute will always be :attr:`ApplicationCommandType.slash`
+
+    Attributes
+    ----------
+    type: :class:`ApplicationCommandType`
+        The type of command, Always :attr:`ApplicationCommandType.slash`
+    options: List[:class:`Option`]
+        The list of options this command has.
+
+        .. tip::
+            To get only the children i.e sub-commands and sub-command groups,
+            Consider using :attr:`children`
+
+    children: List[:class:`.SlashCommandChild`]
+        The children of this commands i.e sub-commands and sub-command groups.
+    """
+    def __init__(self, callback, **attrs: Any):
+        self._type: ApplicationType = ApplicationCommandType.slash
+        self._options: List[Option] = []
+        self._children: List[SlashCommandChild] = []
+
+        super().__init__(callback, **attrs)
+
+    @property
+    def type(self) -> ApplicationCommandType:
+        """:class:`ApplicationCommandType`: The type of command. Always :attr:`ApplicatiionCommandType.slash`"""
+        return self._type
 
     async def _parse_option(self, interaction: Interaction, option: ApplicationCommandOptionPayload) -> Any:
         # This function isn't needed to be a coroutine function but it can be helpful in
@@ -1009,7 +1184,7 @@ class ApplicationCommand(ChecksMixin):
     async def invoke(self, context: InteractionContext):
         """|coro|
 
-        Invokes the application command from provided interaction invocation context.
+        Invokes the slash command or subcommand from provided interaction invocation context.
 
         Parameters
         ----------
@@ -1018,54 +1193,10 @@ class ApplicationCommand(ChecksMixin):
             The interaction invocation context.
         """
         interaction: Interaction = context.interaction
-        args = []
+        args = [context]
 
         if not interaction.data['type'] == self.type.value:
             raise TypeError(f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}')
-
-        if self.type.value == ApplicationCommandType.user.value:
-            if interaction.guild:
-                user = interaction.guild.get_member(int(interaction.data['target_id']))
-            else:
-                user = context.client.get_user(int(interaction.data['target_id']))
-
-            # below code exists for "just in case" purpose
-            if user is None:
-                resolved = interaction.data['resolved']
-                if interaction.guild:
-                    member_with_user = resolved['members'][interaction.data['target_id']]
-                    member_with_user['user'] = resolved['users'][interaction.data['target_id']]
-                    user = Member(
-                        data=member_with_user,
-                        guild=interaction.guild,
-                        state=interaction.guild._state
-                        )
-                else:
-                    user = User(
-                        state=context.client._connection,
-                        data=resolved['users'][interaction.data['target_id']]
-                        )
-
-            args.append(user)
-            context.command = self
-
-        elif self.type.value == ApplicationCommandType.message.value:
-            data = interaction.data['resolved']['messages'][interaction.data['target_id']]
-            if interaction.guild:
-                message = Message(
-                    state=interaction.guild._state,
-                    channel=interaction.channel,
-                    data=data,
-                )
-            else:
-                message = Message(
-                    state=context.client._connection,
-                    channel=interaction.user,
-                    data=data,
-                )
-
-            args.append(message)
-            context.command = self
 
         options = interaction.data.get('options', [])
         kwargs = {}
@@ -1137,111 +1268,11 @@ class ApplicationCommand(ChecksMixin):
         if not (await context.command.can_run(context)):
             raise ApplicationCommandCheckFailure(f'checks functions for application command {context.command._name} failed.')
 
-        args.insert(0, context)
         if context.command.cog is not None:
             args.insert(0, context.command.cog)
 
         await context.command.callback(*args, **kwargs)
 
-    def __repr__(self):
-        # More attributes here?
-        return f'<ApplicationCommand name={self.name!r} description={self.description!r} guild_ids={self.guild_ids!r}'
-
-    def __str__(self):
-        return self.name
-
-### --- Application Commands End --- ###
-
-
-### --- Context Menu Commands Start --- ###
-
-class ContextMenuCommand(ApplicationCommand):
-    """Represents a context menu command."""
-    # This class is intentionally not documented
-
-    def __init__(self, callback: Callable[..., Any], **attrs: Any):
-        super().__init__(callback, **attrs)
-        self._description = ''
-
-    def to_dict(self) -> dict:
-        return {
-            'name': self._name,
-            'description': self._description,
-            'type': self._type.value,
-        }
-
-class UserCommand(ContextMenuCommand):
-    """Represents a user command.
-
-    A user command can be used by right-clicking a user in discord and choosing the
-    command from "Apps" context menu
-
-    This class inherits from :class:`ApplicationCommand` so all attributes valid
-    there are valid here too.
-
-    In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.user`
-    """
-    def __init__(self, callback, **attrs):
-        self._type = ApplicationCommandType.user
-        super().__init__(callback, **attrs)
-
-class MessageCommand(ContextMenuCommand):
-    """Represents a message command.
-
-    A message command can be used by right-clicking a message in discord and choosing
-    the command from "Apps" context menu.
-
-    This class inherits from :class:`ApplicationCommand` so all attributes valid
-    there are valid here too.
-
-    In this class, The ``type`` attribute will always be :attr:`ApplicationCommandType.message`
-    """
-    def __init__(self, callback, **attrs):
-        self._type = ApplicationCommandType.message
-        super().__init__(callback, **attrs)
-
-### --- Context Menu Commands End --- ###
-
-
-
-### --- Slash Commands Start --- ###
-
-class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
-    """Represents a slash command.
-
-    A slash command is a user input command that a user can use by typing ``/`` in
-    the chat bar.
-
-    This class inherits from :class:`ApplicationCommand` so all attributes valid
-    there are valid here too.
-
-    In this class, The :attr:`SlashCommand.type` attribute will always be :attr:`ApplicationCommandType.slash`
-
-    Attributes
-    ----------
-    type: :class:`ApplicationCommandType`
-        The type of command, Always :attr:`ApplicationCommandType.slash`
-    options: List[:class:`Option`]
-        The list of options this command has.
-
-        .. tip::
-            To get only the children i.e sub-commands and sub-command groups,
-            Consider using :attr:`children`
-
-    children: List[:class:`.SlashCommandChild`]
-        The children of this commands i.e sub-commands and sub-command groups.
-    """
-    def __init__(self, callback, **attrs: Any):
-        self._type: ApplicationType = ApplicationCommandType.slash
-        self._options: List[Option] = []
-        self._children: List[SlashCommandChild] = []
-
-        super().__init__(callback, **attrs)
-
-    @property
-    def type(self) -> ApplicationCommandType:
-        """:class:`ApplicationCommandType`: The type of command. Always :attr:`ApplicatiionCommandType.slash`"""
-        return self._type
 
     # decorators
 

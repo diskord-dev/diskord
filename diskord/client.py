@@ -2261,8 +2261,8 @@ class Client:
         command = self.get_application_command(int(interaction.data['id']))
 
         if not command:
-            self.dispatch('unknown_application_command', interaction)
             _log.info(f'Application command of type {interaction.data["type"]} referencing an unknown command {interaction.data["id"]}, Discarding.')
+            self.dispatch('unknown_application_command', interaction)
             return
 
         context = self.get_application_context(interaction)
