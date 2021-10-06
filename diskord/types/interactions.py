@@ -55,7 +55,7 @@ class ApplicationCommand(_ApplicationCommandOptional):
 class _ApplicationCommandOptionOptional(TypedDict, total=False):
     choices: List[ApplicationCommandOptionChoice]
     options: List[ApplicationCommandOption]
-
+    autocomplete: bool
 
 ApplicationCommandOptionType = Literal[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
@@ -99,6 +99,8 @@ InteractionType = Literal[1, 2, 3]
 
 class _ApplicationCommandInteractionDataOption(TypedDict):
     name: str
+    focused: bool
+
 
 
 class _ApplicationCommandInteractionDataOptionSubcommand(

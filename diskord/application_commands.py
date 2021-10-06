@@ -417,6 +417,33 @@ class Option:
     channel_types: List[:class:`ChannelType`]
         The channel types to show, If :attr:`Option.type` is :attr:`OptionType.channel`.
         This is determined by the annotation of the option in callback function.
+    autocomplete:
+        The function that would autocomplete this option if applicable.
+        If option does not has autocompletion, then this is ``None``.
+        
+        First parameter of function would represent the value of option that
+        is focused and second parameter is the autocompletion :class:`~diskord.Interaction`.
+
+        This function must be a coroutine.
+
+        Example: ::
+            
+            async def autocomplete(value, interaction):
+                data = {
+                    'Bun': 'bun',
+                    'Cookie': 'cookie',
+                    'Cake': 'cake',
+                }
+                return [
+                    diskord.OptionChoice(name=name, value=data[name])
+                    for name in data if name.startswith(value)
+                    ]
+
+            @bot.slash_command()
+            @diskord.slash_option('item', autocomplete=autocomplete)
+            async def buy(ctx, item):
+                await ctx.send(f'You bought {item}')
+
     """
 
     def __init__(
@@ -429,6 +456,7 @@ class Option:
         required: bool = True,
         arg: str = None,
         converter: "Converter" = None,
+        autocomplete: Callable[[str], List[OptionChoice]] = None,
         **attrs,
     ):
         self.callback: Callable[..., Any] = attrs.get("callback")
@@ -437,11 +465,13 @@ class Option:
         self._required = required
         self._channel_types: List[ChannelType] = attrs.get("channel_types", [])  # type: ignore
         self._choices: List[OptionChoice] = choices
+        self._options: List[Option] = []
+        self.autocomplete: Callable[[str], List[OptionChoice]] = autocomplete
+        
         if self._choices is None:
             self._choices = []
 
         self.arg = arg or self.name
-        self._options: List[Option] = []
         self.converter: "Converter" = converter  # type: ignore
 
         self._parent: Union[ApplicationCommand, Option] = None  # type: ignore
@@ -511,6 +541,7 @@ class Option:
     def options(self) -> List[Option]:
         """List[:class:`Option`]: The list of sub-options of this option."""
         return self._options
+
 
     # Choices management
 
@@ -674,12 +705,16 @@ class Option:
 
         return option
 
-    def is_command_or_group(self):
+    def is_command_or_group(self) -> bool:
         """:class:`bool`: Indicates whether this option is a subcommand or subgroup."""
         return self._type.value in (
             OptionType.sub_command.value,
             OptionType.sub_command_group.value,
         )
+
+    def can_autocomplete(self) -> bool:
+        """:class:`bool`: Indicates whether this option can autocomplete or not."""
+        return bool(self.autocomplete)
 
     def to_dict(self) -> dict:
         dict_ = {
@@ -688,6 +723,7 @@ class Option:
             "description": self._description,
             "choices": [choice.to_dict() for choice in self._choices],
             "options": [option.to_dict() for option in reversed(self.options)],
+            "autocomplete": self.can_autocomplete(),
         }
 
         if not self.is_command_or_group():
@@ -1194,6 +1230,7 @@ class UserCommand(ContextMenuCommand):
         if context.command.cog is not None:
             args.insert(0, context.command.cog)
 
+        self._bot.dispatch('application_command_run', context)
         await context.command.callback(*args)
 
 
@@ -1251,6 +1288,7 @@ class MessageCommand(ContextMenuCommand):
         if context.command.cog is not None:
             args.insert(0, context.command.cog)
 
+        self._bot.dispatch('application_command_run', context)
         await context.command.callback(*args)
 
 
@@ -1462,6 +1500,7 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
         if context.command.cog is not None:
             args.insert(0, context.command.cog)
 
+        self._bot.dispatch('application_command_run', context)
         await context.command.callback(*args, **kwargs)
 
     # decorators
