@@ -19,9 +19,11 @@ v2.6.0
 Additions
 ~~~~~~~~~
 
+* Add Support for option choices autocompletions.
+* Add :meth:`diskord.PartialApplicationCommand`
 * Converters in slash command options can now be determined by the annotation similar to ext.commands.
-* Add :attr:`ApplicationCommand.extras` (:issue:`11`)
-* Add :attr:`Client.application_commands_guild_ids`
+* Add :attr:`diskord.ApplicationCommand.extras` (:issue:`11`)
+* Add :attr:`diskord.Client.application_commands_guild_ids`
 
 Improvements
 ~~~~~~~~~~~~
@@ -29,6 +31,7 @@ Improvements
 * :func:`Client.register_application_commands` has been renamed to :func:`Client.clean_register_application_commands` while another function has been added with previous name that is called in :func:`on_interaction` and handles the application commands registration.
 * Typehint the most of missing part
 * Many performance fixes and optimizations to application commands.
+* :class:`~diskord.ApplicationCommand` no longer has `invoke` method. Instead, it is moved to subclasses. i.e :meth:`diskord.SlashCommand.invoke` and vice versa.
 
 .. _vp2p5p1:
 

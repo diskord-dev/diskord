@@ -1230,7 +1230,7 @@ class UserCommand(ContextMenuCommand):
         if context.command.cog is not None:
             args.insert(0, context.command.cog)
 
-        self._bot.dispatch('application_command_run', context)
+        self._client.dispatch('application_command_run', context)
         await context.command.callback(*args)
 
 
@@ -1288,7 +1288,7 @@ class MessageCommand(ContextMenuCommand):
         if context.command.cog is not None:
             args.insert(0, context.command.cog)
 
-        self._bot.dispatch('application_command_run', context)
+        self._client.dispatch('application_command_run', context)
         await context.command.callback(*args)
 
 
@@ -1500,7 +1500,7 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
         if context.command.cog is not None:
             args.insert(0, context.command.cog)
 
-        self._bot.dispatch('application_command_run', context)
+        self._client.dispatch('application_command_run', context)
         await context.command.callback(*args, **kwargs)
 
     # decorators

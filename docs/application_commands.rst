@@ -168,6 +168,33 @@ For example: ::
 
 Here, ``name`` is the name of choice that would be shown in Discord and ``value`` is the value of choice that it holds. The ``value`` would be passed to command function.
 
+Option Autocompletion
+---------------------
+
+A great thing about option choices is that you can easily generate custom autocompletions as the user types in the value. This library provides an interface for dealing with this too.
+
+Example: ::
+  
+  async def autocomplete_items(value, interaction):
+    items = {
+      'Bun': 'bun',
+      'Cookie': 'cookie',
+      'Cake': 'cake',
+      'Ice cream': 'icecream',
+      'Pizza': 'pizza',
+    }
+    return [
+      diskord.OptionChoice(name=name, value=items[name])
+      for name in items if name.lower().startswith(value.lower())
+    ]
+
+  @bot.slash_command()
+  @diskord.slash_option('item', autocomplete=autocomplete_items)
+  async def buy(ctx, item):
+    await ctx.send(f"You bought {item}")
+
+
+
 Slash Subcommands and Command Groups
 -------------------------------------
 
