@@ -2453,7 +2453,6 @@ class Client:
             return
 
         context = self.get_application_context(interaction)
-        self.dispatch("application_command_run", context)
 
         try:
             await command.invoke(context)
