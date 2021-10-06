@@ -88,7 +88,7 @@ from .application_commands import (
     Option,
     OptionChoice,
 )
-from .interactions import InteractionContext
+from .interactions import InteractionContext, InteractionType
 
 
 if TYPE_CHECKING:
@@ -2399,9 +2399,8 @@ class Client:
     async def process_application_commands(self, interaction: Interaction) -> Any:
         """|coro|
 
-        Handles an application command interaction.
-
-        This function is used under-the-hood to handle all the application commands interactions.
+        Handles an application command or slash command option autocompletion 
+        interaction.
 
         This is internally called in :func:`on_interaction` event.
 
@@ -2426,10 +2425,25 @@ class Client:
             The interaction to handle. If the interaction is not a application command interaction,
             then this will silently ignore the interaction.
         """
-        if not interaction.is_application_command():
+        if not interaction.type.value in [
+            InteractionType.application_command.value,
+            InteractionType.application_command_autocomplete.value
+            ]:
             return
 
         command = self.get_application_command(int(interaction.data["id"]))
+        
+        if interaction.type.value == InteractionType.application_command_autocomplete.value:
+            options = interaction.data['options']
+            for option in options:
+                if 'focused' in option:
+                    resolved_option = command.get_option(name=option['name'])
+                    choices = await resolved_option.autocomplete(option['value'], interaction)
+
+                    if not isinstance(choices, list):
+                        raise TypeError(f'autocomplete for {resolved_option.name} returned {choices.__class__.__name__}, Expected list.')
+
+                    return (await interaction.response.autocomplete(choices))
 
         if not command:
             _log.info(
