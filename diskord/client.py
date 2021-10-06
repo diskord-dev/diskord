@@ -2457,12 +2457,12 @@ class Client:
         try:
             await command.invoke(context)
         except (ApplicationCommandError, _BaseCommandError) as error:
-            # here comes the important part, There have been many concerns about error handlers
-            # of legacy commands and application commands.
+            # here comes the important part, For those concerned about separation of error handlers
+            # of legacy commands and application commands or other stuff in general.
             # we need seperate handlers for each type, the reason behind this is purely
             # based on the fact that prefixed commands are NOT same as application commands
             # and have different implementation. there can be more complicated issues
-            # if we merge the handlers or in general, these two unlike systems so there
+            # if we merge the handlers or anything about these two unlike systems so there
             # is no possibility of them to be merged in one!
             self.dispatch("application_command_error", context, error)
         else:

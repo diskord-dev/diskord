@@ -714,7 +714,7 @@ class Option:
 
     def can_autocomplete(self) -> bool:
         """:class:`bool`: Indicates whether this option can autocomplete or not."""
-        return (self.autocomplete is not None)
+        return bool(self.autocomplete)
 
     def to_dict(self) -> dict:
         dict_ = {
