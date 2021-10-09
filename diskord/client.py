@@ -2436,14 +2436,34 @@ class Client:
         if interaction.type.value == InteractionType.application_command_autocomplete.value:
             options = interaction.data['options']
             for option in options:
-                if 'focused' in option:
-                    resolved_option = command.get_option(name=option['name'])
+                if option['type'] == OptionType.sub_command.value:
+                    command = command.get_child(name=option['name'])
+
+                    for sub in option['options']:
+                        if 'focused' in sub:
+                            option = sub
+                            break
+
+                elif option['type'] == OptionType.sub_command_group.value:
+                    group = command.get_child(name=option['name'])
+                    command = group.get_child(name=option['options'][0]['name'])
+
+                    for sub in option['options'][0]['options']:
+                        if 'focused' in sub:
+                            option = sub
+                            break
+                
+                resolved_option = command.get_option(name=option['name'])
+                if command.cog is not None:
+                    choices = await resolved_option.autocomplete(command.cog, option['value'], interaction)
+                else:
                     choices = await resolved_option.autocomplete(option['value'], interaction)
+                    
+                if not isinstance(choices, list):
+                    raise TypeError(f'autocomplete for {resolved_option.name} returned {choices.__class__.__name__}, Expected list.')
 
-                    if not isinstance(choices, list):
-                        raise TypeError(f'autocomplete for {resolved_option.name} returned {choices.__class__.__name__}, Expected list.')
-
-                    return (await interaction.response.autocomplete(choices))
+                return await interaction.response.autocomplete(choices)
+                
 
         if not command:
             _log.info(
