@@ -203,7 +203,7 @@ class ApplicationCommand:
 
         try:
             options = data['options']
-            self._options = [ApplicationCommandOption(opt) for opt in options]
+            self._options = [ApplicationCommandOption(opt, state=self._state) for opt in options]
         except KeyError:
             pass
 
