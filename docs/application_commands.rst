@@ -19,9 +19,12 @@ Unlike text commands, Application commands are compatible in both :class:`diskor
 
 To use application commands, You must add your bot to the server with ``application.commands`` scope.
 
-It's simple, You just have to generate an OAuth URL with ``bot`` and ``application.commands`` scope and invite the bot.  
+It's simple, You just have to generate an OAuth URL with ``bot`` and ``application.commands`` scope and invite the bot.
 
 .. image:: /images/application_commands_scope.png
+
+The helpers for creating application commands are implemented in ``diskord.application``
+namespace.
 
 Creating Basic Slash Command
 ----------------------------
@@ -29,26 +32,26 @@ Creating Basic Slash Command
 Let's have a quick example of an application command.
 
 Example: ::
-  
+
   import diskord
   from diskord.ext import commands
 
   bot = commands.Bot(command_prefix='$', application_commands_guild_ids=[guild_id])
-  
+
   @bot.slash_command()
   async def hello(ctx):
     await ctx.respond('Hello from slash command!')
-  
+
   bot.run('token')
 
-Replace ``guild_id`` with the ID of server you are creating command in.  
+Replace ``guild_id`` with the ID of server you are creating command in.
 
 .. note::
   We added a guild ID here because global application commands take up to 2 hours to be registered in
   Discord. For testing purposes, you can pass in ``application_commands_guild_ids`` parameter with the
   list of IDs of guilds that you want to register command in. Guilds commands registration is instant.
 
-  You can remove this parameter once you want to register global commands. 
+  You can remove this parameter once you want to register global commands.
 
 Now we have created a basic slash command:
 
@@ -64,11 +67,11 @@ User Commands
 User commands can be invoked by right-clicking on a user in Discord in a server and selecting the command from "Apps" menu!
 
 Example: ::
-  
+
   @bot.user_command()
   async def slap(ctx, user):
     await ctx.respond(f'{ctx.author.name} slapped {user.name}')
-  
+
 .. image:: /images/user_command.png
 
 Message Commands
@@ -77,11 +80,11 @@ Message Commands
 Message commands can be invoked by right-clicking on a message in Discord in a server and selecting the command from "Apps" menu!
 
 Example: ::
-  
+
   @bot.message_command()
   async def say(ctx, message):
     await ctx.respond(f'{ctx.author.name} said: {message.content}')
-  
+
 .. image:: /images/message_command.png
 
 Now it's time to go a little deep in application commands. Specifically, Slash commands.
@@ -91,12 +94,12 @@ Arguments Handling
 
 Just like the traditional commands system, Slash commands also support arguments handling and Diskord provides a pythonic way of handling slash command options.
 
-Slash commands options are registered using :func:`~diskord.slash_option` decorator.
+Slash commands options are registered using :func:`~diskord.application.option` decorator.
 
 Example: ::
-    
+
   @bot.slash_command()
-  @diskord.slash_option('member', description='The member to highfive.')
+  @diskord.application.option('member', description='The member to highfive.')
   async def highfive(ctx, member: diskord.Member):
     await ctx.respond(f'{ctx.author.name} highfived {member.name}!')
 
@@ -114,10 +117,10 @@ command function.
 Options can be set optional by setting a default value to them!
 
 For example: ::
-  
+
   @bot.slash_command()
-  @diskord.slash_option('item', description='The item to purchase.')
-  @diskord.slash_option('quantity', description='The quantity of item.')
+  @diskord.application.option('item', description='The item to purchase.')
+  @diskord.application.option('quantity', description='The quantity of item.')
   async def buy(ctx, item: str, quantity: int = 1):
     await ctx.respond(f'You bought {quantity} {item}!')
 
@@ -143,8 +146,8 @@ Available types are as follows, You can annotate your options with these types t
 * :class:`diskord.Role`: A role in a guild.
 * typing.Union[:class:`diskord.Role`, :class:`diskord.User`]: Any mentionable i.e role or user.
 
-.. note:: 
-  typing.Union can be used on channel types to filter channel types. For example: 
+.. note::
+  typing.Union can be used on channel types to filter channel types. For example:
   ``Union[diskord.VoiceChannel, diskord.TextChannel]`` would only show voice channels and text channels.
 
 Option Choices
@@ -155,12 +158,12 @@ Certain choices can be added to an option for user to choose from:
 For example: ::
 
   @bot.slash_command()
-  @diskord.slash_option('item', description='The item to purchase.', choices=[
+  @diskord.application.option('item', description='The item to purchase.', choices=[
     diskord.OptionChoice(name='Cookie', value='cookie'),
     diskord.OptionChoice(name='Candy', value='candy'),
     diskord.OptionChoice(name='Cake', value='cake')
   ])
-  @diskord.slash_option('quantity', description='The quantity of item.')
+  @diskord.application.option('quantity', description='The quantity of item.')
   async def buy(ctx, item: str, quantity: int = 1):
     await ctx.respond(f'You bought {quantity} {item}(s)!')
 
@@ -174,7 +177,7 @@ Option Autocompletion
 A great thing about option choices is that you can easily generate custom autocompletions as the user types in the value. This library provides an interface for dealing with this too.
 
 Example: ::
-  
+
   async def autocomplete_items(value, interaction):
     items = {
       'Bun': 'bun',
@@ -189,7 +192,7 @@ Example: ::
     ]
 
   @bot.slash_command()
-  @diskord.slash_option('item', autocomplete=autocomplete_items)
+  @diskord.application.option('item', autocomplete=autocomplete_items)
   async def buy(ctx, item):
     await ctx.send(f"You bought {item}")
 
@@ -203,14 +206,14 @@ You can nest subcommands in a slash command or make a subcommand group in a slas
 The flow of creating these is pretty similar to ext.commands!
 
 Example: ::
-  
+
   @bot.slash_command()
   async def git(ctx):
     pass
-  
+
   @git.sub_command()
-  @diskord.slash_option('remote')
-  @diskord.slash_option('branch')
+  @diskord.application.option('remote')
+  @diskord.application.option('branch')
   async def push(ctx, remote: str = 'origin', branch: str = 'master'):
     await ctx.respond(f'Pushed to {remote}/{branch}!')
 
@@ -219,19 +222,19 @@ Example: ::
 Furthermore, you can also nest in subcommand groups that can hold subcommands.
 
 Example: ::
-  
+
   @bot.slash_command()
   async def todo(ctx):
     pass
-  
+
   @todo.sub_command_group(name='list')
   async def list_(ctx):
     pass
-  
+
   @list_.sub_command()
   async def add(ctx):
     await ctx.respond('Added a todo.')
-  
+
   @list_.sub_command()
   async def remove(ctx):
     await ctx.respond('removed a todo.')
@@ -242,7 +245,7 @@ Checks
 ------
 
 .. note::
-    Checks and converters are currently partially implemented for application commands 
+    Checks and converters are currently partially implemented for application commands
     and are missing some functionality which is currently under development.
 
 You can use checks that are ran before command invocation and if they return False, Command invocation is aborted. This is a useful way of restricting commands to users with specific permissions, Restricting commands to DMs only etc.
@@ -250,10 +253,10 @@ You can use checks that are ran before command invocation and if they return Fal
 The checks for application commands are directly derived from :ref:`ext_commands`, Please refer to the manual of ext.commands for more info.
 
 Example: ::
-  
+
   @bot.slash_command()
   @commands.has_permissions(manage_messages=True)
-  @diskord.slash_option('message', description='The message to echo!')
+  @diskord.application.option('message', description='The message to echo!')
   async def echo(ctx, message: str):
     await ctx.respond('\'+message)
 
@@ -265,11 +268,11 @@ Custom Checks
 You can also create custom checks!
 
 Example: ::
-  
+
   def is_me():
     def predicate(ctx):
       return ctx.author.id == 1234 # put your ID here.
-    
+
     return commands.check(predicate)
 
   @bot.slash_command()
@@ -299,7 +302,7 @@ Converters
 ----------
 
 .. note::
-    Checks and converters are currently partially implemented for application commands 
+    Checks and converters are currently partially implemented for application commands
     and are missing some functionality which is currently under development.
 
 You can use converters with options of slash commands to run some custom conversion on option value and then pass it to the function.
@@ -309,7 +312,7 @@ The converters for application commands are directly derived from :ref:`ext_comm
 This can be helpful in certain use-cases.
 
 Example: ::
-  
+
   class BooleanConverter(commands.Converter):
     async def convert(self, ctx, argument):
       argument = argument.lower()
@@ -321,7 +324,7 @@ Example: ::
         raise ValueError(f'Unknown value "{argument}" was passed.')
 
   @bot.slash_command()
-  @diskord.slash_option('mode'):
+  @diskord.application.option('mode'):
   async def toggle(ctx, mode: BooleanConverter):
     await ctx.respond(f'The value is set to: {mode}')
 
