@@ -40,7 +40,7 @@ from typing import (
     Type,
 )
 
-from diskord import ApplicationCommand, Option, SlashCommandChild
+from diskord.application import ApplicationCommand, SlashCommandChild
 from ._types import _BaseCommand
 
 if TYPE_CHECKING:
@@ -150,6 +150,7 @@ class CogMeta(type):
                 is_static_method = isinstance(value, staticmethod)
                 if is_static_method:
                     value = value.__func__
+
                 if isinstance(value, _BaseCommand):
                     if is_static_method:
                         raise TypeError(
@@ -166,6 +167,7 @@ class CogMeta(type):
                 elif isinstance(value, ApplicationCommand) and not isinstance(
                     value, SlashCommandChild
                 ):
+
                     if is_static_method:
                         raise TypeError(
                             f"Command in method {base}.{elem!r} must not be staticmethod."
