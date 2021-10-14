@@ -78,16 +78,11 @@ from .sticker import GuildSticker, StandardSticker, StickerPack, _sticker_factor
 from .message import Message
 from .member import Member
 from .application_commands import (
-    PartialApplicationCommand,
     ApplicationCommand,
     ApplicationCommandGuildPermissions,
     ApplicationCommandPermission,
-    SlashCommand,
-    UserCommand,
-    MessageCommand,
-    Option,
-    OptionChoice,
 )
+from . import application
 from .interactions import InteractionContext, InteractionType
 
 
@@ -301,7 +296,7 @@ class Client:
         self._connection._get_websocket = self._get_websocket
         self._connection._get_client = lambda: self
 
-        self._pending_commands: List[ApplicationCommand] = []
+        self._pending_commands: List[application.ApplicationCommand] = []
 
         if VoiceClient.warn_nacl:
             VoiceClient.warn_nacl = False
@@ -1786,7 +1781,7 @@ class Client:
         Returns
         -------
 
-        List[:class:`ApplicationCommand`]
+        List[:class:`diskord.application.ApplicationCommand`]
             List of application commands that will be registered.
         """
         # Remove this property? it seems kind of useless.
@@ -1794,12 +1789,12 @@ class Client:
 
     @property
     def application_commands(self):
-        """Dict[:class:`int`, :class:`ApplicationCommand`]: Returns a mapping with ID of command to the application command."""
+        """Dict[:class:`int`, :class:`diskord.application.ApplicationCommand`]: Returns a mapping with ID of command to the application command."""
         return self._connection._application_commands
 
     # Commands management
 
-    def add_pending_command(self, command: ApplicationCommand) -> ApplicationCommand:
+    def add_pending_command(self, command: ApplicationCommand) -> application.ApplicationCommand:
         """Adds an application command to internal list of *pending* commands that will be
         registered on bot connect.
 
@@ -1816,18 +1811,18 @@ class Client:
         Parameters
         ----------
 
-        command: :class:`ApplicationCommand`
+        command: :class:`application.ApplicationCommand`
             The application command to add.
 
         Returns
         -------
 
-        :class:`ApplicationCommand`
+        :class:`application.ApplicationCommand`
             The added command.
         """
-        if not isinstance(command, ApplicationCommand):
+        if not isinstance(command, application.ApplicationCommand):
             raise TypeError(
-                "command parameter must be an instance of ApplicationCommand."
+                "command parameter must be an instance of application.ApplicationCommand."
             )
 
         command._client = self
@@ -1845,7 +1840,7 @@ class Client:
 
         return command
 
-    def remove_pending_command(self, command: ApplicationCommand, /):
+    def remove_pending_command(self, command: application.ApplicationCommand, /):
         """Removes an application command from the pending commands list that will be
         registered upon bot connect.
 
@@ -1854,7 +1849,7 @@ class Client:
         Parameters
         ----------
 
-        command: :class:`ApplicationCommand`
+        command: :class:`application.ApplicationCommand`
             The application command to register.
         """
         try:
@@ -1865,7 +1860,7 @@ class Client:
 
     def remove_application_command(
         self, command_id: int, /
-    ) -> Optional[ApplicationCommand]:
+    ) -> Optional[application.ApplicationCommand]:
         """Removes an application command from registered application commands.
 
         Once an application command is removed using this method, It will not be invoked.
@@ -1888,7 +1883,7 @@ class Client:
 
     def get_application_command(
         self, command_id: int, /
-    ) -> Optional[ApplicationCommand]:
+    ) -> Optional[application.ApplicationCommand]:
         """Returns a bot's application command by it's ID.
 
         This function returns ``None`` if the application command is not found.
@@ -1900,7 +1895,7 @@ class Client:
 
         Returns
         -------
-        Optional[:class:`ApplicationCommand`]
+        Optional[:class:`application.ApplicationCommand`]
             The command matching the ID.
         """
         return self._connection._application_commands.get(command_id)
@@ -1938,7 +1933,7 @@ class Client:
 
     async def fetch_application_commands(
         self, guild_id: int = MISSING
-    ) -> List[PartialApplicationCommand]:
+    ) -> List[ApplicationCommand]:
         """|coro|
 
         Fetches all the application commands registered globally or in a guild.
@@ -1952,7 +1947,7 @@ class Client:
         Returns
         -------
 
-        List[:class:`PartialApplicationCommand`]
+        List[:class:`ApplicationCommand`]
             The list of fetched application commands.
         """
         if guild_id is not MISSING:
@@ -1962,22 +1957,22 @@ class Client:
                 application_id=self.user.id, guild_id=guild_id
             )
 
-        return [PartialApplicationCommand(command, self) for command in commands]
+        return [ApplicationCommand(command, self._state) for command in commands]
 
-    async def fetch_application_command(
+    async def delete_application_command(
         self, command_id: int, /, *, guild_id: int = MISSING
-    ) -> PartialApplicationCommand:
+    ) -> ApplicationCommand:
         """|coro|
 
-        Fetches a global or guild application command.
+        Delets a global or guild application command.
 
         Parameters
         ----------
         command_id: :class:`int`
-            The ID of command to fetch.
+            The ID of command to delete.
 
         guild_id: :class:`int`
-            The list of guilds IDs this command belongs to. If not global.
+            The guild ID this command belongs to. If not global.
 
         """
         if guild_id is not MISSING:
@@ -2006,7 +2001,7 @@ class Client:
 
         Returns
         -------
-        :class:`PartialApplicationCommand`
+        :class:`ApplicationCommand`
             The fetched command.
         """
         if guild_id is not MISSING:
@@ -2016,7 +2011,7 @@ class Client:
         else:
             command = await self.http.get_global_command(self.user.id, command_id)
 
-        return PartialApplicationCommand(command, self)
+        return ApplicationCommand(command, self._state)
 
     async def sync_application_commands_permissions(self):
         """|coro|
@@ -2303,7 +2298,7 @@ class Client:
                 cmds = await self.http.bulk_upsert_guild_commands(
                     self.user.id, guild, guilds[guild]
                 )
-            except Forbidden:
+            except Forbidden as e:
                 # bot doesn't has application.commands scope
                 if ignore_guild_register_fail:
                     traceback.print_exc()
@@ -2335,7 +2330,7 @@ class Client:
 
     # Decorators
 
-    def slash_command(self, **options) -> SlashCommand:
+    def slash_command(self, **options) -> application.SlashCommand:
         """A decorator-based interface to add slash commands to the bot.
 
         Usage: ::
@@ -2351,12 +2346,12 @@ class Client:
 
             options["name"] = options.get("name") or func.__name__
 
-            command = SlashCommand(func, **options)
+            command = application.SlashCommand(func, **options)
             return self.add_pending_command(command)
 
         return inner
 
-    def user_command(self, **options) -> SlashCommand:
+    def user_command(self, **options) -> application.SlashCommand:
         """A decorator-based interface to add user commands to the bot.
 
         Usage: ::
@@ -2370,12 +2365,12 @@ class Client:
             if not inspect.iscoroutinefunction(func):
                 raise TypeError("Callback function must be a coroutine.")
 
-            command = UserCommand(func, **options)
+            command = application.UserCommand(func, **options)
             return self.add_pending_command(command)
 
         return inner
 
-    def message_command(self, **options) -> SlashCommand:
+    def message_command(self, **options) -> application.SlashCommand:
         """A decorator-based interface to add message commands to the bot.
 
         Usage: ::
@@ -2389,7 +2384,7 @@ class Client:
             if not inspect.iscoroutinefunction(func):
                 raise TypeError("Callback function must be a coroutine.")
 
-            command = MessageCommand(func, **options)
+            command = application.MessageCommand(func, **options)
             return self.add_pending_command(command)
 
         return inner
@@ -2399,7 +2394,7 @@ class Client:
     async def process_application_commands(self, interaction: Interaction) -> Any:
         """|coro|
 
-        Handles an application command or slash command option autocompletion 
+        Handles an application command or slash command option autocompletion
         interaction.
 
         This is internally called in :func:`on_interaction` event.
@@ -2432,7 +2427,7 @@ class Client:
             return
 
         command = self.get_application_command(int(interaction.data["id"]))
-        
+
         if interaction.type.value == InteractionType.application_command_autocomplete.value:
             options = interaction.data['options']
             for option in options:
@@ -2452,18 +2447,18 @@ class Client:
                         if 'focused' in sub:
                             option = sub
                             break
-                
+
                 resolved_option = command.get_option(name=option['name'])
                 if command.cog is not None:
                     choices = await resolved_option.autocomplete(command.cog, option['value'], interaction)
                 else:
                     choices = await resolved_option.autocomplete(option['value'], interaction)
-                    
+
                 if not isinstance(choices, list):
                     raise TypeError(f'autocomplete for {resolved_option.name} returned {choices.__class__.__name__}, Expected list.')
 
                 return await interaction.response.autocomplete(choices)
-                
+
 
         if not command:
             _log.info(
