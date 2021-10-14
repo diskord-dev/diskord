@@ -1,5 +1,4 @@
 <div align="center">
-    <img src="docs/images/diskord-banner.PNG">
     <h1>Diskord</h1>
     <img src="https://pepy.tech/badge/diskord">
     <img src="https://canary.discord.com/api/guilds/887217168276656188/embed.png">
@@ -13,14 +12,17 @@
 </div>
 
 ## Features
-* Modern Pythonic API using `async` / `await`
-* Object Oriented, Easy to use design
-* Provides 100% coverage of Discord API
-* Sane ratelimit handling
+* Modern, Pythonic API based on `async` / `await`
+* Consistent, object oriented & easy to use interface
+* Provides full coverage of Discord API
+* Proper and sane ratelimit handling
+* Optimized in both speed and memory
+* Extensions support & prebuilt powerful commands handler
+
 
 ## Installation
 
-**Python 3.8 or higher** is required to install & use this library.
+**Python 3.8 or higher** is required to install this library.
 
 ### Basic Installation
 To install the library **without** full voice support, you can just run the following command:
@@ -35,24 +37,16 @@ python -m pip install diskord[voice]
 ```
 
 ### Development Version
-**Please beware that development version is not guaranteed to be stable. There can be breaking changes and potentially critical bugs. Use with cautions.**
-
 You must have git installed to install development version. Otherwise, you can download the code.
 ```sh
 $ git clone https://github.com/nerdguyahmad/diskord
 $ cd diskord
-$ python3 -m pip install -U .[voice]
+$ python -m pip install -U .[voice]
 ```
-
-### Optional Packages
-* PyNaCl (for voice support, This is usually handled by pip when [installing voice support](#voice-support))
-
-### Linux Installation
-
-Please note that on Linux installing voice you must install the following packages via your favourite package manager (e.g. `apt`, `dnf`, etc) before running the above commands:
-
-* libffi-dev (or `libffi-devel` on some systems)
-* python-dev (e.g. `python3.6-dev` for Python 3.6)
+or in short;
+```sh
+python -m pip install git+https://github.com/diskord-dev/diskord.git
+```
 
 ## Quick Example
 Here are some quick examples to give you a quickstart and show off the basic features of the library.
