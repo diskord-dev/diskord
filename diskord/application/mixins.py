@@ -31,7 +31,7 @@ from typing import (
     TYPE_CHECKING,
     Callable,
 )
-from . import utils
+from .. import utils
 from .types import Check
 from ..errors import ApplicationCommandCheckFailure
 

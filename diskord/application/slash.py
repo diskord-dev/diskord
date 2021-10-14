@@ -28,6 +28,7 @@ from typing import Union, List, Callable, Any, Optional, TYPE_CHECKING
 import inspect
 
 from .. import utils
+from ..application_commands import OptionChoice
 from ..utils import unwrap_function, get_signature_parameters
 from ..enums import OptionType, ChannelType, ApplicationCommandType
 from ..member import Member
@@ -45,45 +46,16 @@ if TYPE_CHECKING:
         ApplicationCommandOption as ApplicationCommandOptionPayload,
     )
 
+__all__ = (
+    'Option',
+    'SlashCommand',
+    'SlashCommandChild',
+    'SlashCommandGroup',
+    'SlashSubCommand',
+    'option',
+    'slash_command'
+)
 
-class OptionChoice:
-    """Represents an option choice for an application command's option.
-
-    Attributes
-    ----------
-
-    name: :class:`str`
-        The name of choice. Will be shown on command explorer.
-    value: :class:`str`
-        A user-set value of the choice. Will be passed in the command's callback.
-    """
-
-    def __init__(self, *, name: str, value: Union[str, int, float]):
-        self.name = name
-        self.value = value
-
-        self._option: Option = None  # type: ignore
-
-    @property
-    def option(self) -> Option:
-        """:class:`Option`: The parent option of this choice."""
-        return self._option
-
-    def to_dict(self) -> dict:
-        return {
-            "name": self.name,
-            "value": self.value,
-        }
-
-    @classmethod
-    def from_dict(cls, dict_: ApplicationCommandOptionChoicePayload):
-        return cls(name=dict_["name"], value=dict_["value"])
-
-    def __repr__(self):
-        return f"<OptionChoice name={self.name!r} value={self.value!r}>"
-
-    def __str__(self):
-        return self.name
 
 
 class Option:

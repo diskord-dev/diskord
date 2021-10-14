@@ -24,6 +24,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
+from diskord.types.interactions import GuildApplicationCommandPermissions
 from typing import Callable, Any, Dict, List
 
 from ..application_commands import (
@@ -90,7 +91,7 @@ class ApplicationCommand(BaseApplicationCommand, ChecksMixin):
         except AttributeError:
             self.checks = []
 
-        self._permissions: List[ApplicationCommandGuildPermissions] = permissions
+        self._permissions: List[GuildApplicationCommandPermissions] = permissions
 
     @property
     def callback(self) -> Callable[..., Any]:
@@ -112,7 +113,7 @@ class ApplicationCommand(BaseApplicationCommand, ChecksMixin):
         self._update_callback_data()
 
     @property
-    def permissions(self) -> List[ApplicationCommandGuildPermissions]:
+    def permissions(self) -> List[GuildApplicationCommandPermissions]:
         """List[:class:`ApplicationCommandGuildPermissions`]: List of permissions this command holds."""
         return self._permissions
 
@@ -132,6 +133,9 @@ class ApplicationCommand(BaseApplicationCommand, ChecksMixin):
         registered. If command has no cog, then ``None`` is returned.
         """
         return self._cog
+
+    async def invoke(self):
+        raise NotImplementedError
 
     def __repr__(self):
         # More attributes here?

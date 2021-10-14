@@ -38,6 +38,12 @@ if TYPE_CHECKING:
     from ..interactions import InteractionContext
     from ..interactions import Interaction
 
+__all__ = (
+    'UserCommand',
+    'MessageCommand',
+    'user_command',
+    'message_command'
+)
 
 class ContextMenuCommand(ApplicationCommand):
     """Represents a context menu command."""
