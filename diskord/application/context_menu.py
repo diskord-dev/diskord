@@ -117,7 +117,7 @@ class UserCommand(ContextMenuCommand):
         if context.command.cog is not None:
             args.insert(0, context.command.cog)
 
-        self._client.dispatch('application_command_run', context)
+        self._client.dispatch('application_command', context)
         await context.command.callback(*args)
 
 

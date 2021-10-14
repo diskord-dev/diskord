@@ -641,7 +641,7 @@ to handle it, which defaults to print a traceback and ignoring the exception.
     :param interaction: The interaction data.
     :type interaction: :class:`Interaction`
 
-.. function:: on_application_command_run(ctx)
+.. function:: on_application_command(ctx)
 
     Called when an application command is ran.
 
