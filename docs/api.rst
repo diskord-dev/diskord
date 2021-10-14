@@ -373,7 +373,7 @@ to handle it, which defaults to print a traceback and ignoring the exception.
     :type when: :class:`datetime.datetime`
 
 .. function:: on_raw_typing(payload)
-    
+
     Called when someone beings typing a message.
 
     Unlike :func:`on_typing` this is called regardless of cache state. This is
@@ -3798,22 +3798,14 @@ InteractionContext
 .. autoclass:: InteractionContext()
     :members:
 
-PartialApplicationCommand
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. attributetable:: PartialApplicationCommand
-
-.. autoclass:: PartialApplicationCommand()
-    :members:
-
 ApplicationCommand
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 .. attributetable:: ApplicationCommand
 
 .. autoclass:: ApplicationCommand()
     :members:
-    :inherited-members:
+
 
 ApplicationCommandGuildPermissions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3855,54 +3847,6 @@ OptionChoice
 
 .. autoclass:: OptionChoice()
     :members:
-
-SlashCommandChild
-~~~~~~~~~~~~~~~~~
-
-.. attributetable:: SlashCommandChild
-.. autoclass:: SlashCommandChild()
-    :members:
-    :inherited-members:
-
-SlashSubCommand
-~~~~~~~~~~~~~~~
-
-.. attributetable:: SlashSubCommand
-
-.. autoclass:: SlashSubCommand()
-    :members:
-    :inherited-members:
-
-SlashCommandGroup
-~~~~~~~~~~~~~~~~~~~~~
-
-.. attributetable:: SlashCommandGroup
-
-.. autoclass:: SlashCommandGroup()
-    :members:
-    :inherited-members:
-
-
-
-UserCommand
-~~~~~~~~~~~
-
-.. attributetable:: UserCommand
-
-.. autoclass:: UserCommand()
-    :members:
-    :inherited-members:
-
-MessageCommand
-~~~~~~~~~~~~~~
-
-.. attributetable:: MessageCommand
-
-.. autoclass:: MessageCommand()
-    :members:
-    :inherited-members:
-
-
 
 Member
 ~~~~~~
@@ -4535,6 +4479,87 @@ Select
 
 .. autofunction:: diskord.ui.select
 
+Application commands
+----------------------
+
+The library provides out-of-the-box interface to create application commands. This part
+of documentation covers that.
+
+ApplicationCommand
+~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: diskord.application.ApplicationCommand
+
+.. autoclass:: diskord.application.ApplicationCommand
+    :members:
+    :inherited-members:
+
+.. autofunction:: diskord.application.ApplicationCommand
+
+
+SlashCommand
+~~~~~~~~~~~~
+
+.. attributetable:: diskord.application.SlashCommand
+
+.. autoclass:: diskord.application.SlashCommand()
+    :members:
+    :inherited-members:
+
+Option
+~~~~~~
+
+.. attributetable:: diskord.application.Option
+
+.. autoclass:: diskord.application.Option()
+    :members:
+
+
+SlashCommandChild
+~~~~~~~~~~~~~~~~~
+
+.. attributetable:: diskord.application.SlashCommandChild
+.. autoclass:: diskord.application.SlashCommandChild()
+    :members:
+    :inherited-members:
+
+SlashSubCommand
+~~~~~~~~~~~~~~~
+
+.. attributetable:: diskord.application.SlashSubCommand
+
+.. autoclass:: diskord.application.SlashSubCommand()
+    :members:
+    :inherited-members:
+
+SlashCommandGroup
+~~~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: diskord.application.SlashCommandGroup
+
+.. autoclass:: diskord.application.SlashCommandGroup()
+    :members:
+    :inherited-members:
+
+
+
+UserCommand
+~~~~~~~~~~~
+
+.. attributetable:: diskord.application.UserCommand
+
+.. autoclass:: diskord.application.UserCommand()
+    :members:
+    :inherited-members:
+
+MessageCommand
+~~~~~~~~~~~~~~
+
+.. attributetable:: diskord.application.MessageCommand
+
+.. autoclass:: diskord.application.MessageCommand()
+    :members:
+    :inherited-members:
 
 Exceptions
 ------------
