@@ -175,7 +175,7 @@ class MessageCommand(ContextMenuCommand):
         if context.command.cog is not None:
             args.insert(0, context.command.cog)
 
-        self._client.dispatch('application_command_run', context)
+        self._client.dispatch('application_command', context)
         await context.command.callback(*args)
 
 
@@ -186,7 +186,7 @@ def user_command(**options) -> Callable[..., Any]:
 
     Usage: ::
 
-        @diskord.user_command()
+        @diskord.application.user_command()
         async def test(ctx, user):
             await ctx.respond('Hello world')
     """
@@ -206,7 +206,7 @@ def message_command(**options) -> Callable[..., Any]:
 
     Usage: ::
 
-        @diskord.message_command()
+        @diskord.application.message_command()
         async def test(ctx, message):
             await ctx.respond('Hello world')
 

@@ -883,7 +883,7 @@ def slash_command(**options) -> SlashCommand:
 
     Usage: ::
 
-        @diskord.slash_command(description='My cool slash command.')
+        @diskord.application.slash_command(description='My cool slash command.')
         async def test(ctx):
             await ctx.respond('Hello world')
     """
