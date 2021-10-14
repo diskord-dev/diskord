@@ -115,6 +115,34 @@ class ChildrenMixin:
 
         return child
 
+    def sub_command(self, **attrs):
+        """A decorator to register a subcommand within this command or group.
+
+        .. note::
+            Once a slash sub-command is registered the callback for parent command
+            would not work. For example:
+
+            ``/hello`` is not a valid command because it has two subcommands ``foo`` and ``world``
+            so ``/hello foo`` and ``/hello world`` are two valid commands.
+
+        Usage: ::
+
+            @bot.slash_command(description='A cool command that has subcommands.')
+            async def git(ctx):
+                pass
+
+            @git.sub_command(description='This is git push!')
+            async def push(ctx):
+                await ctx.respond('Pushed!')
+
+        Options and other features can be added to the subcommands.
+        """
+
+        def inner(func: Callable):
+            return self.add_child(SlashSubCommand(func, **attrs))
+
+        return inner
+
 
 class OptionsMixin:
     """A mixin that implements basic slash commands and subcommands options."""
