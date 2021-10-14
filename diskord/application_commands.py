@@ -197,12 +197,15 @@ class ApplicationCommand:
         self._application_id: int = utils._get_as_snowflake(data, "application_id")
         self._guild_id: int = utils._get_as_snowflake(data, "guild_id")
         self._version: int = utils._get_as_snowflake(data, "version")
-        self._default_permission = data.get("default_permission", getattr(self, "default_permission", True))  # type: ignore
+        self._default_permission = data.get("default_permission", getattr(self, "_default_permission", True))  # type: ignore
+        self._name = data.get("name", getattr(self, '_name', None))
+        self._description = data.get("description")
 
-        if "name" in data:
-            self._name = data.get("name")
-        if "description" in data:
-            self._description = data.get("description")
+        try:
+            options = data['options']
+            self._options = [ApplicationCommandOption(opt) for opt in options]
+        except KeyError:
+            pass
 
         return self
 
