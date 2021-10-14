@@ -194,7 +194,6 @@ def user_command(**options) -> Callable[..., Any]:
     def inner(func: Callable[..., Any]) -> UserCommand:
         if not inspect.iscoroutinefunction(func):
             raise TypeError("Callback function must be a coroutine.")
-        options["name"] = options.get("name") or func.__name__
 
         return UserCommand(func, **options)
 
@@ -219,7 +218,6 @@ def message_command(**options) -> Callable[..., Any]:
     def inner(func: Callable[..., Any]) -> MessageCommand:
         if not inspect.iscoroutinefunction(func):
             raise TypeError("Callback function must be a coroutine.")
-        options["name"] = options.get("name") or func.__name__
 
         return MessageCommand(func, **options)
 

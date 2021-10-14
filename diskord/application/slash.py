@@ -892,8 +892,6 @@ def slash_command(**options) -> SlashCommand:
         if not inspect.iscoroutinefunction(func):
             raise TypeError("Callback function must be a coroutine.")
 
-        options["name"] = options.get("name") or func.__name__
-
         return SlashCommand(func, **options)
 
     return inner
