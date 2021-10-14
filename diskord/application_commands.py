@@ -24,7 +24,6 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
-from diskord.types.interactions import GuildApplicationCommandPermissions
 from itertools import filterfalse
 from typing import (
     Any,
@@ -49,6 +48,7 @@ if TYPE_CHECKING:
     from .types.interactions import (
         ApplicationCommand as ApplicationCommandPayload,
         ApplicationCommandOption as ApplicationCommandOptionPayload,
+        GuildApplicationCommandPermissions as GuildApplicationCommandPermissionsPayload,
     )
     from .state import ConnectionState
     from .guild import Guild
@@ -74,7 +74,7 @@ class ApplicationCommandGuildPermissions:
     to a certain roles or users.
     """
 
-    def __init__(self, data: GuildApplicationCommandPermissions, state: ConnectionState):
+    def __init__(self, data: GuildApplicationCommandPermissionsPayload, state: ConnectionState):
         self._command_id = utils._get_as_snowflake(data, 'id')
         self._application_id = utils._get_as_snowflake(data, 'application_id')
         self._guild_id = utils._get_as_snowflake(data, 'guild_id')
