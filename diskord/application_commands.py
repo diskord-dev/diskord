@@ -199,7 +199,7 @@ class ApplicationCommand:
         self._version: int = utils._get_as_snowflake(data, "version")
         self._default_permission = data.get("default_permission", getattr(self, "_default_permission", True))  # type: ignore
         self._name = data.get("name", getattr(self, '_name', None))
-        self._description = data.get("description")
+        self._description = data.get("description", , getattr(self, '_description', None))
 
         try:
             options = data['options']
