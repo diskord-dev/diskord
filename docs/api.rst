@@ -3823,12 +3823,31 @@ ApplicationCommandPermission
 .. autoclass:: ApplicationCommandPermission()
     :members:
 
-SlashCommand
-~~~~~~~~~~~~
+ApplicationSlashCommand
+~~~~~~~~~~~~~~~~~~~~~~~
 
-.. attributetable:: SlashCommand
+.. attributetable:: ApplicationSlashCommand
 
-.. autoclass:: SlashCommand()
+.. autoclass:: ApplicationSlashCommand()
+    :members:
+    :inherited-members:
+
+
+ApplicationSlashCommand
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: ApplicationSlashCommand
+
+.. autoclass:: ApplicationSlashCommand()
+    :members:
+    :inherited-members:
+
+ApplicationMessageCommand
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: ApplicationMessageCommand
+
+.. autoclass:: ApplicationMessageCommand()
     :members:
     :inherited-members:
 

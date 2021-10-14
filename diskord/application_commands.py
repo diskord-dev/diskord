@@ -58,6 +58,8 @@ __all__ = (
     "ApplicationCommandOption",
     "OptionChoice",
     "ApplicationSlashCommand",
+    "ApplicationUserCommand",
+    "ApplicationMessageCommand",
     "ApplicationCommandGuildPermissions",
     "ApplicationCommandPermission",
     "application_command_permission",
@@ -369,6 +371,31 @@ class ApplicationSlashCommand(ApplicationCommand):
         )
         super().__init__(data, state)
 
+class ApplicationUserCommand(ApplicationCommand):
+    """Represents a user application command.
+
+    This class inherits :class:`ApplicationCommand`
+
+    A user command is a context menu command that can be accessed by right clicking
+    a user in Discord and selecting the command from "Apps" context menu.
+
+    This class is not user constructible, Use :class:`application.UserCommand` instead.
+    """
+    def __init__(self, data: ApplicationCommandPayload, state: ConnectionState):
+        super().__init__(data, state)
+
+class ApplicationMessageCommand(ApplicationCommand):
+    """Represents a message application command.
+
+    This class inherits :class:`ApplicationCommand`
+
+    A message command is a context menu command that can be accessed by right clicking
+    a message in Discord and selecting the command from "Apps" context menu.
+
+    This class is not user constructible, Use :class:`application.MessageCommand` instead.
+    """
+    def __init__(self, data: ApplicationCommandPayload, state: ConnectionState):
+        super().__init__(data, state)
 
 class OptionChoice:
     """Represents an option choice for an application command's option.
