@@ -623,6 +623,38 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
         self._client.dispatch('application_command', context)
         await context.command.callback(*args, **kwargs)
 
+
+
+    # decorators
+
+    def sub_command(self, **attrs):
+        """A decorator to register a subcommand within a slash command.
+
+        .. note::
+            Once a slash sub-command is registered the callback for parent command
+            would not work. For example:
+
+            ``/hello`` is not a valid command because it has two subcommands ``foo`` and ``world``
+            so ``/hello foo`` and ``/hello world`` are two valid commands.
+
+        Usage: ::
+
+            @bot.slash_command(description='A cool command that has subcommands.')
+            async def git(ctx):
+                pass
+
+            @git.sub_command(description='This is git push!')
+            async def push(ctx):
+                await ctx.respond('Pushed!')
+
+        Options and other features can be added to the subcommands.
+        """
+
+        def inner(func: Callable):
+            return self.add_child(SlashSubCommand(func, **attrs))
+
+        return inner
+
     def sub_command_group(self, **attrs):
         """A decorator to register a subcommand group within a slash command.
 
@@ -736,6 +768,37 @@ class SlashCommandGroup(SlashCommandChild):
         super().__init__(callback, **attrs)
         self._type = OptionType.sub_command_group
         self._children: List[SlashCommandChild] = []
+
+    # decorators
+
+    def sub_command(self, **attrs: Any):
+        """A decorator to register a subcommand in the command group.
+
+        Usage: ::
+
+            @bot.slash_command(description='A cool command that has subcommand groups.')
+            async def command(ctx):
+                pass
+
+            @command.sub_command_group(description='This is a cool group.')
+            async def group(ctx):
+                pass
+
+            @group.sub_command(description='This is a cool command inside a command group.')
+            async def subcommand(ctx):
+                await ctx.respond('Hello world!')
+
+        Parameters
+        ----------
+        **attrs:
+            The parameters of :class:`SlashSubCommand`
+        """
+
+        def inner(func: Callable):
+            return self.add_child(SlashSubCommand(func, **attrs))
+
+        return inner
+
 
 class SlashSubCommand(SlashCommandChild):
     """Represents a subcommand of a slash command.
