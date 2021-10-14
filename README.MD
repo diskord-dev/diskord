@@ -2,29 +2,25 @@
     <img src="docs/images/diskord-banner.PNG">
     <h1>Diskord</h1>
     <img src="https://pepy.tech/badge/diskord">
-    <img src="https://img.shields.io/static/v1?label=maintained?&message=Yes&color=brightgreen">
     <img src="https://canary.discord.com/api/guilds/887217168276656188/embed.png">
     <img src="https://readthedocs.org/projects/diskord/badge">
     <hr>
-    <sup>This library is a maintained fork of the popular and now archived library, <a href="https://github.com/Rapptz/discord.py">discord.py</a>.</sup>
+    <sup>This library is a maintained fork of now archived library, <a href="https://github.com/Rapptz/discord.py">discord.py</a>.</sup>
     <p>
-        A modern, easy to use, feature-rich, and async ready API wrapper around Discord API written in Python.
+        A modern and easy to use API wrapper around Discord API written in Python.
         <br><br>
     </p>
 </div>
 
-## Key features
-* Modern Pythonic API using `async` / `await`.
-* Proper and sane rate limit handling.
-* Optimised in both speed and memory.
-* Provides full coverage of Discord API including Interactions i.e Slash Commands.
-* Prebuilt Commands building framework to aid in bot development
-* Easy-to-use object oriented design
-* Actively maintained & updated
+## Features
+* Modern Pythonic API using `async` / `await`
+* Object Oriented, Easy to use design
+* Provides 100% coverage of Discord API
+* Sane ratelimit handling
 
 ## Installation
 
-**Python 3.8 or higher** is required to use this library.
+**Python 3.8 or higher** is required to install & use this library.
 
 ### Basic Installation
 To install the library **without** full voice support, you can just run the following command:
@@ -91,7 +87,6 @@ You can find more examples in the examples directory.
 
 ## Links
 * [Latest Documentation](https://diskord.readthedocs.io/en/latest/index.html)
-* [Development Documentation](https://diskord.readthedocs.io/en/master/index.html)
 * [Official Discord Server](https://dsc.gg/diskord-dev)
 * [Discord API](https://discord.gg/discord-api)
 * [Developer Portal](https://developer.discord.com/applications)
