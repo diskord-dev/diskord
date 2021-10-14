@@ -1,5 +1,5 @@
 """
-discord.ui
+diskord.ui
 ~~~~~~~~~~~
 
 Bot UI Kit helper for the Discord API
