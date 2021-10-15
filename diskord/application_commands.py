@@ -456,7 +456,7 @@ class ApplicationCommandOption:
     choices: List[:class:`OptionChoice`]
         The list of choices this option has.
     channel_types: List[:class:`ChannelType`]
-        The channel types that would be shown if :attr:`Option.type` is :attr:`OptionType.channel`
+        The channel types that would be shown if :attr:`ApplicationCommandOption.type` is :attr:`OptionType.channel`
     autocomplete:
         Whether this option would autocomplete or not.
     """
