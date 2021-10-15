@@ -535,7 +535,7 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
 
         for option in options:
             if option['type'] == OptionType.sub_command.value:
-                command = command.get_child(name=option['name'])
+                command = self.get_child(name=option['name'])
 
                 for sub in option['options']:
                     if 'focused' in sub:
@@ -543,7 +543,7 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
                         break
 
             elif option['type'] == OptionType.sub_command_group.value:
-                group = command.get_child(name=option['name'])
+                group = self.get_child(name=option['name'])
                 command = group.get_child(name=option['options'][0]['name'])
 
                 for sub in option['options'][0]['options']:
@@ -551,16 +551,17 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
                         option = sub
                         break
 
-        resolved_option = command.get_option(name=option['name'])
+        resolved_option = self.get_option(name=option['name'])
 
-        if command.cog is not None:
-            choices = await resolved_option.autocomplete(command.cog, option['value'], interaction)
+        if self.cog is not None:
+            choices = await resolved_option.autocomplete(self.cog, option['value'], interaction)
         else:
             choices = await resolved_option.autocomplete(option['value'], interaction)
 
         if not isinstance(choices, list):
             raise TypeError(f'autocomplete for {resolved_option.name} returned {choices.__class__.__name__}, Expected list.')
 
+        return choices
 
 
     async def invoke(self, context: InteractionContext):
