@@ -2173,7 +2173,7 @@ class Client:
         # Deleting the command that weren't found in internal cache
         # this parameter is set to False by default because of the fact that
         # it can be very expensive to delete the commands on every restart and would
-        # lead to easy ratelimit.
+        # lead to ratelimit often.
         if delete_unregistered_commands:
             for command in non_registered:
                 if command.get("guild_id"):
@@ -2315,6 +2315,17 @@ class Client:
         _log.info("Clean Registered commands successfully.")
 
     async def register_application_commands(self):
+        """|coro|
+
+        A method that registers the application commands in :attr:`~Client.pending_commands`.
+
+        If ``overwrite_application_commands`` parameter in :class:`Client` is set to
+        ``True``, :meth:`~Client.clean_register_application_commands` would be called
+        otherwise commands would be synced by :meth:`~Client.sync_application_commands`
+
+        This function is called in :func:`on_connect` and you must take care of calling
+        it in case you decide to override :func:`on_connect`
+        """
         if self.overwrite_application_commands:
             await self.clean_register_application_commands()
         else:
