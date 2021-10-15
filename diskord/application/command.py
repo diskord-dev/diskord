@@ -65,7 +65,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
         self.extras: Dict[str, Any] = attrs.pop("extras", {})
 
         self._cog = None
-        self._client = self._bot = None
+        self._client = None
 
         self._from_data(dict())
         self._update_callback_data()
@@ -91,6 +91,11 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
             self.checks = []
 
         self._permissions: List[GuildApplicationCommandPermissions] = permissions
+
+    @property
+    def _bot(self):
+        # a simple alias to not break ext.commands
+        return self._client
 
     @property
     def callback(self) -> Callable[..., Any]:
