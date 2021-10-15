@@ -2078,11 +2078,7 @@ class Client:
             application_id=self.user.id,
             guild_id=guild_id,
         )
-        for perm in response:
-            perm["permissions"] = [
-                ApplicationCommandPermission(**p) for p in perm["permissions"]
-            ]
-        return ApplicationCommandGuildPermissions(**response)
+        return ApplicationCommandGuildPermissions(response, self._connection)
 
     async def fetch_application_command_permission(
         self, *, guild_id: int, command_id: int
@@ -2108,10 +2104,7 @@ class Client:
             guild_id=guild_id,
             command_id=command_id,
         )
-        response["permissions"] = [
-            ApplicationCommandPermission(**perm) for perm in response["permissions"]
-        ]
-        return ApplicationCommandGuildPermissions(**response)
+        return ApplicationCommandGuildPermissions(response)
 
     # TODO: Add other API methods
 
