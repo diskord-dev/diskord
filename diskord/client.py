@@ -1925,7 +1925,6 @@ class Client:
         """
         if guild_id:
             await self.http.delete_guild_command(self.user.id, guild_id, command_id)
-
         else:
             await self.http.delete_global_command(self.user.id, command_id)
 
@@ -1957,7 +1956,7 @@ class Client:
                 application_id=self.user.id, guild_id=guild_id
             )
 
-        return [ApplicationCommand(command, self._state) for command in commands]
+        return [ApplicationCommand(command, self._connection) for command in commands]
 
     async def delete_application_command(
         self, command_id: int, /, *, guild_id: int = MISSING
@@ -2011,7 +2010,7 @@ class Client:
         else:
             command = await self.http.get_global_command(self.user.id, command_id)
 
-        return ApplicationCommand(command, self._state)
+        return ApplicationCommand(command, self._connection)
 
     async def sync_application_commands_permissions(self):
         """|coro|
