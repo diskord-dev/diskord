@@ -71,6 +71,7 @@ from .ui.view import ViewStore, View
 from .stage_instance import StageInstance
 from .threads import Thread, ThreadMember
 from .sticker import GuildSticker
+from .application.command import ApplicationCommandStore
 
 if TYPE_CHECKING:
     from .abc import PrivateChannel
@@ -262,7 +263,7 @@ class ConnectionState:
             if attr.startswith("parse_"):
                 parsers[attr[6:].upper()] = func
 
-        self.clear(application_commands=True)
+        self.clear(application_commands=True, views=True)
 
     def clear(self, *, views: bool = True, application_commands: bool = False) -> None:
         self.user: Optional[ClientUser] = None
@@ -285,7 +286,7 @@ class ConnectionState:
         if views:
             self._view_store: ViewStore = ViewStore(self)
         if application_commands:
-            self._application_commands = {}
+            self._commands_store: ApplicationCommandStore = ApplicationCommandStore(self)
 
         self._voice_clients: Dict[int, VoiceProtocol] = {}
 
@@ -787,6 +788,10 @@ class ConnectionState:
             custom_id = interaction.data["custom_id"]  # type: ignore
             component_type = interaction.data["component_type"]  # type: ignore
             self._view_store.dispatch(component_type, custom_id, interaction)
+        elif data["type"] == 2: # interaction application command
+            self._commands_store.dispatch(interaction)
+        elif data["type"] == 4: # interaction application command autocompletion
+            pass
 
         self.dispatch("interaction", interaction)
 

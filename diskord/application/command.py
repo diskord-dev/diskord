@@ -24,10 +24,11 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
-from diskord.types.interactions import GuildApplicationCommandPermissions
 from typing import Callable, Any, Dict, List
+import asyncio
 
 from ..application_commands import ApplicationCommandMixin
+from ..errors import ApplicationCommandError, _BaseCommandError
 from .mixins import ChecksMixin
 from .types import Check
 
@@ -66,7 +67,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
         self._cog = None
         self._client = self._bot = None
 
-        super().__init__(dict(), self._client)
+        self._from_data(dict())
         self._update_callback_data()
 
     def is_global_command(self) -> bool:
@@ -140,3 +141,48 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
 
     def __str__(self):
         return self.name
+
+class ApplicationCommandStore:
+    def __init__(self, state: ConnectionState):
+        self._commands: Dict[int, ApplicationCommand] = {}
+        self._state = state
+
+    def get_application_command(self, command_id: int):
+        try:
+            return self._commands[command_id] # type: ignore
+        except KeyError:
+            return
+
+    def add_application_command(self, command: ApplicationCommand):
+        self._commands[command.id] = command
+
+    def remove_application_command(self, id: int):
+        return self._commands.pop(id, None) # type: ignore
+
+    async def _dispatch_command(self, command: ApplicationCommand, interaction: Interaction):
+        # _get_client will never be unavailable at this point
+        client = self._state._get_client()
+        context = client.get_application_context(interaction)
+
+        try:
+            await command.invoke(context)
+        except (ApplicationCommandError, _BaseCommandError) as error:
+            self._state.dispatch("application_command_error", context, error)
+        else:
+            self._state.dispatch("application_command_completion", context)
+
+    def dispatch(self, interaction: Interaction):
+        try:
+            command_id = int(interaction.data['id'])
+        except KeyError:
+            return
+
+        command = self.get_application_command(command_id)
+
+        if command is None:
+            return self._state.dispatch('unknown_application_command')
+
+        asyncio.create_task(
+            self._dispatch_command(command, interaction),
+            name=f"discord-application-command-dispatch-{command.id}",
+        )

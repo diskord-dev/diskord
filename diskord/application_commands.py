@@ -172,19 +172,6 @@ class ApplicationCommandMixin:
         _description: str
         _default_permission: bool
 
-
-    def __eq__(self, other: Any):
-        try:
-            return self.id == other.id
-        except AttributeError:
-            return False
-
-    def __ne__(self, other: Any):
-        try:
-            return self.id != other.id
-        except AttributeError:
-            return False
-
     async def edit(
         self,
         *,
@@ -276,7 +263,7 @@ class ApplicationCommandMixin:
         self._default_permission = data.get("default_permission", getattr(self, "_default_permission", True))  # type: ignore
         self._name = data.get("name", getattr(self, '_name', None))
         self._description = data.get("description", getattr(self, '_description', None))
-
+        return self
 
     @property
     def name(self) -> str:

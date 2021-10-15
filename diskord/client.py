@@ -1790,7 +1790,7 @@ class Client:
     @property
     def application_commands(self):
         """Dict[:class:`int`, :class:`diskord.application.ApplicationCommand`]: Returns a mapping with ID of command to the application command."""
-        return self._connection._application_commands
+        return self._connection._commands_store._commands # type: ignore
 
     # Commands management
 
@@ -1877,7 +1877,7 @@ class Client:
             The ID of command to delete.
         """
         try:
-            return self._connection._application_commands.pop(command_id)
+            return self._connection._commands_store.remove_command(command_id)
         except KeyError:
             return
 
@@ -1898,7 +1898,7 @@ class Client:
         Optional[:class:`application.ApplicationCommand`]
             The command matching the ID.
         """
-        return self._connection._application_commands.get(command_id)
+        return self._connection._commands_store.get_application_command(command_id)
 
     async def delete_application_command(
         self,
@@ -1928,7 +1928,7 @@ class Client:
         else:
             await self.http.delete_global_command(self.user.id, command_id)
 
-        self._connection._application_commands.pop(command_id, None)  # type: ignore
+        self._connection._commands_store.remove_application_command(command_id)  # type: ignore
 
     async def fetch_application_commands(
         self, guild_id: int = MISSING
@@ -2031,7 +2031,7 @@ class Client:
         permissions = {}
 
         # firstly, we need to add permissions raw data to permissions list.
-        for command in self._connection._application_commands.values():
+        for command in self._connection._commands_store._commands.values():
             perms = [perm.to_dict() for perm in command._permissions]
 
             for perm in perms:
@@ -2165,9 +2165,7 @@ class Client:
                 non_registered.append(command)
                 continue
 
-            self._connection._application_commands[
-                int(command["id"])
-            ] = registered._from_data(command)
+            self._connection._commands_store.add_application_command(registered._from_data(command))
             self._pending_commands.remove(registered)
 
         # Deleting the command that weren't found in internal cache
@@ -2205,9 +2203,7 @@ class Client:
                 data = command.to_dict()
                 cmd = await self.http.upsert_global_command(self.user.id, data)
 
-            self._connection._application_commands[int(cmd["id"])] = command._from_data(
-                cmd
-            )
+            self._connection._commands_store.add_application_command(command._from_data(cmd))
             self._pending_commands.pop(index)
 
         # finally, batch-editing the permissions
@@ -2267,10 +2263,7 @@ class Client:
                 name=cmd["name"],
                 type=try_enum(ApplicationCommandType, int(cmd["type"])),
             )
-            self._connection._application_commands[int(cmd["id"])] = command._from_data(
-                cmd
-            )
-
+            self._connection._commands_store.add_application_command(command._from_data(cmd))
             self._pending_commands.remove(command)
 
         # Registering the guild commands now
@@ -2303,9 +2296,7 @@ class Client:
                     name=cmd["name"],
                     type=try_enum(ApplicationCommandType, int(cmd["type"])),
                 )
-                self._connection._application_commands[
-                    int(cmd["id"])
-                ] = command._from_data(cmd)
+                self._connection._commands_store.add_application_command(command._from_data(cmd))
 
                 self._pending_commands.remove(command)
 
@@ -2531,6 +2522,3 @@ class Client:
 
     async def on_connect(self):
         await self.register_application_commands()
-
-    async def on_interaction(self, interaction: Interaction):
-        await self.process_application_commands(interaction)

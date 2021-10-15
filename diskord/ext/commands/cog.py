@@ -501,7 +501,7 @@ class Cog(metaclass=CogMeta):
                 # if we're here then command is registered and synced and we
                 # just have to add it to application commands list and it
                 # would start working as normal.
-                bot._connection._application_commands[int(command.id)] = command
+                bot._connection._commands_store.add_application_command(command)
                 continue
 
             try:
@@ -538,7 +538,7 @@ class Cog(metaclass=CogMeta):
 
             for command in self.__cog_application_commands__:
                 if not isinstance(command, SlashCommandChild):
-                    registered = command.id in bot._connection._application_commands
+                    registered = command.id in bot._connection._commands_store._commands
                     if registered:
                         bot.remove_application_command(command.id)
                     else:
