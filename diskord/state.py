@@ -791,7 +791,7 @@ class ConnectionState:
         elif data["type"] == 2: # interaction application command
             self._commands_store.dispatch(interaction)
         elif data["type"] == 4: # interaction application command autocompletion
-            pass
+            self._commands_store.dispatch_autocomplete(interaction)
 
         self.dispatch("interaction", interaction)
 
