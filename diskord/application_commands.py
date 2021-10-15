@@ -163,115 +163,16 @@ class ApplicationCommandPermission:
 
         return ret
 
-class ApplicationCommand:
-    """Represents an application command.
-
-    This class is not user constructible, Use :class:`diskord.application.ApplicationCommand`
-    instead.
-
-    Attributes
-    ----------
-    name: :class:`str`
-        The name of application command.
-    description: :class:`str`
-        The description of application command.
-    guild_id: :class:`int`
-        The ID of guild this command belongs to, ``None`` if command
-        is a global command.
-    default_permission: :class:`bool`
-        The command's default permission.
-    id: :class:`int`
-        The unique ID of this command.
-    version: :class:`int`
-        The auto incrementing version of this application command.
-    application_id: :class:`int`
-        The ID of application this command belongs to.
-    """
-
-    def __init__(self, data: ApplicationCommandPayload, state: ConnectionState):
-        self._state = state
-        self._from_data(data)
-
-    def _from_data(self, data: ApplicationCommandPayload) -> ApplicationCommand:
-        self._id: int = utils._get_as_snowflake(data, "id")
-        self._application_id: int = utils._get_as_snowflake(data, "application_id")
-        self._guild_id: int = utils._get_as_snowflake(data, "guild_id")
-        self._version: int = utils._get_as_snowflake(data, "version")
-        self._default_permission = data.get("default_permission", getattr(self, "_default_permission", True))  # type: ignore
-        self._name = data.get("name", getattr(self, '_name', None))
-        self._description = data.get("description", getattr(self, '_description', None))
-
-        try:
-            options = data['options']
-            self._options = [ApplicationCommandOption(opt, state=self._state) for opt in options]
-        except KeyError:
-            pass
-
-        return self
-
-    @property
-    def name(self) -> str:
-        """:class:`str`: The name of application command."""
-        return self._name
-
-    @property
-    def description(self) -> str:
-        """:class:`description`: The description of application command."""
-        return self._description
-
-    @property
-    def guild_id(self) -> int:
-        """:class:`int`: The ID of the guild this command belongs to.
-
-        Every command is stored per-guild basis and this attribute represents that guild's ID.
-        To get the list of guild IDs in which this command was initially registered, use
-        :attr:`ApplicationCommand.guild_id`
-        """
-        return self._guild_id
-
-    @property
-    def guild(self) -> Optional[Guild]:
-        """:class:`Guild`: The guild this command belongs to. This could be ``None`` if command is a global command."""
-        if self._state:
-            return self._state._get_guild(self.guild_id)
-
-    @property
-    def type(self) -> ApplicationCommandType:
-        """:class:`ApplicationCommandType`: Returns the type of application command."""
-        return self._type
-
-    @property
-    def default_permission(self) -> bool:
-        """
-        :class:`bool`: Returns the default permission of this command. Default permission
-        means whether this command will be enabled by default or not. ``False`` indicates
-        that this command is not useable by default.
-        """
-        return self._default_permission
-
-    @property
-    def id(self) -> Optional[int]:
-        """
-        Optional[:class:`int`]: The unique ID of this command. This is usually ``None`` before command
-        registration.
-        """
-        return self._id
-
-    @property
-    def application_id(self) -> Optional[int]:
-        """
-        Optional[:class:`int`]: The ID of application that owns this command usually :attr:`ClientUser.id`.
-        This is usually ``None`` before command registration.
-        """
-        return self._application_id
-
-    @property
-    def version(self) -> Optional[int]:
-        """
-        Optional[:class:`int`]: The unique version of the application command. Usually
-        :attr:`ApplicationCommand.id`
-        """
-        return self._version
+class ApplicationCommandMixin:
+    if TYPE_CHECKING:
+        _state: ConnectionState
+        _guild_id: int
+        _id: int
+        _application_id: int
+        _version: int
+        _name: str
+        _description: str
+        _default_permission: bool
 
     async def edit(
         self,
@@ -355,6 +256,123 @@ class ApplicationCommand:
             )
 
         self._state._application_commands.pop(self.id, None)  # type: ignore
+
+    def _from_data(self, data: ApplicationCommandPayload):
+        self._id: int = utils._get_as_snowflake(data, "id")
+        self._application_id: int = utils._get_as_snowflake(data, "application_id")
+        self._guild_id: int = utils._get_as_snowflake(data, "guild_id")
+        self._version: int = utils._get_as_snowflake(data, "version")
+        self._default_permission = data.get("default_permission", getattr(self, "_default_permission", True))  # type: ignore
+        self._name = data.get("name", getattr(self, '_name', None))
+        self._description = data.get("description", getattr(self, '_description', None))
+
+
+    @property
+    def name(self) -> str:
+        """:class:`str`: The name of application command."""
+        return self._name
+
+    @property
+    def description(self) -> str:
+        """:class:`description`: The description of application command."""
+        return self._description
+
+    @property
+    def guild_id(self) -> int:
+        """:class:`int`: The ID of the guild this command belongs to.
+
+        Every command is stored per-guild basis and this attribute represents that guild's ID.
+        To get the list of guild IDs in which this command was initially registered, use
+        :attr:`ApplicationCommand.guild_id`
+        """
+        return self._guild_id
+
+    @property
+    def guild(self) -> Optional[Guild]:
+        """:class:`Guild`: The guild this command belongs to. This could be ``None`` if command is a global command."""
+        if self._state:
+            return self._state._get_guild(self.guild_id)
+
+    @property
+    def type(self) -> ApplicationCommandType:
+        """:class:`ApplicationCommandType`: Returns the type of application command."""
+        return self._type
+
+    @property
+    def default_permission(self) -> bool:
+        """
+        :class:`bool`: Returns the default permission of this command. Default permission
+        means whether this command will be enabled by default or not. ``False`` indicates
+        that this command is not useable by default.
+        """
+        return self._default_permission
+
+    @property
+    def id(self) -> Optional[int]:
+        """
+        Optional[:class:`int`]: The unique ID of this command. This is usually ``None`` before command
+        registration.
+        """
+        return self._id
+
+    @property
+    def application_id(self) -> Optional[int]:
+        """
+        Optional[:class:`int`]: The ID of application that owns this command usually :attr:`ClientUser.id`.
+        This is usually ``None`` before command registration.
+        """
+        return self._application_id
+
+    @property
+    def version(self) -> Optional[int]:
+        """
+        Optional[:class:`int`]: The unique version of the application command. Usually
+        :attr:`ApplicationCommand.id`
+        """
+        return self._version
+
+
+
+
+class ApplicationCommand(ApplicationCommandMixin):
+    """Represents an application command.
+
+    This class is not user constructible, Use :class:`diskord.application.ApplicationCommand`
+    instead.
+
+    Attributes
+    ----------
+    name: :class:`str`
+        The name of application command.
+    description: :class:`str`
+        The description of application command.
+    guild_id: :class:`int`
+        The ID of guild this command belongs to, ``None`` if command
+        is a global command.
+    default_permission: :class:`bool`
+        The command's default permission.
+    id: :class:`int`
+        The unique ID of this command.
+    version: :class:`int`
+        The auto incrementing version of this application command.
+    application_id: :class:`int`
+        The ID of application this command belongs to.
+    """
+
+    def __init__(self, data: ApplicationCommandPayload, state: ConnectionState):
+        self._state = state
+        self._from_data(data)
+
+    def _from_data(self, data: ApplicationCommandPayload) -> ApplicationCommand:
+        super()._from_data(data)
+
+        try:
+            options = data['options']
+            self._options = [ApplicationCommandOption(opt, state=self._state) for opt in options]
+        except KeyError:
+            pass
+
+        return self
 
 class ApplicationSlashCommand(ApplicationCommand):
     """Represents a slash application command.

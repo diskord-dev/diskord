@@ -27,15 +27,13 @@ from __future__ import annotations
 from diskord.types.interactions import GuildApplicationCommandPermissions
 from typing import Callable, Any, Dict, List
 
-from ..application_commands import (
-    ApplicationCommand as BaseApplicationCommand
-)
+from ..application_commands import ApplicationCommandMixin
 from .mixins import ChecksMixin
 from .types import Check
 
 # TODO: permissions fix.
 
-class ApplicationCommand(BaseApplicationCommand, ChecksMixin):
+class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
     """Represents an application command.
 
     This is base class for all user constructible application commands classes like
