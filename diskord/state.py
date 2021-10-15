@@ -263,7 +263,7 @@ class ConnectionState:
             if attr.startswith("parse_"):
                 parsers[attr[6:].upper()] = func
 
-        self.clear(application_commands=True, views=True)
+        self.clear(application_commands=True)
 
     def clear(self, *, views: bool = True, application_commands: bool = False) -> None:
         self.user: Optional[ClientUser] = None
