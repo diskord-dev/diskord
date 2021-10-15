@@ -50,6 +50,7 @@ if TYPE_CHECKING:
         ApplicationCommandOption as ApplicationCommandOptionPayload,
         GuildApplicationCommandPermissions as GuildApplicationCommandPermissionsPayload,
     )
+    from .application.slash import Option
     from .state import ConnectionState
     from .guild import Guild
 
@@ -64,9 +65,6 @@ __all__ = (
     "ApplicationCommandPermission",
     "application_command_permission",
 )
-
-### --- Application Command Permissions Start --- ###
-
 
 class ApplicationCommandGuildPermissions:
     """
@@ -174,12 +172,25 @@ class ApplicationCommandMixin:
         _description: str
         _default_permission: bool
 
+
+    def __eq__(self, other: Any):
+        try:
+            return self.id == other.id
+        except AttributeError:
+            return False
+
+    def __ne__(self, other: Any):
+        try:
+            return self.id != other.id
+        except AttributeError:
+            return False
+
     async def edit(
         self,
         *,
         name: str = None,
         description: str = None,
-        options: List['Option'] = None, # type: ignore
+        options: List[Option] = None, # type: ignore
         default_permission: bool = None,
     ):
         """|coro|
@@ -332,6 +343,8 @@ class ApplicationCommandMixin:
         return self._version
 
 
+    def __repr__(self):
+        return f'<{self.__class__.__name__} name={self.name!r} description={self.description!r} type={self.type!r}'
 
 
 class ApplicationCommand(ApplicationCommandMixin):
@@ -363,23 +376,28 @@ class ApplicationCommand(ApplicationCommandMixin):
         self._state = state
         self._from_data(data)
 
-    def _from_data(self, data: ApplicationCommandPayload) -> ApplicationCommand:
-        super()._from_data(data)
-
-        try:
-            options = data['options']
-            self._options = [ApplicationCommandOption(opt, state=self._state) for opt in options]
-        except KeyError:
-            pass
-
-        return self
-
 class ApplicationSlashCommand(ApplicationCommand):
     """Represents a slash application command.
 
     This class inherits :class:`ApplicationCommand`
 
-    This class is not user constructible, Use :class:`application.SlashCommand` instead.
+    .. note::
+        This class is not user constructible, Use :class:`application.SlashCommand` instead.
+
+
+    .. container:: operations
+
+        .. describe:: str(x)
+
+            Returns the name of application command.
+
+        .. describe:: x == y
+
+            Checks if the command is equal to another command.
+
+        .. describe:: x != y
+
+            Checks if the command is not equal to another command.
 
     Attributes
     ----------
@@ -391,6 +409,17 @@ class ApplicationSlashCommand(ApplicationCommand):
             ApplicationCommandOption(option, state=state) for option in data.get('options', [])
         )
         super().__init__(data, state)
+
+    def _from_data(self, data: ApplicationCommandPayload) -> ApplicationCommand:
+        super()._from_data(data)
+
+        try:
+            options = data['options']
+            self._options = [ApplicationCommandOption(opt, state=self._state) for opt in options]
+        except KeyError:
+            pass
+
+        return self
 
 class ApplicationUserCommand(ApplicationCommand):
     """Represents a user application command.
@@ -482,9 +511,6 @@ class ApplicationCommandOption:
         self._state = state
         self._update(data)
 
-    def __repr__(self):
-        return f'<{self.__class__.__name__} name={self.name!r} description={self.description!r} type={self.type!r}'
-
     def _update(self, data: ApplicationCommandOptionPayload):
         self.name: str = data['name']
         self.description: str = data['description']
@@ -502,7 +528,6 @@ class ApplicationCommandOption:
                 self.channel_types.append(try_enum(ChannelType, int(t)))
 
 
-### --- Decorators Start --- ###
 def application_command_permission(
     *, guild_id: int, user_id: int = None, role_id: int = None, permission: bool = False
 ):
@@ -564,6 +589,3 @@ def application_command_permission(
         return func
 
     return inner
-
-
-### --- Decorators End --- ###

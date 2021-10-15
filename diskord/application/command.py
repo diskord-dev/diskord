@@ -136,8 +136,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
         raise NotImplementedError
 
     def __repr__(self):
-        # More attributes here?
-        return f"<ApplicationCommand name={self.name!r} description={self.description!r} guild_ids={self.guild_ids!r}"
+        return f"<{self.__class__.__name__} name={self.name!r} description={self.description!r} guild_id={self.guild_id!r} id={self.id!r}"
 
     def __str__(self):
         return self.name
