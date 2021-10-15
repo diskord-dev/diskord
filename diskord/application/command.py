@@ -73,7 +73,7 @@ class ApplicationCommand(BaseApplicationCommand, ChecksMixin):
 
     def is_global_command(self) -> bool:
         """:class:`bool`: Whether the command is global command or not."""
-        return bool(self._guild_ids)
+        return len(self._guild_ids) == 0
 
     def _update_callback_data(self):
         try:
