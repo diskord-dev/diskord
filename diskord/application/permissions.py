@@ -82,7 +82,7 @@ class ApplicationCommandPermissions:
             The permission overwrite that was added.
         """
         overwrite = CommandPermissionOverwrite(**options)
-        self.permissions.append(overwrite)
+        self.overwrites.append(overwrite)
         return overwrite
 
     def remove_overwrite(self, entity_id: int) -> None:
@@ -97,7 +97,7 @@ class ApplicationCommandPermissions:
         """
         for overwrite in self.overwrites:
             if overwrite.role_id == entity_id or overwrite.user_id == entity_id:
-                return self.permissions.remove(overwrite)
+                return self.overwrites.remove(overwrite)
 
 class CommandPermissionOverwrite:
     """A class that defines an overwrite for :class:`ApplicationCommandPermissions`.

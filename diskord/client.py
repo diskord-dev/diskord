@@ -1838,6 +1838,10 @@ class Client:
         for opt in command.callback.__application_command_params__.values():
             command.append_option(opt)
 
+        # reset the params so they don't conflict if user decides to readd this
+        # command.
+        command.callback.__application_command_params__ = {}
+
         return command
 
     def remove_pending_command(self, command: application.ApplicationCommand, /):
@@ -1877,7 +1881,7 @@ class Client:
             The ID of command to delete.
         """
         try:
-            return self._connection._commands_store.remove_command(command_id)
+            return self._connection._commands_store.remove_application_command(command_id)
         except KeyError:
             return
 
@@ -2187,6 +2191,7 @@ class Client:
             if command.guild_ids:
                 for guild_id in command.guild_ids:
                     try:
+                        print(command.to_dict())
                         cmd = await self.http.upsert_guild_command(
                             self.user.id, guild_id, command.to_dict()
                         )
