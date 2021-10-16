@@ -82,7 +82,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
             permissions = {}  # type: ignore
 
         for guild in permissions:
-            perms = ApplicationCommandPermissions(guild_id=guild)
+            perms = ApplicationCommandPermissions(command=self, guild_id=guild)
             perms.overwrites = permissions[guild]
 
             self.permissions.append(perms)

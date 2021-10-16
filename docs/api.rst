@@ -4513,9 +4513,6 @@ ApplicationCommand
     :members:
     :inherited-members:
 
-.. autofunction:: diskord.application.ApplicationCommand
-
-
 SlashCommand
 ~~~~~~~~~~~~
 
@@ -4525,6 +4522,12 @@ SlashCommand
     :members:
     :inherited-members:
 
+
+slash_command
+~~~~~~~~~~~~~~
+
+.. autofunction:: diskord.application.slash_command
+
 Option
 ~~~~~~
 
@@ -4532,6 +4535,11 @@ Option
 
 .. autoclass:: diskord.application.Option()
     :members:
+
+option
+~~~~~~~
+
+.. autofunction:: diskord.application.option
 
 
 SlashCommandChild
@@ -4571,6 +4579,13 @@ UserCommand
     :members:
     :inherited-members:
 
+
+user_command
+~~~~~~~~~~~~~~
+
+.. autofunction:: diskord.application.user_command
+
+
 MessageCommand
 ~~~~~~~~~~~~~~
 
@@ -4579,6 +4594,34 @@ MessageCommand
 .. autoclass:: diskord.application.MessageCommand()
     :members:
     :inherited-members:
+
+message_command
+~~~~~~~~~~~~~~~~~
+
+.. autofunction:: diskord.application.message_command
+
+ApplicationCommandPermissions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: diskord.application.ApplicationCommandPermissions
+
+.. autoclass:: diskord.application.ApplicationCommandPermissions()
+    :members:
+
+CommandPermissionOverwrite
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: diskord.application.CommandPermissionOverwrite
+
+.. autoclass:: diskord.application.CommandPermissionOverwrite()
+    :members:
+
+
+permission
+~~~~~~~~~~
+
+.. autofunction:: diskord.application.permission
+
 
 Exceptions
 ------------

@@ -27,31 +27,95 @@ from ..enums import ApplicationCommandPermissionType
 
 if TYPE_CHECKING:
     from .command import ApplicationCommand
-    from ..abc import Snowflake
 
 __all__ = ('ApplicationCommandPermissions', 'CommandPermissionOverwrite', 'permission')
 
 class ApplicationCommandPermissions:
-    def __init__(self, guild_id: int):
+    """A class that allows you to define permissions for an application command
+    in a :class:`Guild`.
+
+    Parameters
+    -----------
+    command: :class:`application.ApplicationCommand`
+        The application command whose permissions are being defined.
+    guild_id: :class:`int`
+        The ID of guild in which permissions are applied.
+
+    Attributes
+    ----------
+    overwrite: List[:class:`CommandPermissionOverwrite`]
+        The overwrites this permissions set holds.
+    """
+    def __init__(self, command: ApplicationCommand, guild_id: int):
+        self.command  = command
         self.guild_id = guild_id
         self.overwrites = []
 
-    def get_overwrite(self, entity_id: int) -> CommandPermissionOverwrite:
+    def get_overwrite(self, entity_id: int) -> Optional[CommandPermissionOverwrite]:
+        """Gets permission overwrite for provided entity ID.
+
+        Parameters
+        -----------
+        entity_id: :class:`int`
+            The ID of role or user whose overwrite should be get.
+
+        Returns
+        -------
+        Optional[:class:`.CommandPermissionOverwrite`]
+            The permission overwrite if found, otherwise ``None``
+        """
         for overwrite in self.overwrites:
             if overwrite.role_id == entity_id or overwrite.user_id == entity_id:
                 return overwrite
 
     def add_overwrite(self, **options: Any) -> CommandPermissionOverwrite:
+        """Adds a permission overwrite to this permissions set.
+
+        Parameters
+        -----------
+        **options:
+            The options of :class:`.CommandPermissionOverwrite`
+
+        Returns
+        -------
+        :class:`CommandPermissionOverwrite`
+            The permission overwrite that was added.
+        """
         overwrite = CommandPermissionOverwrite(**options)
         self.permissions.append(overwrite)
         return overwrite
 
     def remove_overwrite(self, entity_id: int) -> None:
+        """Removes a permission overwrite for provided entity ID.
+
+        This method will not raise error if overwrite is not found.
+
+        Parameters
+        -----------
+        entity_id: :class:`int`
+            The ID of role or user whose overwrite should be removed.
+        """
         for overwrite in self.overwrites:
             if overwrite.role_id == entity_id or overwrite.user_id == entity_id:
                 return self.permissions.remove(overwrite)
 
 class CommandPermissionOverwrite:
+    """A class that defines an overwrite for :class:`ApplicationCommandPermissions`.
+
+    .. note::
+        Either of ``user_id`` or ``role_id`` must be provided.
+
+    Parameters
+    -----------
+    role_id: :class:`int`
+        The ID of role whose overwrite is being defined, this cannot be mixed with ``user_id``
+        parameter.
+    user_id: :class:`int`
+        The ID of user whose overwrite is being defined, this cannot be mixed with ``user_id``
+        parameter.
+    permission: :class:`bool`
+        Whether to allow the command for provided user or role ID. Defaults to ``False``
+    """
     if TYPE_CHECKING:
         type: CommandPermissionOverwrite
 
