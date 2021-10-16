@@ -117,7 +117,6 @@ class File:
         self.spoiler = spoiler or (
             self.filename is not None and self.filename.startswith("SPOILER_")
         )
-        self.ephemeral = ephemeral
 
     def reset(self, *, seek: Union[int, bool] = True) -> None:
         # The `seek` parameter is needed because
