@@ -514,7 +514,7 @@ class InteractionResponse:
         view: View = MISSING,
         tts: bool = False,
         file: File = MISSING,
-        files: List[File] = MISSING
+        files: List[File] = MISSING,
         ephemeral: bool = False,
         ) -> None:
         """|coro|
