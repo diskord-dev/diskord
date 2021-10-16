@@ -4522,10 +4522,6 @@ SlashCommand
     :members:
     :inherited-members:
 
-
-slash_command
-~~~~~~~~~~~~~~
-
 .. autofunction:: diskord.application.slash_command
 
 Option
@@ -4535,9 +4531,6 @@ Option
 
 .. autoclass:: diskord.application.Option()
     :members:
-
-option
-~~~~~~~
 
 .. autofunction:: diskord.application.option
 
@@ -4579,10 +4572,6 @@ UserCommand
     :members:
     :inherited-members:
 
-
-user_command
-~~~~~~~~~~~~~~
-
 .. autofunction:: diskord.application.user_command
 
 
@@ -4594,9 +4583,6 @@ MessageCommand
 .. autoclass:: diskord.application.MessageCommand()
     :members:
     :inherited-members:
-
-message_command
-~~~~~~~~~~~~~~~~~
 
 .. autofunction:: diskord.application.message_command
 
@@ -4615,10 +4601,6 @@ CommandPermissionOverwrite
 
 .. autoclass:: diskord.application.CommandPermissionOverwrite()
     :members:
-
-
-permission
-~~~~~~~~~~
 
 .. autofunction:: diskord.application.permission
 
