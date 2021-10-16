@@ -231,7 +231,7 @@ class ApplicationCommandMixin:
                 application_id=self._state.user.id,
             )
 
-        self._state._application_commands.pop(self.id, None)  # type: ignore
+        self._state._commands_store.remove_application_command(self.id)  # type: ignore
 
     def _from_data(self, data: ApplicationCommandPayload):
         self._id: int = utils._get_as_snowflake(data, "id")

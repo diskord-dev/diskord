@@ -27,6 +27,7 @@ from __future__ import annotations
 from typing import Callable, Any, Dict, List
 import asyncio
 
+from .. import utils
 from ..application_commands import ApplicationCommandMixin
 from ..errors import ApplicationCommandError, _BaseCommandError
 from ..enums import OptionType
@@ -137,6 +138,70 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
 
     async def invoke(self):
         raise NotImplementedError
+
+    # permissions management
+
+    def add_permissions(self, guild_id: int) -> ApplicationCommandPermissions:
+        """Adds a :class:`~application.ApplicationCommandPermissions` to the command.
+
+        If this method is called after the commands were synced or clean registered
+        initially, you might need to recall :meth:`Client.sync_application_commands`
+        in order for changes to take affect.
+
+        This method would overwrite existing permissions set for this guild if any.
+
+        Parameters
+        ----------
+        guild_id: :class:`int`
+            The ID of guild to add permissions for.
+
+        Returns
+        -------
+        :class:`~application.ApplicationCommandPermissions`
+            The permissions that were added.
+        """
+        original = self.get_permissions(guild_id)
+        if original:
+            self.remove_permissions(guild_id)
+
+        permission = ApplicationCommandPermissions(command=self, guild_id=guild_id)
+        self.permissions.append(permission)
+        return permission
+
+    def remove_permissions(self, guild_id: int) -> None:
+        """Removes a :class:`~application.ApplicationCommandPermissions` from the command.
+
+        If this method is called after the commands were synced or clean registered
+        initially, you might need to recall :meth:`Client.sync_application_commands`
+        in order for changes to take affect.
+
+        This function does not raise an error if the permissions set for the guild
+        is not found.
+
+        Parameters
+        ----------
+        guild_id: :class:`int`
+            The ID of guild whose permissions are being removed.
+        """
+        permission = utils.get(self.permissions, guild_id=guild_id)
+        if not permission:
+            return
+
+        self.permissions.remove(permission)
+
+    def get_permissions(self, guild_id: int) -> Optional[ApplicationCommandPermissions]:
+        """Gets a :class:`~application.ApplicationCommandPermissions` from the command
+        for the provided guild ID.
+
+        This function does not raise an error if the permissions set for the guild
+        is not found, instead, it returns ``None``
+
+        Parameters
+        ----------
+        guild_id: :class:`int`
+            The ID of guild whose permissions are required.
+        """
+        return utils.get(self.permissions, guild_id=guild_id)
 
     def __repr__(self):
         return f"<{self.__class__.__name__} name={self.name!r} description={self.description!r} guild_id={self.guild_id!r} id={self.id!r}"
