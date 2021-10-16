@@ -2017,34 +2017,33 @@ class Client:
 
         Synchronizes the application command permissions to API.
 
-        This function shouldn't generally be used as it is automatically called
+        This method shouldn't generally be used as it is automatically called
         under-the-hood while commands are being registered in :func:`sync_application_commands`
         or :func:`clean_register_application_commands`
 
-        This function takes no parameters.
+        .. note::
+            This method must be called after application commands have been registered.
 
         Raises
         ------
         HTTPException:
             The permissions synchronization failed.
         """
+        # { guild_id: [ { command_id: ..., permissions: ... } ] }
+
         permissions = {}
 
         # firstly, we need to add permissions raw data to permissions list.
         for command in self._connection._commands_store._commands.values():
-            perms = [perm.to_dict() for perm in command._permissions]
+            perms = command.permissions
+            if not perms:
+                continue
 
             for perm in perms:
-                if not perm["guild_id"] in permissions:
-                    permissions[perm["guild_id"]] = []
+                if not perm.guild_id in permissions:
+                    permissions[perm.guild_id] = []
 
-                # ensuring that permissions gets proper ids
-                perm["application_id"] = self.user.id
-                perm["command_id"] = command.id
-
-                permissions[perm["guild_id"]].append(
-                    {"id": perm["command_id"], "permissions": perm["permissions"]}
-                )
+                permissions[perm.guild_id].append({'id': command.id, 'permissions': [o.to_dict() for o in perm.overwrites]})
 
         # finally, batch-editing the permissions
 

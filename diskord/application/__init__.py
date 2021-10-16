@@ -11,5 +11,6 @@ Helper for building application commands.
 from .command import *
 from .context_menu import *
 from .slash import *
+from .permissions import *
 
 from . import mixins, types

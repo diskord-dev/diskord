@@ -63,7 +63,6 @@ __all__ = (
     "ApplicationMessageCommand",
     "ApplicationCommandGuildPermissions",
     "ApplicationCommandPermission",
-    "application_command_permission",
 )
 
 class ApplicationCommandGuildPermissions:
@@ -72,20 +71,16 @@ class ApplicationCommandGuildPermissions:
 
     Application commands permissions allow you to restrict an application command
     to a certain roles or users.
+
+    This class is not user construct-able, Use :class:`application.ApplicationCommandPermissions`
+    instead.
     """
 
     def __init__(self, data: GuildApplicationCommandPermissionsPayload, state: ConnectionState):
         self._command_id = utils._get_as_snowflake(data, 'id')
         self._application_id = utils._get_as_snowflake(data, 'application_id')
         self._guild_id = utils._get_as_snowflake(data, 'guild_id')
-        self._permissions = [
-            ApplicationCommandPermission(
-                id=int(perm['id']),
-                type=try_enum(ApplicationCommandPermissionType, int(data['type'])),
-                permissions=data['permission']
-            )
-            for perm in data.get('permissions', [])
-            ]
+        self._permissions = [ApplicationCommandPermission(perm) for perm in data.get('permissions', [])]
 
         self._state = state
 
@@ -114,21 +109,13 @@ class ApplicationCommandGuildPermissions:
         """List[:class:`ApplicationCommandPermission`]: The list of permissions that are configured."""
         return self._permissions
 
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "command_id": self._command_id,
-            "application_id": self._application_id,
-            "guild_id": self._guild_id,
-            "permissions": [perm.to_dict() for perm in self._permissions],
-        }
-
 
 class ApplicationCommandPermission:
     """A class representing a specific permission for an application command.
 
-    The purpose of this class is to edit the commands permissions of a command in a guild.
-    A number of parameters can be passed in this class initialization to customise
-    the permissions.
+    .. note::
+        This class is not user constructable, Use :class:`application.CommandPermissionOverwrite`
+        instead.
 
     Parameters
     ----------
@@ -144,22 +131,13 @@ class ApplicationCommandPermission:
         The permission for the command. If this is set to ``False`` the provided
         user or role will not be able to use the command. Defaults to ``False``
     """
+    __slots__ = ('id', 'type', 'permission')
 
-    def __init__(
-        self, *, id: int, type: ApplicationCommandPermissionType, permission: bool
-    ):
-        self.id = id
-        self.type = type
-        self.permission = bool(permission)
+    def __init__(self, data):
+        self.id = int(data['id'])
+        self.type: ApplicationCommandPermissionType = try_enum(ApplicationCommandPermissionType, int(data['type']))
+        self.permission = data['permission']
 
-    def to_dict(self):
-        ret = {
-            "id": self.id,
-            "permission": self.permission,
-            "type": self.type.value,
-        }
-
-        return ret
 
 class ApplicationCommandMixin:
     if TYPE_CHECKING:
@@ -513,66 +491,3 @@ class ApplicationCommandOption:
 
             for t in original:
                 self.channel_types.append(try_enum(ChannelType, int(t)))
-
-
-def application_command_permission(
-    *, guild_id: int, user_id: int = None, role_id: int = None, permission: bool = False
-):
-    """A decorator that defines the permissions of :class:`ApplicationCommand`
-
-    Usage: ::
-
-        @bot.slash_command(guild_ids=[12345], description='Cool command')
-        @diskord.application_command_permission(guild_id=12345, user_id=1234, permission=False)
-        @diskord.application_command_permission(guild_id=12345, role_id=123456, permission=True)
-        async def command(ctx):
-            await ctx.respond('Hello world')
-
-    In above command, The user with ID ``1234`` would not be able to use to command
-    and anyone with role of ID ``123456`` will be able to use the command in the guild
-    with ID ``12345``.
-    """
-
-    def inner(func: Callable[..., Any]):
-        if not hasattr(func, "__application_command_permissions__"):
-            func.__application_command_permissions__ = []
-
-        if user_id is not None and role_id is not None:
-            raise TypeError("keyword paramters user_id and role_id cannot be mixed.")
-
-        if user_id is not None:
-            id = user_id
-            type = ApplicationCommandPermissionType.user
-
-        elif role_id is not None:
-            id = role_id
-            type = ApplicationCommandPermissionType.role
-
-        for perm in func.__application_command_permissions__:
-            if perm.guild_id == guild_id:
-                perm._permissions.append(
-                    ApplicationCommandPermission(
-                        id=id,
-                        type=type,
-                        permission=permission,
-                    )
-                )
-                return func
-
-        func.__application_command_permissions__.append(
-            ApplicationCommandGuildPermissions(
-                guild_id=guild_id,
-                application_id=None,  # type: ignore
-                command_id=None,  # type: ignore
-                permissions=[
-                    ApplicationCommandPermission(
-                        id=id,
-                        type=type,
-                        permission=permission,
-                    )
-                ],
-            )
-        )
-        return func
-
-    return inner

@@ -32,8 +32,7 @@ from ..errors import ApplicationCommandError, _BaseCommandError
 from ..enums import OptionType
 from .mixins import ChecksMixin
 from .types import Check
-
-# TODO: permissions fix.
+from .permissions import ApplicationCommandPermissions
 
 class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
     """Represents an application command.
@@ -76,13 +75,17 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
         return len(self._guild_ids) == 0
 
     def _update_callback_data(self):
+        self.permissions: List[ApplicationCommandPermissions] = []
         try:
             permissions = self.callback.__application_command_permissions__
         except AttributeError:
-            permissions = []  # type: ignore
+            permissions = {}  # type: ignore
 
-        for perm in permissions:
-            perm._command = self
+        for guild in permissions:
+            perms = ApplicationCommandPermissions(guild_id=guild)
+            perms.overwrites = permissions[guild]
+
+            self.permissions.append(perms)
 
         self.checks: List[Check]
         try:
@@ -90,8 +93,6 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
             self.checks.reverse()
         except AttributeError:
             self.checks = []
-
-        self._permissions: List[GuildApplicationCommandPermissions] = permissions
 
     @property
     def _bot(self):
@@ -116,11 +117,6 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
             self.append_option(opt)
 
         self._update_callback_data()
-
-    @property
-    def permissions(self) -> List[GuildApplicationCommandPermissions]:
-        """List[:class:`ApplicationCommandGuildPermissions`]: List of permissions this command holds."""
-        return self._permissions
 
     @property
     def guild_ids(self) -> List[int]:
