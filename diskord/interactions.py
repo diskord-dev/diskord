@@ -57,6 +57,7 @@ from .message import Message, Attachment
 from .object import Object
 from .permissions import Permissions
 from .webhook.async_ import async_context, Webhook, handle_message_parameters
+from .file import File
 
 __all__ = (
     "Interaction",
@@ -76,7 +77,6 @@ if TYPE_CHECKING:
     )
     from .guild import Guild
     from .state import ConnectionState
-    from .file import File
     from .mentions import AllowedMentions
     from aiohttp import ClientSession
     from .embeds import Embed
@@ -513,8 +513,10 @@ class InteractionResponse:
         embeds: List[Embed] = MISSING,
         view: View = MISSING,
         tts: bool = False,
+        file: File = MISSING,
+        files: List[File] = MISSING
         ephemeral: bool = False,
-    ) -> None:
+        ) -> None:
         """|coro|
 
         Responds to this interaction by sending a message.
@@ -533,6 +535,11 @@ class InteractionResponse:
             Indicates if the message should be sent using text-to-speech.
         view: :class:`discord.ui.View`
             The view to send with the message.
+        file: :class:`File`
+            The file to send. This cannot be mixed with ``files`` parameter.
+        files: List[:class:`File`]
+            The list of files to send, This cannot be mixed with ``file`` parameter.
+            Can be upto 10.
         ephemeral: :class:`bool`
             Indicates if the message should only be visible to the user who started the interaction.
             If a view is sent with an ephemeral message and it has no timeout set then the timeout
@@ -559,6 +566,9 @@ class InteractionResponse:
         if embed is not MISSING and embeds is not MISSING:
             raise TypeError("cannot mix embed and embeds keyword arguments")
 
+        if file is not MISSING and files is not MISSING:
+            raise TypeError('cannot mix file and files keyword arguments')
+
         if embed is not MISSING:
             embeds = [embed]
 
@@ -576,6 +586,18 @@ class InteractionResponse:
         if view is not MISSING:
             payload["components"] = view.to_components()
 
+        if file is not MISSING:
+            if not isinstance(file, File):
+                raise 'files keyword argument must be an instance of File, Got {}'.format(file.__class__.__name__)
+            else:
+                files = [file]
+
+        if files is not MISSING:
+            if len(files) > 10:
+                raise ValueError('files keyword argument must be a list of maximum 10 arguments. Got {}'.format(len(files)))
+            elif not all(isinstance(file, File) for file in files):
+                raise TypeError('files keyword argument must be a list of File, Got {}'.format(files.__class__.__name__))
+
         parent = self._parent
         adapter = async_context.get()
         await adapter.create_interaction_response(
@@ -584,6 +606,7 @@ class InteractionResponse:
             session=parent._session,
             type=InteractionResponseType.channel_message.value,
             data=payload,
+            files=files
         )
 
         if view is not MISSING:
