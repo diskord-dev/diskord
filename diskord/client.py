@@ -1824,29 +1824,7 @@ class Client:
         :class:`application.ApplicationCommand`
             The added command.
         """
-        if not isinstance(command, application.ApplicationCommand):
-            raise TypeError(
-                "command parameter must be an instance of application.ApplicationCommand."
-            )
-
-        command._client = self
-
-        if self.application_commands_guild_ids and not command._guild_ids:
-            command._guild_ids = self.application_commands_guild_ids
-
-        self._connection._commands_store._pending.append(command)
-
-        if not hasattr(command.callback, "__application_command_params__"):
-            command.callback.__application_command_params__ = {}
-
-        for opt in command.callback.__application_command_params__.values():
-            command.append_option(opt)
-
-        # reset the params so they don't conflict if user decides to readd this
-        # command.
-        command.callback.__application_command_params__ = {}
-
-        return command
+        return self._connection._commands_store.add_pending_command(command)
 
     def remove_pending_command(self, command: application.ApplicationCommand, /):
         """Removes an application command from the pending commands list that will be
@@ -1860,11 +1838,7 @@ class Client:
         command: :class:`application.ApplicationCommand`
             The application command to register.
         """
-        try:
-            self._connection._commands_store._pending.remove(command)
-            return command
-        except ValueError:
-            return
+        return self._connection._commands_store.remove_pending_command(command)
 
     def remove_application_command(
         self, command_id: int, /
@@ -2152,69 +2126,12 @@ class Client:
             application command couldn't be upserted in a guild but the commands sync
             process will not be interrupted. Defaults to ``True``
         """
-        _log.info("Synchronizing internal cache commands.")
-        if not self._connection._commands_store._pending:
-            # since we don't have any commands pending to register then
-            # we just return
-            return
-
-        commands = await self.http.get_global_commands(self.user.id)
-        non_registered = []
-
-        # Synchronising the fetched commands with internal cache.
-        for command in commands:
-            registered = utils.get(
-                [c for c in self._connection._commands_store._pending if not c.guild_ids],
-                name=command["name"],
-                type=command["type"],
+        await self._connection._commands_store.sync_pending(
+            delete_unregistered_commands=delete_unregistered_commands,
+            ignore_guild_register_fail=ignore_guild_register_fail
             )
-            if registered is None:
-                non_registered.append(command)
-                continue
 
-            self._connection._commands_store.add_application_command(registered._from_data(command))
-            self._connection._commands_store._pending.remove(registered)
-
-        # Deleting the command that weren't found in internal cache
-        # this parameter is set to False by default because of the fact that
-        # it can be very expensive to delete the commands on every restart and would
-        # lead to ratelimit often.
-        if delete_unregistered_commands:
-            for command in non_registered:
-                if command.get("guild_id"):
-                    await self.http.delete_guild_command(
-                        self.user.id, command["guild_id"], command["id"]
-                    )
-                else:
-                    await self.http.delete_global_command(self.user.id, command["id"])
-
-        # Registering the remaining commands
-        while len(self._connection._commands_store._pending):
-            index = len(self._connection._commands_store._pending) - 1
-            command = self._connection._commands_store._pending[index]
-            if command.guild_ids:
-                for guild_id in command.guild_ids:
-                    try:
-                        print(command.to_dict())
-                        cmd = await self.http.upsert_guild_command(
-                            self.user.id, guild_id, command.to_dict()
-                        )
-                    except Forbidden as e:
-                        # the bot is missing application.commands scope so cannot
-                        # make the command in the guild
-                        if ignore_guild_register_fail:
-                            traceback.print_exc()
-                            continue
-                        else:
-                            raise e
-            else:
-                data = command.to_dict()
-                cmd = await self.http.upsert_global_command(self.user.id, data)
-
-            self._connection._commands_store.add_application_command(command._from_data(cmd))
-            self._connection._commands_store._pending.pop(index)
-
-        # finally, batch-editing the permissions
+        # batch-editing the permissions
         await self.sync_application_commands_permissions()
 
         _log.info(
@@ -2244,69 +2161,8 @@ class Client:
             application command couldn't be upserted in a guild but the commands registration
             process will not be interrupted. Defaults to ``True``
         """
-        # This needs a refactor as current implementation is kind of hacky and can
-        # be unstable.
 
-        if not self._connection._commands_store._pending:
-            # since we don't have any commands pending, we will do nothing and return
-            return
-
-        _log.info(
-            "Clean Registering %s application commands."
-            % str(len(self._connection._commands_store._pending))
-        )
-
-        commands = []
-
-        # Firstly, We will register the global commands
-        for command in (cmd for cmd in self._connection._commands_store._pending if not cmd.guild_ids):
-            data = command.to_dict()
-            commands.append(data)
-
-        cmds = await self.http.bulk_upsert_global_commands(self.user.id, commands)
-
-        for cmd in cmds:
-            command = utils.get(
-                self._connection._commands_store._pending,
-                name=cmd["name"],
-                type=try_enum(ApplicationCommandType, int(cmd["type"])),
-            )
-            self._connection._commands_store.add_application_command(command._from_data(cmd))
-            self._connection._commands_store._pending.remove(command)
-
-        # Registering the guild commands now
-
-        guilds = {}
-
-        for cmd in (command for command in self._connection._commands_store._pending if command.guild_ids):
-            data = cmd.to_dict()
-            for guild in cmd.guild_ids:
-                if guilds.get(guild) is None:
-                    guilds[guild] = []
-
-                guilds[guild].append(data)
-
-        for guild in guilds:
-            try:
-                cmds = await self.http.bulk_upsert_guild_commands(
-                    self.user.id, guild, guilds[guild]
-                )
-            except Forbidden as e:
-                # bot doesn't has application.commands scope
-                if ignore_guild_register_fail:
-                    traceback.print_exc()
-                    continue
-                else:
-                    raise e
-            for cmd in cmds:
-                command = utils.get(
-                    self._connection._commands_store._pending,
-                    name=cmd["name"],
-                    type=try_enum(ApplicationCommandType, int(cmd["type"])),
-                )
-                self._connection._commands_store.add_application_command(command._from_data(cmd))
-
-                self._connection._commands_store._pending.remove(command)
+        await self._connection._commands_store.clean_register(ignore_guild_register_fail=ignore_guild_register_fail)
 
         # finally, batch-editing the permissions
         await self.sync_application_commands_permissions()

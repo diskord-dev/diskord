@@ -26,14 +26,17 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 from typing import Callable, Any, Dict, List
 import asyncio
+import logging
 
 from .. import utils
 from ..application_commands import ApplicationCommandMixin
 from ..errors import ApplicationCommandError, _BaseCommandError
-from ..enums import OptionType
+from ..enums import OptionType, ApplicationCommandType, try_enum
 from .mixins import ChecksMixin
 from .types import Check
 from .permissions import ApplicationCommandPermissions
+
+_log = logging.getLogger(__name__)
 
 class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
     """Represents an application command.
@@ -227,6 +230,38 @@ class ApplicationCommandStore:
     def remove_application_command(self, id: int):
         return self._commands.pop(id, None) # type: ignore
 
+    def add_pending_command(self, command: ApplicationCommand):
+        if not isinstance(command, ApplicationCommand):
+            raise TypeError(
+                "command parameter must be an instance of application.ApplicationCommand."
+            )
+
+        client = self._state._get_client()
+        command._client = client
+
+        if client.application_commands_guild_ids and not command._guild_ids:
+            command._guild_ids = client.application_commands_guild_ids
+
+        self._pending.append(command)
+
+        if not hasattr(command.callback, "__application_command_params__"):
+            command.callback.__application_command_params__ = {}
+
+        for opt in command.callback.__application_command_params__.values():
+            command.append_option(opt)
+
+        # reset the params so they don't conflict if user decides to re-add this
+        # command.
+        command.callback.__application_command_params__ = {}
+
+        return command
+
+    def remove_pending_command(self, command: ApplicationCommand):
+        try:
+            self._pending.remove(command)
+        except ValueError:
+            return
+
     async def _dispatch_command(self, command: ApplicationCommand, interaction: Interaction):
         # _get_client will never be unavailable at this point
         client = self._state._get_client() # type: ignore
@@ -271,3 +306,133 @@ class ApplicationCommandStore:
             name=f"discord-application-command-autocomplete-dispatch-{command.id}",
         )
 
+    async def sync_pending(self, *, delete_unregistered_commands: bool = False, ignore_guild_register_fail: bool = True):
+        _log.info("Synchronizing internal cache commands.")
+
+        if not self._pending:
+            # since we don't have any commands pending to register then
+            # we just return
+            _log.info('No commands are pending, No changes made.')
+            return
+
+        client = self._state._get_client()
+        commands = await self._state.http.get_global_commands(client.user.id)
+        non_registered = []
+
+        # Synchronising the fetched commands with internal cache.
+        for command in commands:
+            registered = utils.get(
+                [c for c in self._pending if not c.guild_ids],
+                name=command["name"],
+                type=command["type"],
+            )
+            if registered is None:
+                non_registered.append(command)
+                continue
+
+            self.add_application_command(registered._from_data(command))
+            self.remove_pending_command(registered)
+
+        # Deleting the command that weren't found in internal cache
+        # this parameter is set to False by default because of the fact that
+        # it can be very expensive to delete the commands on every restart and would
+        # lead to ratelimit often.
+        if delete_unregistered_commands:
+            for command in non_registered:
+                if command.get("guild_id"):
+                    await self._state.http.delete_guild_command(
+                        client.user.id, command["guild_id"], command["id"]
+                    )
+                else:
+                    await self._state.http.delete_global_command(client.user.id, command["id"])
+
+        # Registering the remaining commands
+        while len(self._pending):
+            index = len(self._pending) - 1
+            command = self._pending[index]
+            if command.guild_ids:
+                for guild_id in command.guild_ids:
+                    try:
+                        cmd = await self._state.http.upsert_guild_command(
+                            client.user.id, guild_id, command.to_dict()
+                        )
+                    except Forbidden as e:
+                        # the bot is missing application.commands scope so cannot
+                        # make the command in the guild
+                        if ignore_guild_register_fail:
+                            traceback.print_exc()
+                            continue
+                        else:
+                            raise e
+            else:
+                data = command.to_dict()
+                cmd = await self._state.http.upsert_global_command(client.user.id, data)
+
+            self.add_application_command(command._from_data(cmd))
+            self._pending.pop(index)
+
+    async def clean_register(self, *, ignore_guild_register_fail: bool = True):
+        # This needs a refactor as current implementation is kind of hacky and can
+        # be unstable.
+
+        if not self._pending:
+            # since we don't have any commands pending, we will do nothing and return
+            _log.info('No commands are pending, No changes made.')
+            return
+
+        client = self._state._get_client()
+        _log.info(
+            "Clean Registering %s application commands."
+            % str(len(self._pending))
+        )
+
+        commands = []
+
+        # Firstly, We will register the global commands
+        for command in (cmd for cmd in self._pending if not cmd.guild_ids):
+            data = command.to_dict()
+            commands.append(data)
+
+        cmds = await self._state.http.bulk_upsert_global_commands(client.user.id, commands)
+
+        for cmd in cmds:
+            command = utils.get(
+                self._pending,
+                name=cmd["name"],
+                type=try_enum(ApplicationCommandType, int(cmd["type"])),
+            )
+            self.add_application_command(command._from_data(cmd))
+            self.remove_pending_command(command)
+
+        # Registering the guild commands now
+
+        guilds = {}
+
+        for cmd in (command for command in self._pending if command.guild_ids):
+            data = cmd.to_dict()
+            for guild in cmd.guild_ids:
+                if guilds.get(guild) is None:
+                    guilds[guild] = []
+
+                guilds[guild].append(data)
+
+        for guild in guilds:
+            try:
+                cmds = await self._state.http.bulk_upsert_guild_commands(
+                    client.user.id, guild, guilds[guild]
+                )
+            except Forbidden as e:
+                # bot doesn't has application.commands scope
+                if ignore_guild_register_fail:
+                    traceback.print_exc()
+                    continue
+                else:
+                    raise e
+            for cmd in cmds:
+                command = utils.get(
+                    self._pending,
+                    name=cmd["name"],
+                    type=try_enum(ApplicationCommandType, int(cmd["type"])),
+                )
+                self.add_application_command(command._from_data(cmd))
+                self.remove_pending_command(command)
