@@ -92,6 +92,10 @@ class ChildrenMixin:
         for opt in child.callback.__application_command_params__.values():
             child.append_option(opt)
 
+        # resetting the params so if user tries to re-add the command, the params
+        # don't get duplicated.
+        child.callback.__application_command_params__ = {}
+
         return child
 
     def remove_child(self, **attrs: Any) -> Optional[SlashCommandChild]:
