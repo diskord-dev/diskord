@@ -211,6 +211,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
 
 class ApplicationCommandStore:
     def __init__(self, state: ConnectionState):
+        self._pending: List[ApplicationCommand] = []
         self._commands: Dict[int, ApplicationCommand] = {}
         self._state = state
 

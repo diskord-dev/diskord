@@ -296,7 +296,7 @@ class Client:
         self._connection._get_websocket = self._get_websocket
         self._connection._get_client = lambda: self
 
-        self._pending_commands: List[application.ApplicationCommand] = []
+        self._connection._commands_store._pending: List[application.ApplicationCommand] = []
 
         if VoiceClient.warn_nacl:
             VoiceClient.warn_nacl = False
@@ -1773,10 +1773,15 @@ class Client:
     @property
     def pending_commands(self):
         """
-        Returns a list of application commands that will be registered once the bot connects.
+        Returns a list of application commands that had been added to pending
+        commands list and are awaiting register.
 
         Note that this is most likely to be empty after the bot has connected to Discord because
-        all commands are registered as soon as the connection is made.
+        all commands are registered as soon as the connection is made. However, any
+        commands added after bot connect will be added to this list.
+
+        When this list has some commands, you can call :meth:`~Client.sync_application_commands`
+        to sync them.
 
         Returns
         -------
@@ -1784,8 +1789,7 @@ class Client:
         List[:class:`diskord.application.ApplicationCommand`]
             List of application commands that will be registered.
         """
-        # Remove this property? it seems kind of useless.
-        return self._pending_commands
+        return self._connection._commands_store._pending
 
     @property
     def application_commands(self):
@@ -1830,7 +1834,7 @@ class Client:
         if self.application_commands_guild_ids and not command._guild_ids:
             command._guild_ids = self.application_commands_guild_ids
 
-        self._pending_commands.append(command)
+        self._connection._commands_store._pending.append(command)
 
         if not hasattr(command.callback, "__application_command_params__"):
             command.callback.__application_command_params__ = {}
@@ -1857,7 +1861,7 @@ class Client:
             The application command to register.
         """
         try:
-            self._pending_commands.remove(command)
+            self._connection._commands_store._pending.remove(command)
             return command
         except ValueError:
             return
@@ -2149,7 +2153,7 @@ class Client:
             process will not be interrupted. Defaults to ``True``
         """
         _log.info("Synchronizing internal cache commands.")
-        if not self._pending_commands:
+        if not self._connection._commands_store._pending:
             # since we don't have any commands pending to register then
             # we just return
             return
@@ -2160,7 +2164,7 @@ class Client:
         # Synchronising the fetched commands with internal cache.
         for command in commands:
             registered = utils.get(
-                [c for c in self._pending_commands if not c.guild_ids],
+                [c for c in self._connection._commands_store._pending if not c.guild_ids],
                 name=command["name"],
                 type=command["type"],
             )
@@ -2169,7 +2173,7 @@ class Client:
                 continue
 
             self._connection._commands_store.add_application_command(registered._from_data(command))
-            self._pending_commands.remove(registered)
+            self._connection._commands_store._pending.remove(registered)
 
         # Deleting the command that weren't found in internal cache
         # this parameter is set to False by default because of the fact that
@@ -2185,9 +2189,9 @@ class Client:
                     await self.http.delete_global_command(self.user.id, command["id"])
 
         # Registering the remaining commands
-        while len(self._pending_commands):
-            index = len(self._pending_commands) - 1
-            command = self._pending_commands[index]
+        while len(self._connection._commands_store._pending):
+            index = len(self._connection._commands_store._pending) - 1
+            command = self._connection._commands_store._pending[index]
             if command.guild_ids:
                 for guild_id in command.guild_ids:
                     try:
@@ -2208,7 +2212,7 @@ class Client:
                 cmd = await self.http.upsert_global_command(self.user.id, data)
 
             self._connection._commands_store.add_application_command(command._from_data(cmd))
-            self._pending_commands.pop(index)
+            self._connection._commands_store._pending.pop(index)
 
         # finally, batch-editing the permissions
         await self.sync_application_commands_permissions()
@@ -2243,19 +2247,19 @@ class Client:
         # This needs a refactor as current implementation is kind of hacky and can
         # be unstable.
 
-        if not self._pending_commands:
+        if not self._connection._commands_store._pending:
             # since we don't have any commands pending, we will do nothing and return
             return
 
         _log.info(
             "Clean Registering %s application commands."
-            % str(len(self._pending_commands))
+            % str(len(self._connection._commands_store._pending))
         )
 
         commands = []
 
         # Firstly, We will register the global commands
-        for command in (cmd for cmd in self._pending_commands if not cmd.guild_ids):
+        for command in (cmd for cmd in self._connection._commands_store._pending if not cmd.guild_ids):
             data = command.to_dict()
             commands.append(data)
 
@@ -2263,18 +2267,18 @@ class Client:
 
         for cmd in cmds:
             command = utils.get(
-                self._pending_commands,
+                self._connection._commands_store._pending,
                 name=cmd["name"],
                 type=try_enum(ApplicationCommandType, int(cmd["type"])),
             )
             self._connection._commands_store.add_application_command(command._from_data(cmd))
-            self._pending_commands.remove(command)
+            self._connection._commands_store._pending.remove(command)
 
         # Registering the guild commands now
 
         guilds = {}
 
-        for cmd in (command for command in self._pending_commands if command.guild_ids):
+        for cmd in (command for command in self._connection._commands_store._pending if command.guild_ids):
             data = cmd.to_dict()
             for guild in cmd.guild_ids:
                 if guilds.get(guild) is None:
@@ -2296,13 +2300,13 @@ class Client:
                     raise e
             for cmd in cmds:
                 command = utils.get(
-                    self._pending_commands,
+                    self._connection._commands_store._pending,
                     name=cmd["name"],
                     type=try_enum(ApplicationCommandType, int(cmd["type"])),
                 )
                 self._connection._commands_store.add_application_command(command._from_data(cmd))
 
-                self._pending_commands.remove(command)
+                self._connection._commands_store._pending.remove(command)
 
         # finally, batch-editing the permissions
         await self.sync_application_commands_permissions()
