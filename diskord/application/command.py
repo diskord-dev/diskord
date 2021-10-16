@@ -164,7 +164,7 @@ class ApplicationCommandStore:
     async def _dispatch_command(self, command: ApplicationCommand, interaction: Interaction):
         # _get_client will never be unavailable at this point
         client = self._state._get_client() # type: ignore
-        context = client.get_application_context(interaction)
+        context = client.get_interaction_context(interaction)
 
         try:
             await command.invoke(context)

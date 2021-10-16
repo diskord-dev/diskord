@@ -2382,9 +2382,9 @@ class Client:
 
         return inner
 
-    # Command handler
+    # Command handling
 
-    def get_application_context(
+    def get_interaction_context(
         self, interaction: Interaction, *, cls: InteractionContext = None
     ) -> InteractionContext:
         """
