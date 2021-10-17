@@ -26,6 +26,7 @@ from .application_commands import *
 from .asset import *
 from .colour import *
 from .components import *
+from . import utils, opus, abc, ui, application
 from .client import *
 from .emoji import *
 from .errors import *
@@ -44,7 +45,6 @@ from .invite import *
 from .template import *
 from .widget import *
 from .object import *
-from . import utils, opus, abc, ui, application
 from .reaction import *
 from .enums import *
 from .embeds import *
