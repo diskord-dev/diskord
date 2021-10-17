@@ -10,7 +10,7 @@ Helper for building application commands.
 """
 from .command import *
 from .context_menus import *
-from .commands_permissions import *
 from .slash import *
+from .permissions import *
 
-from . import commands_mixins, commands_types
+from . import mixins, types

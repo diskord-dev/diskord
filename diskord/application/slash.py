@@ -27,7 +27,6 @@ from __future__ import annotations
 from typing import Union, List, Callable, Any, Optional, TYPE_CHECKING
 import inspect
 
-from ..application_commands import OptionChoice
 from ..utils import unwrap_function, get_signature_parameters, get
 from ..enums import OptionType, ChannelType, ApplicationCommandType
 from ..member import Member
@@ -39,6 +38,7 @@ from .command import ApplicationCommand
 from .mixins import ChildrenMixin, OptionsMixin
 
 if TYPE_CHECKING:
+    from ..application_commands import OptionChoice
     from ..interactions import Interaction
     from ..types.interactions import (
         ApplicationCommandOptionChoice as ApplicationCommandOptionChoicePayload,
@@ -254,6 +254,8 @@ class Option:
         :class:`OptionChoice`
             The added choice.
         """
+        from ..application_commands import OptionChoice
+
         choice = OptionChoice(**attrs)
         choice._option = self
         self._choices.insert(index, choice)

@@ -68,10 +68,10 @@ from .invite import Invite
 from .integrations import _integration_factory
 from .interactions import Interaction
 from .ui.view import ViewStore, View
+from .application.command import ApplicationCommandStore
 from .stage_instance import StageInstance
 from .threads import Thread, ThreadMember
 from .sticker import GuildSticker
-from .application.command import ApplicationCommandStore
 
 if TYPE_CHECKING:
     from .abc import PrivateChannel

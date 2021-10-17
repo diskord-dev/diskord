@@ -35,7 +35,7 @@ from typing import (
     Union,
 )
 
-from . import utils
+from .utils import _get_as_snowflake
 from .enums import (
     ApplicationCommandType,
     ApplicationCommandPermissionType,
@@ -50,7 +50,6 @@ if TYPE_CHECKING:
         ApplicationCommandOption as ApplicationCommandOptionPayload,
         GuildApplicationCommandPermissions as GuildApplicationCommandPermissionsPayload,
     )
-    from .application.slash import Option
     from .state import ConnectionState
     from .guild import Guild
 
@@ -77,9 +76,9 @@ class ApplicationCommandGuildPermissions:
     """
 
     def __init__(self, data: GuildApplicationCommandPermissionsPayload, state: ConnectionState):
-        self._command_id = utils._get_as_snowflake(data, 'id')
-        self._application_id = utils._get_as_snowflake(data, 'application_id')
-        self._guild_id = utils._get_as_snowflake(data, 'guild_id')
+        self._command_id = _get_as_snowflake(data, 'id')
+        self._application_id = _get_as_snowflake(data, 'application_id')
+        self._guild_id = _get_as_snowflake(data, 'guild_id')
         self._permissions = [ApplicationCommandPermission(perm) for perm in data.get('permissions', [])]
 
         self._state = state
@@ -234,10 +233,10 @@ class ApplicationCommandMixin:
         self._state._commands_store.remove_application_command(self.id)  # type: ignore
 
     def _from_data(self, data: ApplicationCommandPayload):
-        self._id: int = utils._get_as_snowflake(data, "id")
-        self._application_id: int = utils._get_as_snowflake(data, "application_id")
-        self._guild_id: int = utils._get_as_snowflake(data, "guild_id")
-        self._version: int = utils._get_as_snowflake(data, "version")
+        self._id: int = _get_as_snowflake(data, "id")
+        self._application_id: int = _get_as_snowflake(data, "application_id")
+        self._guild_id: int = _get_as_snowflake(data, "guild_id")
+        self._version: int = _get_as_snowflake(data, "version")
         self._default_permission = data.get("default_permission", getattr(self, "_default_permission", True))  # type: ignore
         self._name = data.get("name", getattr(self, '_name', None))
         self._description = data.get("description", getattr(self, '_description', None))

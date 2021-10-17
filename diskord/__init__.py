@@ -20,13 +20,13 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)
 import logging
 from typing import NamedTuple, Literal
 
+from . import utils, opus, abc, ui, application
 from .activity import *
 from .appinfo import *
 from .application_commands import *
 from .asset import *
 from .colour import *
 from .components import *
-from .interactions import *
 from .client import *
 from .emoji import *
 from .errors import *
@@ -49,7 +49,6 @@ from .reaction import *
 from .enums import *
 from .embeds import *
 from .mentions import *
-from . import utils, opus, abc, ui, application
 from .shard import *
 from .player import *
 from .webhook import *
@@ -59,6 +58,7 @@ from .raw_models import *
 from .team import *
 from .sticker import *
 from .stage_instance import *
+from .interactions import *
 from .threads import *
 from .welcome_screen import *
 

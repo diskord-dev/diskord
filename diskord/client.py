@@ -64,7 +64,6 @@ from .activity import ActivityTypes, BaseActivity, create_activity
 from .voice_client import VoiceClient
 from .http import HTTPClient
 from . import utils
-from .state import ConnectionState
 from .utils import MISSING
 from .object import Object
 from .backoff import ExponentialBackoff
@@ -82,9 +81,9 @@ from .application_commands import (
     ApplicationCommandGuildPermissions,
     ApplicationCommandPermission,
 )
-from . import application
 from .interactions import InteractionContext, InteractionType
-
+from . import application
+from .state import ConnectionState
 
 if TYPE_CHECKING:
     from .abc import SnowflakeTime, PrivateChannel, GuildChannel, Snowflake
