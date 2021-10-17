@@ -30,7 +30,7 @@ import logging
 
 from ..utils import get as utils_get
 from ..application_commands import ApplicationCommandMixin
-from ..errors import ApplicationCommandError, _BaseCommandError
+from ..errors import ApplicationCommandError, _BaseCommandError, Forbidden
 from ..enums import OptionType, ApplicationCommandType, try_enum
 from .mixins import ChecksMixin
 from .types import Check
