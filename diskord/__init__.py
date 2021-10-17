@@ -20,7 +20,6 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)
 import logging
 from typing import NamedTuple, Literal
 
-from . import utils, opus, abc, ui, application
 from .activity import *
 from .appinfo import *
 from .application_commands import *
@@ -61,6 +60,7 @@ from .stage_instance import *
 from .interactions import *
 from .threads import *
 from .welcome_screen import *
+from . import utils, opus, abc, ui, application
 
 
 class VersionInfo(NamedTuple):
