@@ -28,7 +28,7 @@ from typing import Callable, Any, Dict, List
 import asyncio
 import logging
 
-from .. import utils
+from ..utils import get as utils_get
 from ..application_commands import ApplicationCommandMixin
 from ..errors import ApplicationCommandError, _BaseCommandError
 from ..enums import OptionType, ApplicationCommandType, try_enum
@@ -186,7 +186,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
         guild_id: :class:`int`
             The ID of guild whose permissions are being removed.
         """
-        permission = utils.get(self.permissions, guild_id=guild_id)
+        permission = utils_get(self.permissions, guild_id=guild_id)
         if not permission:
             return
 
@@ -204,7 +204,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
         guild_id: :class:`int`
             The ID of guild whose permissions are required.
         """
-        return utils.get(self.permissions, guild_id=guild_id)
+        return utils_get(self.permissions, guild_id=guild_id)
 
     def __repr__(self):
         return f"<{self.__class__.__name__} name={self.name!r} description={self.description!r} guild_id={self.guild_id!r} id={self.id!r}"
@@ -321,7 +321,7 @@ class ApplicationCommandStore:
 
         # Synchronising the fetched commands with internal cache.
         for command in commands:
-            registered = utils.get(
+            registered = utils_get(
                 [c for c in self._pending if not c.guild_ids],
                 name=command["name"],
                 type=command["type"],
@@ -396,7 +396,7 @@ class ApplicationCommandStore:
         cmds = await self._state.http.bulk_upsert_global_commands(client.user.id, commands)
 
         for cmd in cmds:
-            command = utils.get(
+            command = utils_get(
                 self._pending,
                 name=cmd["name"],
                 type=try_enum(ApplicationCommandType, int(cmd["type"])),
@@ -429,7 +429,7 @@ class ApplicationCommandStore:
                 else:
                     raise e
             for cmd in cmds:
-                command = utils.get(
+                command = utils_get(
                     self._pending,
                     name=cmd["name"],
                     type=try_enum(ApplicationCommandType, int(cmd["type"])),

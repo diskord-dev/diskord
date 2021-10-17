@@ -31,7 +31,7 @@ from typing import (
     TYPE_CHECKING,
     Callable,
 )
-from .. import utils
+from ..utils import async_all, maybe_coroutine, get
 from .types import Check
 from ..errors import ApplicationCommandCheckFailure
 
@@ -64,7 +64,7 @@ class ChildrenMixin:
         Optional[:class:`SlashCommandChild`]
             The option that matched the traits. ``None`` if not found.
         """
-        return utils.get(self._children, **attrs)
+        return get(self._children, **attrs)
 
     def add_child(self, child: SlashCommandChild) -> SlashCommandChild:
         """Adds a child to this command.
@@ -113,7 +113,7 @@ class ChildrenMixin:
         Optional[:class:`SlashCommandChild`]
             The removed child. ``None`` if not found.
         """
-        child = utils.get(self._children, **attrs)
+        child = get(self._children, **attrs)
         if child:
             self._children.remove(child)
 
@@ -142,7 +142,7 @@ class OptionsMixin:
         Optional[:class:`Option`]
             The option that matched the traits. ``None`` if not found.
         """
-        return utils.get(self._options, **attrs)
+        return get(self._options, **attrs)
 
     def add_option(self, index: int = -1, **attrs: Any) -> Option:
         """Adds an option to command.
@@ -198,7 +198,7 @@ class OptionsMixin:
         Optional[:class:`Option`]
             The removed option. ``None`` if not found.
         """
-        option = utils.get(self._options, **attrs)
+        option = get(self._options, **attrs)
         if option:
             self._options.remove(option)
 
@@ -275,7 +275,7 @@ class ChecksMixin:
         if cog is not None:
             local_check = type(cog)._get_overridden_method(cog.cog_check)
             if local_check is not None:
-                ret = await utils.maybe_coroutine(local_check, ctx)
+                ret = await maybe_coroutine(local_check, ctx)
                 if not ret:
                     return False
 
@@ -284,4 +284,4 @@ class ChecksMixin:
             # since we have no checks, then we just return True.
             return True
 
-        return await utils.async_all(predicate(ctx) for predicate in predicates)  # type: ignore
+        return await async_all(predicate(ctx) for predicate in predicates)  # type: ignore

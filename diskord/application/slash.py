@@ -27,9 +27,8 @@ from __future__ import annotations
 from typing import Union, List, Callable, Any, Optional, TYPE_CHECKING
 import inspect
 
-from .. import utils
 from ..application_commands import OptionChoice
-from ..utils import unwrap_function, get_signature_parameters
+from ..utils import unwrap_function, get_signature_parameters, get
 from ..enums import OptionType, ChannelType, ApplicationCommandType
 from ..member import Member
 from ..user import User
@@ -234,7 +233,7 @@ class Option:
         Optional[:class:`OptionChoice`]
             The removed choice. ``None`` if not found.
         """
-        return utils.get(self._choices, **attrs)
+        return get(self._choices, **attrs)
 
     def add_choice(self, index: int = -1, **attrs) -> OptionChoice:
         """Adds a choice to option.
@@ -296,7 +295,7 @@ class Option:
         Optional[:class:`OptionChoice`]
             The removed choice. ``None`` if not found.
         """
-        choice = utils.get(self._choices, **attrs)
+        choice = get(self._choices, **attrs)
         if choice:
             self._choices.remove(choice)
 
@@ -317,7 +316,7 @@ class Option:
         Optional[:class:`OptionChoice`]
             The option that matched the traits. ``None`` if not found.
         """
-        return utils.get(self._options, **attrs)
+        return get(self._options, **attrs)
 
     def add_option(self, index: int = -1, **attrs: Any) -> Option:
         """Adds a sub-option to option.
@@ -373,7 +372,7 @@ class Option:
         Optional[:class:`Option`]
             The removed choice. ``None`` if not found.
         """
-        option = utils.get(self._options, **attrs)
+        option = get(self._options, **attrs)
         if option:
             self._options.remove(option)
 
