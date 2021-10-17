@@ -63,8 +63,8 @@ from .gateway import *
 from .activity import ActivityTypes, BaseActivity, create_activity
 from .voice_client import VoiceClient
 from .http import HTTPClient
-from .state import ConnectionState
 from . import utils
+from .state import ConnectionState
 from .utils import MISSING
 from .object import Object
 from .backoff import ExponentialBackoff

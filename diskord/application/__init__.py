@@ -9,8 +9,8 @@ Helper for building application commands.
 :license: MIT, see LICENSE for more details.
 """
 from .command import *
-from .context_menu import *
+from .context_menus import *
+from .commands_permissions import *
 from .slash import *
-from .permissions import *
 
-from . import mixins, types
+from . import commands_mixins, commands_types
