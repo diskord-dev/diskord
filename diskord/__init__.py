@@ -44,6 +44,7 @@ from .invite import *
 from .template import *
 from .widget import *
 from .object import *
+from . import utils, opus, abc, ui, application
 from .reaction import *
 from .enums import *
 from .embeds import *
@@ -60,7 +61,6 @@ from .stage_instance import *
 from .interactions import *
 from .threads import *
 from .welcome_screen import *
-from . import utils, opus, abc, ui, application
 
 
 class VersionInfo(NamedTuple):
