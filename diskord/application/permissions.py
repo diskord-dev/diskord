@@ -117,7 +117,7 @@ class CommandPermissionOverwrite:
         Whether to allow the command for provided user or role ID. Defaults to ``False``
     """
     if TYPE_CHECKING:
-        type: CommandPermissionOverwrite
+        type: ApplicationCommandType
 
     def __init__(self, *,
         role_id: Optional[int] = None,
