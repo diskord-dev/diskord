@@ -290,20 +290,25 @@ class ApplicationCommandStore:
             name=f"discord-application-command-dispatch-{command.id}",
         )
 
-    async def _dispatch_autocomplete(self, command, interaction):
+    async def _dispatch_autocomplete(self, interaction):
+        command = self.get_application_command(int(interaction.data['id']))
+
+        for option in interaction.data['options']:
+            if option['type'] == OptionType.sub_command.value:
+                command = command.get_child(name=option['name'])
+            elif option['type'] == OptionType.sub_command_group.value:
+                grp = command.get_child(name=option['name'])
+                # first element is the command being used.
+                command = grp.get_child(name=option['options'][0]['name'])
+
         choices = await command.resolve_autocomplete_choices(interaction)
         await interaction.response.autocomplete(choices)
 
 
     def dispatch_autocomplete(self, interaction: Interaction):
-        command = self.get_application_command(int(interaction.data['id']))
-
-        if command is None:
-            return self._state.dispatch('unknown_application_command', interaction)
-
         asyncio.create_task(
-            self._dispatch_autocomplete(command, interaction),
-            name=f"discord-application-command-autocomplete-dispatch-{command.id}",
+            self._dispatch_autocomplete(interaction),
+            name=f"discord-application-command-autocomplete-dispatch-{interaction.data['id']}",
         )
 
     async def sync_pending(self, *, delete_unregistered_commands: bool = False, ignore_guild_register_fail: bool = True):
