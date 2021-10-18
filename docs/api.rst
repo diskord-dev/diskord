@@ -3851,12 +3851,12 @@ ApplicationMessageCommand
     :members:
     :inherited-members:
 
-Option
-~~~~~~
+ApplicationCommandOption
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. attributetable:: Option
+.. attributetable:: ApplicationCommandOption
 
-.. autoclass:: Option()
+.. autoclass:: ApplicationCommandOption()
     :members:
 
 OptionChoice
