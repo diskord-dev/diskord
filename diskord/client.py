@@ -63,7 +63,6 @@ from .gateway import *
 from .activity import ActivityTypes, BaseActivity, create_activity
 from .voice_client import VoiceClient
 from .http import HTTPClient
-from .state import ConnectionState
 from . import utils
 from .utils import MISSING
 from .object import Object
@@ -78,18 +77,13 @@ from .sticker import GuildSticker, StandardSticker, StickerPack, _sticker_factor
 from .message import Message
 from .member import Member
 from .application_commands import (
-    PartialApplicationCommand,
     ApplicationCommand,
     ApplicationCommandGuildPermissions,
     ApplicationCommandPermission,
-    SlashCommand,
-    UserCommand,
-    MessageCommand,
-    Option,
-    OptionChoice,
 )
 from .interactions import InteractionContext, InteractionType
-
+from . import application
+from .state import ConnectionState
 
 if TYPE_CHECKING:
     from .abc import SnowflakeTime, PrivateChannel, GuildChannel, Snowflake
@@ -301,7 +295,7 @@ class Client:
         self._connection._get_websocket = self._get_websocket
         self._connection._get_client = lambda: self
 
-        self._pending_commands: List[ApplicationCommand] = []
+        self._connection._commands_store._pending: List[application.ApplicationCommand] = []
 
         if VoiceClient.warn_nacl:
             VoiceClient.warn_nacl = False
@@ -1778,28 +1772,32 @@ class Client:
     @property
     def pending_commands(self):
         """
-        Returns a list of application commands that will be registered once the bot connects.
+        Returns a list of application commands that had been added to pending
+        commands list and are awaiting register.
 
         Note that this is most likely to be empty after the bot has connected to Discord because
-        all commands are registered as soon as the connection is made.
+        all commands are registered as soon as the connection is made. However, any
+        commands added after bot connect will be added to this list.
+
+        When this list has some commands, you can call :meth:`~Client.sync_application_commands`
+        to sync them.
 
         Returns
         -------
 
-        List[:class:`ApplicationCommand`]
+        List[:class:`diskord.application.ApplicationCommand`]
             List of application commands that will be registered.
         """
-        # Remove this property? it seems kind of useless.
-        return self._pending_commands
+        return self._connection._commands_store._pending
 
     @property
     def application_commands(self):
-        """Dict[:class:`int`, :class:`ApplicationCommand`]: Returns a mapping with ID of command to the application command."""
-        return self._connection._application_commands
+        """Dict[:class:`int`, :class:`diskord.application.ApplicationCommand`]: Returns a mapping with ID of command to the application command."""
+        return self._connection._commands_store._commands # type: ignore
 
     # Commands management
 
-    def add_pending_command(self, command: ApplicationCommand) -> ApplicationCommand:
+    def add_pending_command(self, command: ApplicationCommand) -> application.ApplicationCommand:
         """Adds an application command to internal list of *pending* commands that will be
         registered on bot connect.
 
@@ -1816,36 +1814,18 @@ class Client:
         Parameters
         ----------
 
-        command: :class:`ApplicationCommand`
+        command: :class:`application.ApplicationCommand`
             The application command to add.
 
         Returns
         -------
 
-        :class:`ApplicationCommand`
+        :class:`application.ApplicationCommand`
             The added command.
         """
-        if not isinstance(command, ApplicationCommand):
-            raise TypeError(
-                "command parameter must be an instance of ApplicationCommand."
-            )
+        return self._connection._commands_store.add_pending_command(command)
 
-        command._client = self
-
-        if self.application_commands_guild_ids and not command._guild_ids:
-            command._guild_ids = self.application_commands_guild_ids
-
-        self._pending_commands.append(command)
-
-        if not hasattr(command.callback, "__application_command_params__"):
-            command.callback.__application_command_params__ = {}
-
-        for opt in command.callback.__application_command_params__.values():
-            command.append_option(opt)
-
-        return command
-
-    def remove_pending_command(self, command: ApplicationCommand, /):
+    def remove_pending_command(self, command: application.ApplicationCommand, /):
         """Removes an application command from the pending commands list that will be
         registered upon bot connect.
 
@@ -1854,18 +1834,14 @@ class Client:
         Parameters
         ----------
 
-        command: :class:`ApplicationCommand`
+        command: :class:`application.ApplicationCommand`
             The application command to register.
         """
-        try:
-            self._pending_commands.remove(command)
-            return command
-        except ValueError:
-            return
+        return self._connection._commands_store.remove_pending_command(command)
 
     def remove_application_command(
         self, command_id: int, /
-    ) -> Optional[ApplicationCommand]:
+    ) -> Optional[application.ApplicationCommand]:
         """Removes an application command from registered application commands.
 
         Once an application command is removed using this method, It will not be invoked.
@@ -1882,13 +1858,13 @@ class Client:
             The ID of command to delete.
         """
         try:
-            return self._connection._application_commands.pop(command_id)
+            return self._connection._commands_store.remove_application_command(command_id)
         except KeyError:
             return
 
     def get_application_command(
         self, command_id: int, /
-    ) -> Optional[ApplicationCommand]:
+    ) -> Optional[application.ApplicationCommand]:
         """Returns a bot's application command by it's ID.
 
         This function returns ``None`` if the application command is not found.
@@ -1900,10 +1876,10 @@ class Client:
 
         Returns
         -------
-        Optional[:class:`ApplicationCommand`]
+        Optional[:class:`application.ApplicationCommand`]
             The command matching the ID.
         """
-        return self._connection._application_commands.get(command_id)
+        return self._connection._commands_store.get_application_command(command_id)
 
     async def delete_application_command(
         self,
@@ -1930,15 +1906,14 @@ class Client:
         """
         if guild_id:
             await self.http.delete_guild_command(self.user.id, guild_id, command_id)
-
         else:
             await self.http.delete_global_command(self.user.id, command_id)
 
-        self._connection._application_commands.pop(command_id, None)  # type: ignore
+        self._connection._commands_store.remove_application_command(command_id)  # type: ignore
 
     async def fetch_application_commands(
         self, guild_id: int = MISSING
-    ) -> List[PartialApplicationCommand]:
+    ) -> List[ApplicationCommand]:
         """|coro|
 
         Fetches all the application commands registered globally or in a guild.
@@ -1952,7 +1927,7 @@ class Client:
         Returns
         -------
 
-        List[:class:`PartialApplicationCommand`]
+        List[:class:`ApplicationCommand`]
             The list of fetched application commands.
         """
         if guild_id is not MISSING:
@@ -1962,22 +1937,22 @@ class Client:
                 application_id=self.user.id, guild_id=guild_id
             )
 
-        return [PartialApplicationCommand(command, self) for command in commands]
+        return [ApplicationCommand(command, self._connection) for command in commands]
 
-    async def fetch_application_command(
+    async def delete_application_command(
         self, command_id: int, /, *, guild_id: int = MISSING
-    ) -> PartialApplicationCommand:
+    ) -> ApplicationCommand:
         """|coro|
 
-        Fetches a global or guild application command.
+        Delets a global or guild application command.
 
         Parameters
         ----------
         command_id: :class:`int`
-            The ID of command to fetch.
+            The ID of command to delete.
 
         guild_id: :class:`int`
-            The list of guilds IDs this command belongs to. If not global.
+            The guild ID this command belongs to. If not global.
 
         """
         if guild_id is not MISSING:
@@ -2006,7 +1981,7 @@ class Client:
 
         Returns
         -------
-        :class:`PartialApplicationCommand`
+        :class:`ApplicationCommand`
             The fetched command.
         """
         if guild_id is not MISSING:
@@ -2016,41 +1991,40 @@ class Client:
         else:
             command = await self.http.get_global_command(self.user.id, command_id)
 
-        return PartialApplicationCommand(command, self)
+        return ApplicationCommand(command, self._connection)
 
     async def sync_application_commands_permissions(self):
         """|coro|
 
         Synchronizes the application command permissions to API.
 
-        This function shouldn't generally be used as it is automatically called
+        This method shouldn't generally be used as it is automatically called
         under-the-hood while commands are being registered in :func:`sync_application_commands`
         or :func:`clean_register_application_commands`
 
-        This function takes no parameters.
+        .. note::
+            This method must be called after application commands have been registered.
 
         Raises
         ------
         HTTPException:
             The permissions synchronization failed.
         """
+        # { guild_id: [ { command_id: ..., permissions: ... } ] }
+
         permissions = {}
 
         # firstly, we need to add permissions raw data to permissions list.
-        for command in self._connection._application_commands.values():
-            perms = [perm.to_dict() for perm in command._permissions]
+        for command in self._connection._commands_store._commands.values():
+            perms = command.permissions
+            if not perms:
+                continue
 
             for perm in perms:
-                if not perm["guild_id"] in permissions:
-                    permissions[perm["guild_id"]] = []
+                if not perm.guild_id in permissions:
+                    permissions[perm.guild_id] = []
 
-                # ensuring that permissions gets proper ids
-                perm["application_id"] = self.user.id
-                perm["command_id"] = command.id
-
-                permissions[perm["guild_id"]].append(
-                    {"id": perm["command_id"], "permissions": perm["permissions"]}
-                )
+                permissions[perm.guild_id].append({'id': command.id, 'permissions': [o.to_dict() for o in perm.overwrites]})
 
         # finally, batch-editing the permissions
 
@@ -2084,11 +2058,7 @@ class Client:
             application_id=self.user.id,
             guild_id=guild_id,
         )
-        for perm in response:
-            perm["permissions"] = [
-                ApplicationCommandPermission(**p) for p in perm["permissions"]
-            ]
-        return ApplicationCommandGuildPermissions(**response)
+        return ApplicationCommandGuildPermissions(response, self._connection)
 
     async def fetch_application_command_permission(
         self, *, guild_id: int, command_id: int
@@ -2114,10 +2084,7 @@ class Client:
             guild_id=guild_id,
             command_id=command_id,
         )
-        response["permissions"] = [
-            ApplicationCommandPermission(**perm) for perm in response["permissions"]
-        ]
-        return ApplicationCommandGuildPermissions(**response)
+        return ApplicationCommandGuildPermissions(response)
 
     # TODO: Add other API methods
 
@@ -2158,72 +2125,12 @@ class Client:
             application command couldn't be upserted in a guild but the commands sync
             process will not be interrupted. Defaults to ``True``
         """
-        _log.info("Synchronizing internal cache commands.")
-        if not self._pending_commands:
-            # since we don't have any commands pending to register then
-            # we just return
-            return
-
-        commands = await self.http.get_global_commands(self.user.id)
-        non_registered = []
-
-        # Synchronising the fetched commands with internal cache.
-        for command in commands:
-            registered = utils.get(
-                [c for c in self._pending_commands if not c.guild_ids],
-                name=command["name"],
-                type=command["type"],
+        await self._connection._commands_store.sync_pending(
+            delete_unregistered_commands=delete_unregistered_commands,
+            ignore_guild_register_fail=ignore_guild_register_fail
             )
-            if registered is None:
-                non_registered.append(command)
-                continue
 
-            self._connection._application_commands[
-                int(command["id"])
-            ] = registered._from_data(command)
-            self._pending_commands.remove(registered)
-
-        # Deleting the command that weren't found in internal cache
-        # this parameter is set to False by default because of the fact that
-        # it can be very expensive to delete the commands on every restart and would
-        # lead to easy ratelimit.
-        if delete_unregistered_commands:
-            for command in non_registered:
-                if command.get("guild_id"):
-                    await self.http.delete_guild_command(
-                        self.user.id, command["guild_id"], command["id"]
-                    )
-                else:
-                    await self.http.delete_global_command(self.user.id, command["id"])
-
-        # Registering the remaining commands
-        while len(self._pending_commands):
-            index = len(self._pending_commands) - 1
-            command = self._pending_commands[index]
-            if command.guild_ids:
-                for guild_id in command.guild_ids:
-                    try:
-                        cmd = await self.http.upsert_guild_command(
-                            self.user.id, guild_id, command.to_dict()
-                        )
-                    except Forbidden as e:
-                        # the bot is missing application.commands scope so cannot
-                        # make the command in the guild
-                        if ignore_guild_register_fail:
-                            traceback.print_exc()
-                            continue
-                        else:
-                            raise e
-            else:
-                data = command.to_dict()
-                cmd = await self.http.upsert_global_command(self.user.id, data)
-
-            self._connection._application_commands[int(cmd["id"])] = command._from_data(
-                cmd
-            )
-            self._pending_commands.pop(index)
-
-        # finally, batch-editing the permissions
+        # batch-editing the permissions
         await self.sync_application_commands_permissions()
 
         _log.info(
@@ -2253,74 +2160,8 @@ class Client:
             application command couldn't be upserted in a guild but the commands registration
             process will not be interrupted. Defaults to ``True``
         """
-        # This needs a refactor as current implementation is kind of hacky and can
-        # be unstable.
 
-        if not self._pending_commands:
-            # since we don't have any commands pending, we will do nothing and return
-            return
-
-        _log.info(
-            "Clean Registering %s application commands."
-            % str(len(self._pending_commands))
-        )
-
-        commands = []
-
-        # Firstly, We will register the global commands
-        for command in (cmd for cmd in self._pending_commands if not cmd.guild_ids):
-            data = command.to_dict()
-            commands.append(data)
-
-        cmds = await self.http.bulk_upsert_global_commands(self.user.id, commands)
-
-        for cmd in cmds:
-            command = utils.get(
-                self._pending_commands,
-                name=cmd["name"],
-                type=try_enum(ApplicationCommandType, int(cmd["type"])),
-            )
-            self._connection._application_commands[int(cmd["id"])] = command._from_data(
-                cmd
-            )
-
-            self._pending_commands.remove(command)
-
-        # Registering the guild commands now
-
-        guilds = {}
-
-        for cmd in (command for command in self._pending_commands if command.guild_ids):
-            data = cmd.to_dict()
-            for guild in cmd.guild_ids:
-                if guilds.get(guild) is None:
-                    guilds[guild] = []
-
-                guilds[guild].append(data)
-
-        for guild in guilds:
-            try:
-                cmds = await self.http.bulk_upsert_guild_commands(
-                    self.user.id, guild, guilds[guild]
-                )
-            except Forbidden:
-                # bot doesn't has application.commands scope
-                if ignore_guild_register_fail:
-                    traceback.print_exc()
-                    continue
-                else:
-                    raise e
-            for cmd in cmds:
-                command = utils.get(
-                    self._pending_commands,
-                    name=cmd["name"],
-                    type=try_enum(ApplicationCommandType, int(cmd["type"])),
-                )
-                self._connection._application_commands[
-                    int(cmd["id"])
-                ] = command._from_data(cmd)
-
-                self._pending_commands.remove(command)
+        await self._connection._commands_store.clean_register(ignore_guild_register_fail=ignore_guild_register_fail)
 
         # finally, batch-editing the permissions
         await self.sync_application_commands_permissions()
@@ -2328,6 +2169,17 @@ class Client:
         _log.info("Clean Registered commands successfully.")
 
     async def register_application_commands(self):
+        """|coro|
+
+        A method that registers the application commands in :attr:`~Client.pending_commands`.
+
+        If ``overwrite_application_commands`` parameter in :class:`Client` is set to
+        ``True``, :meth:`~Client.clean_register_application_commands` would be called
+        otherwise commands would be synced by :meth:`~Client.sync_application_commands`
+
+        This function is called in :func:`on_connect` and you must take care of calling
+        it in case you decide to override :func:`on_connect`
+        """
         if self.overwrite_application_commands:
             await self.clean_register_application_commands()
         else:
@@ -2335,7 +2187,7 @@ class Client:
 
     # Decorators
 
-    def slash_command(self, **options) -> SlashCommand:
+    def slash_command(self, **options) -> application.SlashCommand:
         """A decorator-based interface to add slash commands to the bot.
 
         Usage: ::
@@ -2351,12 +2203,12 @@ class Client:
 
             options["name"] = options.get("name") or func.__name__
 
-            command = SlashCommand(func, **options)
+            command = application.SlashCommand(func, **options)
             return self.add_pending_command(command)
 
         return inner
 
-    def user_command(self, **options) -> SlashCommand:
+    def user_command(self, **options) -> application.SlashCommand:
         """A decorator-based interface to add user commands to the bot.
 
         Usage: ::
@@ -2370,12 +2222,12 @@ class Client:
             if not inspect.iscoroutinefunction(func):
                 raise TypeError("Callback function must be a coroutine.")
 
-            command = UserCommand(func, **options)
+            command = application.UserCommand(func, **options)
             return self.add_pending_command(command)
 
         return inner
 
-    def message_command(self, **options) -> SlashCommand:
+    def message_command(self, **options) -> application.SlashCommand:
         """A decorator-based interface to add message commands to the bot.
 
         Usage: ::
@@ -2389,106 +2241,14 @@ class Client:
             if not inspect.iscoroutinefunction(func):
                 raise TypeError("Callback function must be a coroutine.")
 
-            command = MessageCommand(func, **options)
+            command = application.MessageCommand(func, **options)
             return self.add_pending_command(command)
 
         return inner
 
-    # Command handler
+    # Command handling
 
-    async def process_application_commands(self, interaction: Interaction) -> Any:
-        """|coro|
-
-        Handles an application command or slash command option autocompletion 
-        interaction.
-
-        This is internally called in :func:`on_interaction` event.
-
-        .. warning::
-            If you decide to override the :func:`on_interaction` event, You must call this at the
-            end of your event callback or the commands wouldn't work.
-
-            Usage: ::
-
-                @bot.event
-                async def on_interaction(interaction):
-                    # do something here
-                    ...
-
-                    # at the end of event
-                    await bot.process_application_commands(interaction)
-
-        Parameters
-        ----------
-
-        interaction: :class:`Interaction`
-            The interaction to handle. If the interaction is not a application command interaction,
-            then this will silently ignore the interaction.
-        """
-        if not interaction.type.value in [
-            InteractionType.application_command.value,
-            InteractionType.application_command_autocomplete.value
-            ]:
-            return
-
-        command = self.get_application_command(int(interaction.data["id"]))
-        
-        if interaction.type.value == InteractionType.application_command_autocomplete.value:
-            options = interaction.data['options']
-            for option in options:
-                if option['type'] == OptionType.sub_command.value:
-                    command = command.get_child(name=option['name'])
-
-                    for sub in option['options']:
-                        if 'focused' in sub:
-                            option = sub
-                            break
-
-                elif option['type'] == OptionType.sub_command_group.value:
-                    group = command.get_child(name=option['name'])
-                    command = group.get_child(name=option['options'][0]['name'])
-
-                    for sub in option['options'][0]['options']:
-                        if 'focused' in sub:
-                            option = sub
-                            break
-                
-                resolved_option = command.get_option(name=option['name'])
-                if command.cog is not None:
-                    choices = await resolved_option.autocomplete(command.cog, option['value'], interaction)
-                else:
-                    choices = await resolved_option.autocomplete(option['value'], interaction)
-                    
-                if not isinstance(choices, list):
-                    raise TypeError(f'autocomplete for {resolved_option.name} returned {choices.__class__.__name__}, Expected list.')
-
-                return await interaction.response.autocomplete(choices)
-                
-
-        if not command:
-            _log.info(
-                f'Application command of type {interaction.data["type"]} referencing an unknown command {interaction.data["id"]}, Discarding.'
-            )
-            self.dispatch("unknown_application_command", interaction)
-            return
-
-        context = self.get_application_context(interaction)
-
-        try:
-            await command.invoke(context)
-        except (ApplicationCommandError, _BaseCommandError) as error:
-            # here comes the important part, For those concerned about separation of error handlers
-            # of legacy commands and application commands or other stuff in general.
-            # we need seperate handlers for each type, the reason behind this is purely
-            # based on the fact that prefixed commands are NOT same as application commands
-            # and have different implementation. there can be more complicated issues
-            # if we merge the handlers or anything about these two unlike systems so there
-            # is no possibility of them to be merged in one!
-            self.dispatch("application_command_error", context, error)
-        else:
-            self.dispatch("application_command_completion", context)
-
-    def get_application_context(
+    def get_interaction_context(
         self, interaction: Interaction, *, cls: InteractionContext = None
     ) -> InteractionContext:
         """
@@ -2533,6 +2293,3 @@ class Client:
 
     async def on_connect(self):
         await self.register_application_commands()
-
-    async def on_interaction(self, interaction: Interaction):
-        await self.process_application_commands(interaction)

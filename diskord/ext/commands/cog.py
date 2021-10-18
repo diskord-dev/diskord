@@ -40,7 +40,7 @@ from typing import (
     Type,
 )
 
-from diskord import ApplicationCommand, Option, SlashCommandChild
+from diskord.application import ApplicationCommand, SlashCommandChild
 from ._types import _BaseCommand
 
 if TYPE_CHECKING:
@@ -150,6 +150,7 @@ class CogMeta(type):
                 is_static_method = isinstance(value, staticmethod)
                 if is_static_method:
                     value = value.__func__
+
                 if isinstance(value, _BaseCommand):
                     if is_static_method:
                         raise TypeError(
@@ -166,6 +167,7 @@ class CogMeta(type):
                 elif isinstance(value, ApplicationCommand) and not isinstance(
                     value, SlashCommandChild
                 ):
+
                     if is_static_method:
                         raise TypeError(
                             f"Command in method {base}.{elem!r} must not be staticmethod."
@@ -499,7 +501,7 @@ class Cog(metaclass=CogMeta):
                 # if we're here then command is registered and synced and we
                 # just have to add it to application commands list and it
                 # would start working as normal.
-                bot._connection._application_commands[int(command.id)] = command
+                bot._connection._commands_store.add_application_command(command)
                 continue
 
             try:
@@ -536,7 +538,7 @@ class Cog(metaclass=CogMeta):
 
             for command in self.__cog_application_commands__:
                 if not isinstance(command, SlashCommandChild):
-                    registered = command.id in bot._connection._application_commands
+                    registered = command.id in bot._connection._commands_store._commands
                     if registered:
                         bot.remove_application_command(command.id)
                     else:

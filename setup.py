@@ -49,6 +49,7 @@ packages = [
     'diskord',
     'diskord.types',
     'diskord.ui',
+    'diskord.application',
     'diskord.webhook',
     'diskord.ext.commands',
     'diskord.ext.tasks',

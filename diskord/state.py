@@ -68,6 +68,7 @@ from .invite import Invite
 from .integrations import _integration_factory
 from .interactions import Interaction
 from .ui.view import ViewStore, View
+from .application.command import ApplicationCommandStore
 from .stage_instance import StageInstance
 from .threads import Thread, ThreadMember
 from .sticker import GuildSticker
@@ -285,7 +286,7 @@ class ConnectionState:
         if views:
             self._view_store: ViewStore = ViewStore(self)
         if application_commands:
-            self._application_commands = {}
+            self._commands_store: ApplicationCommandStore = ApplicationCommandStore(self)
 
         self._voice_clients: Dict[int, VoiceProtocol] = {}
 
@@ -787,6 +788,10 @@ class ConnectionState:
             custom_id = interaction.data["custom_id"]  # type: ignore
             component_type = interaction.data["component_type"]  # type: ignore
             self._view_store.dispatch(component_type, custom_id, interaction)
+        elif data["type"] == 2: # interaction application command
+            self._commands_store.dispatch(interaction)
+        elif data["type"] == 4: # interaction application command autocompletion
+            self._commands_store.dispatch_autocomplete(interaction)
 
         self.dispatch("interaction", interaction)
 
