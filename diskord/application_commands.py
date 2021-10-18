@@ -471,21 +471,38 @@ class ApplicationCommandOption:
         The list of choices this option has.
     channel_types: List[:class:`ChannelType`]
         The channel types that would be shown if :attr:`Option.type` is :attr:`OptionType.channel`
-    autocomplete:
+    autocomplete: :class:`bool`
         Whether this option would autocomplete or not.
+    max_value: Optional[:class:`int`, :class:`float`]
+        The maximum value permitted to be supplied if this option is an integer or number.
+        ``None`` if there is no limit.
+    min_value: Optional[:class:`int`, :class:`float`]
+        The minimum value permitted to be supplied if this option is an integer or number.
+        ``None`` if there is no limit.
     """
+    if TYPE_CHECKING:
+        name: str
+        description: str
+        type: OptionType
+        required: bool
+        choices: List[OptionChoice]
+        autocomplete: bool
+        channel_types: Optional[List[ChannelType]]
+        max_value: Optional[Union[int, float]]
+        min_value: Optional[Union[int, float]]
+
     def __init__(self, data: ApplicationCommandOptionPayload, state: ConnectionState):
         self._state = state
         self._update(data)
 
     def _update(self, data: ApplicationCommandOptionPayload):
-        self.name: str = data['name']
-        self.description: str = data['description']
-        self.type: OptionType = try_enum(OptionType, int(data['type']))
-        self.required: bool = data.get('required', filterfalse)
-        self.choices: List[OptionChoice] = [OptionChoice.from_dict(choice) for choice in data.get('options', [])]
-        self.autocomplete: bool = data.get('autocomplete', False)
-        self.channel_types: Optional[List[ChannelType]] = data.get('channel_types')
+        self.name = data['name']
+        self.description = data['description']
+        self.type = try_enum(OptionType, int(data['type']))
+        self.required = data.get('required', filterfalse)
+        self.choices = [OptionChoice.from_dict(choice) for choice in data.get('options', [])]
+        self.autocomplete = data.get('autocomplete', False)
+        self.channel_types = data.get('channel_types')
 
         if self.channel_types is not None:
             original = self.channel_types
@@ -493,3 +510,6 @@ class ApplicationCommandOption:
 
             for t in original:
                 self.channel_types.append(try_enum(ChannelType, int(t)))
+
+        self.max_value = options.get('max_value')
+        self.min_value = options.get('min_value')
