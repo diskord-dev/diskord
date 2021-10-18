@@ -3832,6 +3832,16 @@ ApplicationSlashCommand
     :members:
     :inherited-members:
 
+
+ApplicationUserCommand
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: ApplicationUserCommand
+
+.. autoclass:: ApplicationUserCommand()
+    :members:
+    :inherited-members:
+
 ApplicationMessageCommand
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
