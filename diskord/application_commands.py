@@ -69,10 +69,10 @@ class ApplicationCommandGuildPermissions:
     Represents the permissions for an application command in a :class:`Guild`.
 
     Application commands permissions allow you to restrict an application command
-    to a certain roles or users.
+    to a certain roles or users in a specific Guild.
 
     This class is not user construct-able, Use :class:`application.ApplicationCommandPermissions`
-    instead.
+    instead to create custom permissions.
     """
 
     def __init__(self, data: GuildApplicationCommandPermissionsPayload, state: ConnectionState):
@@ -116,16 +116,13 @@ class ApplicationCommandPermission:
         This class is not user constructable, Use :class:`application.CommandPermissionOverwrite`
         instead.
 
-    Parameters
+    Attributes
     ----------
 
     id: :class:`int`
         The ID of role or user whose permission is being defined.
     type: :class:`ApplicationCommandPermissionType`
-        The type of permission. If a role id was passed in ``id`` parameter
-        then this should be :attr:`ApplicationCommandPermissionType.role`
-        and if user id was passed then it should  be
-        :attr:`ApplicationCommandPermissionType.user`
+        The type of entity of which permission is being defined.
     permission: :class:`bool`
         The permission for the command. If this is set to ``False`` the provided
         user or role will not be able to use the command. Defaults to ``False``
@@ -237,8 +234,7 @@ class ApplicationCommandMixin:
     async def delete(self):
         """|coro|
 
-        Deletes the application command. This function also removes the command
-        from internal cache of application commands.
+        Deletes the application command.
         """
         if self.guild_id:
             ret = await self._state.http.delete_guild_command(
@@ -369,21 +365,6 @@ class ApplicationSlashCommand(ApplicationCommand):
 
     .. note::
         This class is not user constructible, Use :class:`application.SlashCommand` instead.
-
-
-    .. container:: operations
-
-        .. describe:: str(x)
-
-            Returns the name of application command.
-
-        .. describe:: x == y
-
-            Checks if the command is equal to another command.
-
-        .. describe:: x != y
-
-            Checks if the command is not equal to another command.
 
     Attributes
     ----------

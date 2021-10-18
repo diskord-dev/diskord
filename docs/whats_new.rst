@@ -30,7 +30,7 @@ Additions
 
 * Implement autocompletion for slash commands options (:issue:`15`)
 * Implement support for sending files in :meth:`diskord.InteractionResponse.send_message`
-* Add :attr:`~diskord.application.ApplicationCommand.extras` to :class:`diskord.application.ApplicationCommand` :issue:`11`
+* Add :attr:`~diskord.application.ApplicationCommand.extras` to :class:`diskord.application.ApplicationCommand` (:issue:`11`)
 * Add ``application_commands_guild_ids`` parameter to :class:`~diskord.Client` to prevent bot from creating global commands.
 * Add :meth:`diskord.ApplicationCommand.edit` and :meth:`diskord.ApplicationCommand.delete` methods.
 * Rename :meth:`diskord.Client.get_application_context` to :meth:`diskord.Client.get_interaction_context`
