@@ -16,22 +16,37 @@ in specific versions.
 v2.6.0
 --------
 
+Breaking Changes
+~~~~~~~~~~~~~~~~~
+
+* Rename ``diskord.slash_option`` decorator to :func:`diskord.application.option`
+* Move user constructable application commands classes to ``application`` namespace.
+* Rename ``on_application_command_run`` to :func:`on_application_command`
+* Application Commands are now handled internally like components. ``Client.process_application_commands`` has been removed.
+* Application commands permissions rework. See the relevant documentation for more details.
+
 Additions
 ~~~~~~~~~
 
-* Add Support for option choices autocompletions.
-* Add :meth:`diskord.PartialApplicationCommand`
-* Converters in slash command options can now be determined by the annotation similar to ext.commands.
-* Add :attr:`diskord.ApplicationCommand.extras` (:issue:`11`)
-* Add :attr:`diskord.Client.application_commands_guild_ids`
+* Implement autocompletion for slash commands options (:issue:`15`)
+* Implement support for sending files in :meth:`diskord.InteractionResponse.send_message`
+* Add :attr:`~diskord.application.ApplicationCommand.extras` to :class:`diskord.application.ApplicationCommand` :issue:`11`
+* Add ``application_commands_guild_ids`` parameter to :class:`~diskord.Client` to prevent bot from creating global commands.
+* Add :meth:`diskord.ApplicationCommand.edit` and :meth:`diskord.ApplicationCommand.delete` methods.
+* Rename :meth:`diskord.Client.get_application_context` to :meth:`diskord.Client.get_interaction_context`
 
 Improvements
-~~~~~~~~~~~~
+~~~~~~~~~~~~~
 
-* :func:`Client.register_application_commands` has been renamed to :func:`Client.clean_register_application_commands` while another function has been added with previous name that is called in :func:`on_interaction` and handles the application commands registration.
-* Typehint the most of missing part
-* Many performance fixes and optimizations to application commands.
-* :class:`~diskord.ApplicationCommand` no longer has `invoke` method. Instead, it is moved to subclasses. i.e :meth:`diskord.SlashCommand.invoke` and vice versa.
+* :attr:`diskord.application.ApplicationCommand.callback` is now settable.
+* Converters can now be determined by the option annotations in slash commands.
+
+Bug Fixes
+~~~~~~~~~~
+
+* Fix role icons not being set properly.
+* Fix previous options for application commands getting re-added after command has been removed and added back to pending commands list.
+* Fix user option resolving to ``None`` in slash commands if member intents are missing.
 
 .. _vp2p5p1:
 
