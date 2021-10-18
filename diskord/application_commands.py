@@ -149,6 +149,19 @@ class ApplicationCommandMixin:
         _description: str
         _default_permission: bool
 
+    async def _edit_permissions(self, permissions: ApplicationCommandPermissions):
+        user = self._state._get_client().user
+        permissions.command = self
+        permissions_payload = [perm.to_dict() for perm in permissions.perms]
+
+        data = await self._state.http.edit_application_command_permissions(
+            application_id=user.id,
+            guild_id=permissions.guild_id,
+            command_id=self.id,
+            payload=permissions_payload
+        )
+        return data
+
     async def edit(
         self,
         *,
@@ -156,6 +169,7 @@ class ApplicationCommandMixin:
         description: str = None,
         options: List[Option] = None, # type: ignore
         default_permission: bool = None,
+        permissions: ApplicationCommandPermissions = None,
     ):
         """|coro|
 
@@ -179,13 +193,21 @@ class ApplicationCommandMixin:
             The new default permission of the application command.
             Setting this to ``False`` will disable the command by default
             unless a permission overwrite is configured.
+        permissions: :class:`application.ApplicationCommandPermissions`
+            The new permissions of the command in a specific guild.
 
         Returns
         -------
         :class:`ApplicationCommand`:
             The updated command
         """
+        user = self._state._get_client().user
+
+        if permissions is not None:
+            self._edit_permissions(permissions)
+
         payload: Dict[str, Any] = {}
+
 
         if name is not None:
             payload["name"] = name
@@ -200,13 +222,13 @@ class ApplicationCommandMixin:
             ret = await self._state.http.edit_guild_command(
                 command_id=self.id,
                 guild_id=self.guild_id,
-                application_id=self._state.user.id,
+                application_id=user.id,
                 payload=payload,
             )
         else:
             ret = await self._state.http.edit_global_command(
                 command_id=self.id,
-                application_id=self._state.user.id,
+                application_id=user.id,
                 payload=payload,
             )
 

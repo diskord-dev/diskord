@@ -142,6 +142,13 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
     async def invoke(self):
         raise NotImplementedError
 
+    async def _edit_permissions(self, permissions: ApplicationCommandPermissions):
+        data = await super()._edit_permissions(permissions)
+
+        new = self.add_permissions(guild_id=int(data['guild_id']))
+        new.overwrites = permissions.overwrites
+
+
     # permissions management
 
     def add_permissions(self, guild_id: int) -> ApplicationCommandPermissions:

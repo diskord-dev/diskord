@@ -46,8 +46,8 @@ class ApplicationCommandPermissions:
     overwrite: List[:class:`CommandPermissionOverwrite`]
         The overwrites this permissions set holds.
     """
-    def __init__(self, command: ApplicationCommand, guild_id: int):
-        self.command  = command
+    def __init__(self, guild_id: int, command: ApplicationCommand = None):
+        self.command  = command # type: ignore
         self.guild_id = guild_id
         self.overwrites = []
 
