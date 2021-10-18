@@ -544,8 +544,11 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
                         break
 
             elif option['type'] == OptionType.sub_command_group.value:
-                group = self.get_child(name=option['name'])
-                command = group.get_child(name=option['options'][0]['name'])
+                if self.type == OptionType.sub_command:
+                    command = self
+                else:
+                    group = self.get_child(name=option['name'])
+                    command = group.get_child(name=option['options'][0]['name'])
 
                 for sub in option['options'][0]['options']:
                     if 'focused' in sub:
