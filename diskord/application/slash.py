@@ -491,7 +491,7 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
                     )
                 else:
                     value = User(
-                        state=self._client._connection,
+                        state=self._state,
                         data=resolved["users"][option["value"]],
                     )
 
@@ -670,8 +670,6 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
 
         self._client.dispatch('application_command', context)
         await context.command.callback(*args, **kwargs)
-
-
 
     # decorators
 

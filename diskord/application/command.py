@@ -69,7 +69,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
         self.extras: Dict[str, Any] = attrs.pop("extras", {})
 
         self._cog = None
-        self._client = None
+        self._state = None
 
         self._from_data(dict())
         self._update_callback_data()
@@ -99,9 +99,10 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
             self.checks = []
 
     @property
-    def _bot(self):
-        # a simple alias to not break ext.commands
-        return self._client
+    def _client(self):
+        return self._state._get_client()
+
+    _bot = _client
 
     @property
     def callback(self) -> Callable[..., Any]:
@@ -243,8 +244,8 @@ class ApplicationCommandStore:
                 "command parameter must be an instance of application.ApplicationCommand."
             )
 
-        client = self._state._get_client()
-        command._client = client
+        command._state = self._state
+        client = command._client
 
         if client.application_commands_guild_ids and not command._guild_ids:
             command._guild_ids = client.application_commands_guild_ids

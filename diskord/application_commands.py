@@ -152,7 +152,7 @@ class ApplicationCommandMixin:
     async def _edit_permissions(self, permissions: ApplicationCommandPermissions):
         user = self._state._get_client().user
         permissions.command = self
-        permissions_payload = [perm.to_dict() for perm in permissions.perms]
+        permissions_payload = {'permissions': [perm.to_dict() for perm in permissions.overwrites]}
 
         data = await self._state.http.edit_application_command_permissions(
             application_id=user.id,
@@ -204,7 +204,7 @@ class ApplicationCommandMixin:
         user = self._state._get_client().user
 
         if permissions is not None:
-            self._edit_permissions(permissions)
+            await self._edit_permissions(permissions)
 
         payload: Dict[str, Any] = {}
 
