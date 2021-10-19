@@ -764,6 +764,7 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
             "type": self._type.value,
             "options": [option.to_dict() for option in reversed(self.options)],
             "description": self._description,
+            "default_permission": self._default_permission,
         }
 
         return dict_
