@@ -74,14 +74,15 @@ class ApplicationCommandGuildPermissions:
     This class is not user construct-able, Use :class:`application.ApplicationCommandPermissions`
     instead to create custom permissions.
     """
-
+    __slots__ = ('_command_id', '_application_id', '_guild_id', '_permissions', '_state')
+    
     def __init__(self, data: GuildApplicationCommandPermissionsPayload, state: ConnectionState):
-        self._command_id = _get_as_snowflake(data, 'id')
-        self._application_id = _get_as_snowflake(data, 'application_id')
-        self._guild_id = _get_as_snowflake(data, 'guild_id')
-        self._permissions = [ApplicationCommandPermission(perm) for perm in data.get('permissions', [])]
+        self._command_id: int = int(data['id'])
+        self._application_id: int = int(data['application_id'])
+        self._guild_id: int = int(data['guild_id'])
+        self._permissions: List[ApplicationCommandPermission] = [ApplicationCommandPermission(perm) for perm in data.get('permissions', [])] # type: ignore
 
-        self._state = state
+        self._state: ConnectionState = state
 
     @property
     def command_id(self) -> int:
