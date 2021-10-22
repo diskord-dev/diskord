@@ -145,6 +145,7 @@ class ApplicationCommandMixin:
         _name: str
         _description: str
         _default_permission: bool
+        _type: ApplicationCommandType
 
     async def _edit_permissions(self, permissions: ApplicationCommandPermissions):
         user = self._state._get_client().user
@@ -258,6 +259,7 @@ class ApplicationCommandMixin:
         self._default_permission = data.get("default_permission", getattr(self, "_default_permission", True))  # type: ignore
         self._name = data.get("name", getattr(self, '_name', None))
         self._description = data.get("description", getattr(self, '_description', None))
+        self._type = try_enum(data.get("type", 1)) # type: ignore
         return self
 
     @property
