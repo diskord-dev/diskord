@@ -1793,7 +1793,7 @@ class Client:
     @property
     def application_commands(self):
         """Dict[:class:`int`, :class:`diskord.application.ApplicationCommand`]: Returns a mapping with ID of command to the application command."""
-        return self._connection._commands_store._commands # type: ignore
+        return list(self._connection._commands_store._commands.values()) # type: ignore
 
     # Commands management
 
