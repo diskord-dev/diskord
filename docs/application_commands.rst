@@ -36,7 +36,7 @@ Example: ::
   import diskord
   from diskord.ext import commands
 
-  bot = commands.Bot(command_prefix='$', application_commands_guild_ids=[guild_id])
+  bot = commands.Bot(command_prefix='$', application_command_guild_ids=[guild_id])
 
   @bot.slash_command()
   async def hello(ctx):

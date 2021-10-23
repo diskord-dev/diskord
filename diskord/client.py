@@ -160,7 +160,7 @@ class Client:
         application commands.
 
         This parameter's sole purpose is debugging, it can come in handy when
-        testing application commands as global commands take upto 2 hours to register
+        testing application commands as global commands take upto 1 hour to register
         while guild commands registration is instant.
     max_messages: Optional[:class:`int`]
         The maximum number of messages to store in the internal message cache.

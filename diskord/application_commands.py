@@ -453,7 +453,7 @@ class OptionChoice:
 class ApplicationCommandOption:
     """Represents an option for an application slash command.
 
-    This class is not user constructible, Use :class:`application.ApplicationCommandOption`
+    This class is not user constructible, Use :class:`application.Option`
     instead.
 
     Attributes
@@ -464,8 +464,6 @@ class ApplicationCommandOption:
         The description of option. Defaults to ``No description``
     type: :class:`OptionType`
         The type of the option. Defaults to :attr:`OptionType.string`
-        While using :func:`.option` decorator, This is determined by type or annotation
-        of relevant argument of parent command callback function.
     required: :class:`bool`
         Whether this option is required or not. Defaults to ``True``
         While using :func:`.option` decorator, This is determined by the argument

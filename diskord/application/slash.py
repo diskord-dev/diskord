@@ -913,8 +913,8 @@ def option(name: str, **attrs) -> Option:
     Usage: ::
 
         @bot.slash_command(description="Highfive a member!")
-        @diskord.option('member', description='The member to high-five.')
-        @diskord.option('reason', description='Reason to high-five')
+        @diskord.application.option('member', description='The member to high-five.')
+        @diskord.application.option('reason', description='Reason to high-five')
 
         async def highfive(ctx, member: diskord.Member, reason = 'No reason!'):
             await ctx.respond(f'{ctx.author.name} high-fived {member.name} for {reason}')
