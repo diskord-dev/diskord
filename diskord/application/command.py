@@ -247,8 +247,8 @@ class ApplicationCommandStore:
         command._state = self._state
         client = command._client
 
-        if client.application_commands_guild_ids and not command._guild_ids:
-            command._guild_ids = client.application_commands_guild_ids
+        if client.application_command_guild_ids and not command._guild_ids:
+            command._guild_ids = client.application_command_guild_ids
 
         self._pending.append(command)
 
@@ -345,6 +345,7 @@ class ApplicationCommandStore:
 
             self.add_application_command(registered._from_data(command))
             self.remove_pending_command(registered)
+
 
         # Deleting the command that weren't found in internal cache
         # this parameter is set to False by default because of the fact that
