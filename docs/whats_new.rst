@@ -11,6 +11,21 @@ Changelog
 This page keeps a detailed human friendly rendering of what's new and changed
 in specific versions.
 
+.. _vp2p6p1
+
+v2.6.1
+--------
+
+- Add support minimum and maximum values on slash commands options
+    - Add :attr:`~diskord.application.Option.min_value`
+    - Add :attr:`~diskord.application.Option.max_value`
+- Rename ``Client.application_commands_guild_ids`` to :attr:`~diskord.Client.application_command_guild_ids`
+- :attr:`diskord.Client.application_commands` is now a :class:`list` instead of ID to command mapping.
+- Fix NameError on guilds commands registration failing to register
+- Fix :attr:`~diskord.application.ApplicationCommand.default_permissions` not working at all.
+- Fix repr(:attr:`~diskord.ApplicationCommand`) raising AttributeError
+- Fix getters and fetchers from :class:`~diskord.Guild` for commands not working at all.
+
 .. _vp2p6p0:
 
 v2.6.0
