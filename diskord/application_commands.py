@@ -69,19 +69,20 @@ class ApplicationCommandGuildPermissions:
     Represents the permissions for an application command in a :class:`Guild`.
 
     Application commands permissions allow you to restrict an application command
-    to a certain roles or users.
+    to a certain roles or users in a specific Guild.
 
     This class is not user construct-able, Use :class:`application.ApplicationCommandPermissions`
-    instead.
+    instead to create custom permissions.
     """
+    __slots__ = ('_command_id', '_application_id', '_guild_id', '_permissions', '_state')
 
     def __init__(self, data: GuildApplicationCommandPermissionsPayload, state: ConnectionState):
-        self._command_id = _get_as_snowflake(data, 'id')
-        self._application_id = _get_as_snowflake(data, 'application_id')
-        self._guild_id = _get_as_snowflake(data, 'guild_id')
-        self._permissions = [ApplicationCommandPermission(perm) for perm in data.get('permissions', [])]
+        self._command_id: int = int(data['id'])
+        self._application_id: int = int(data['application_id'])
+        self._guild_id: int = int(data['guild_id'])
+        self._permissions: List[ApplicationCommandPermission] = [ApplicationCommandPermission(perm) for perm in data.get('permissions', [])] # type: ignore
 
-        self._state = state
+        self._state: ConnectionState = state
 
     @property
     def command_id(self) -> int:
@@ -116,16 +117,13 @@ class ApplicationCommandPermission:
         This class is not user constructable, Use :class:`application.CommandPermissionOverwrite`
         instead.
 
-    Parameters
+    Attributes
     ----------
 
     id: :class:`int`
         The ID of role or user whose permission is being defined.
     type: :class:`ApplicationCommandPermissionType`
-        The type of permission. If a role id was passed in ``id`` parameter
-        then this should be :attr:`ApplicationCommandPermissionType.role`
-        and if user id was passed then it should  be
-        :attr:`ApplicationCommandPermissionType.user`
+        The type of entity of which permission is being defined.
     permission: :class:`bool`
         The permission for the command. If this is set to ``False`` the provided
         user or role will not be able to use the command. Defaults to ``False``
@@ -148,6 +146,7 @@ class ApplicationCommandMixin:
         _name: str
         _description: str
         _default_permission: bool
+        _type: ApplicationCommandType
 
     async def _edit_permissions(self, permissions: ApplicationCommandPermissions):
         user = self._state._get_client().user
@@ -237,8 +236,7 @@ class ApplicationCommandMixin:
     async def delete(self):
         """|coro|
 
-        Deletes the application command. This function also removes the command
-        from internal cache of application commands.
+        Deletes the application command.
         """
         if self.guild_id:
             ret = await self._state.http.delete_guild_command(
@@ -262,6 +260,7 @@ class ApplicationCommandMixin:
         self._default_permission = data.get("default_permission", getattr(self, "_default_permission", True))  # type: ignore
         self._name = data.get("name", getattr(self, '_name', None))
         self._description = data.get("description", getattr(self, '_description', None))
+        self._type = try_enum(ApplicationCommandType, int(data['type'])) # type: ignore
         return self
 
     @property
@@ -370,21 +369,6 @@ class ApplicationSlashCommand(ApplicationCommand):
     .. note::
         This class is not user constructible, Use :class:`application.SlashCommand` instead.
 
-
-    .. container:: operations
-
-        .. describe:: str(x)
-
-            Returns the name of application command.
-
-        .. describe:: x == y
-
-            Checks if the command is equal to another command.
-
-        .. describe:: x != y
-
-            Checks if the command is not equal to another command.
-
     Attributes
     ----------
     options: :class:`ApplicationCommandOption`
@@ -490,21 +474,38 @@ class ApplicationCommandOption:
         The list of choices this option has.
     channel_types: List[:class:`ChannelType`]
         The channel types that would be shown if :attr:`Option.type` is :attr:`OptionType.channel`
-    autocomplete:
+    autocomplete: :class:`bool`
         Whether this option would autocomplete or not.
+    max_value: Optional[:class:`int`, :class:`float`]
+        The maximum value permitted to be supplied if this option is an integer or number.
+        ``None`` if there is no limit.
+    min_value: Optional[:class:`int`, :class:`float`]
+        The minimum value permitted to be supplied if this option is an integer or number.
+        ``None`` if there is no limit.
     """
+    if TYPE_CHECKING:
+        name: str
+        description: str
+        type: OptionType
+        required: bool
+        choices: List[OptionChoice]
+        autocomplete: bool
+        channel_types: Optional[List[ChannelType]]
+        max_value: Optional[Union[int, float]]
+        min_value: Optional[Union[int, float]]
+
     def __init__(self, data: ApplicationCommandOptionPayload, state: ConnectionState):
         self._state = state
         self._update(data)
 
     def _update(self, data: ApplicationCommandOptionPayload):
-        self.name: str = data['name']
-        self.description: str = data['description']
-        self.type: OptionType = try_enum(OptionType, int(data['type']))
-        self.required: bool = data.get('required', filterfalse)
-        self.choices: List[OptionChoice] = [OptionChoice.from_dict(choice) for choice in data.get('options', [])]
-        self.autocomplete: bool = data.get('autocomplete', False)
-        self.channel_types: Optional[List[ChannelType]] = data.get('channel_types')
+        self.name = data['name']
+        self.description = data['description']
+        self.type = try_enum(OptionType, int(data['type']))
+        self.required = data.get('required', filterfalse)
+        self.choices = [OptionChoice.from_dict(choice) for choice in data.get('options', [])]
+        self.autocomplete = data.get('autocomplete', False)
+        self.channel_types = data.get('channel_types')
 
         if self.channel_types is not None:
             original = self.channel_types
@@ -512,3 +513,6 @@ class ApplicationCommandOption:
 
             for t in original:
                 self.channel_types.append(try_enum(ChannelType, int(t)))
+
+        self.max_value = options.get('max_value')
+        self.min_value = options.get('min_value')

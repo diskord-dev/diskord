@@ -56,6 +56,8 @@ class _ApplicationCommandOptionOptional(TypedDict, total=False):
     choices: List[ApplicationCommandOptionChoice]
     options: List[ApplicationCommandOption]
     autocomplete: bool
+    min_value: Union[int, float]
+    max_value: Union[int, float]
 
 ApplicationCommandOptionType = Literal[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 

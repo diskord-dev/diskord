@@ -116,20 +116,27 @@ class Option:
             @diskord.option('item', autocomplete=autocomplete)
             async def buy(ctx, item):
                 await ctx.send(f'You bought {item}')
-
+    max_value: Optional[:class:`int`, :class:`float`]
+        The maximum value the user can provide. If the :attr:`~Option.type` is
+        :attr:`~OptionType.integer` or :attr:`~OptionType.number`
+    min_value: Optional[:class:`int`, :class:`float`]
+        The minimum value the user can provide. If the :attr:`~Option.type` is
+        :attr:`~OptionType.integer` or :attr:`~OptionType.number`
     """
 
     def __init__(
         self,
         *,
         name: str,
-        description: str = None,
-        type: OptionType = str,
+        description: Optional[str] = None,
+        type: Optional[OptionType] = str,
         choices: List[OptionChoice] = None,
         required: bool = True,
-        arg: str = None,
+        arg: Optional[str] = None,
         converter: "Converter" = None, # type: ignore
         autocomplete: Callable[[str], List[OptionChoice]] = None,
+        min_value: Optional[Union[int, float]] = None,
+        max_value: Optional[Union[int, float]] = None,
         **attrs,
     ):
         self.callback: Callable[..., Any] = attrs.get("callback")
@@ -138,7 +145,9 @@ class Option:
         self._required = required
         self._channel_types: List[ChannelType] = attrs.get("channel_types", [])  # type: ignore
         self._choices: List[OptionChoice] = choices
-        self._options: List[Option] = []
+        self._options = []
+        self._min_value = min_value
+        self._max_value = max_value
         self.autocomplete: Callable[[str], List[OptionChoice]] = autocomplete
 
         if self._choices is None:
@@ -214,6 +223,22 @@ class Option:
     def options(self) -> List[Option]:
         """List[:class:`Option`]: The list of sub-options of this option."""
         return self._options
+
+    @property
+    def max_value(self) -> Optional[Union[int, float]]:
+        """
+        Optional[:class:`int`]: The maximum value the user can provide. If the :attr:`~Option.type` is
+        :attr:`~OptionType.integer` or :attr:`~OptionType.number`
+        """
+        return self._max_value
+
+    @property
+    def min_value(self) -> Optional[Union[int, float]]:
+        """
+        Optional[:class:`int`]: The minimum value the user can provide. If the :attr:`~Option.type` is
+        :attr:`~OptionType.integer` or :attr:`~OptionType.number`
+        """
+        return self._min_value
 
 
     # Choices management
@@ -414,6 +439,11 @@ class Option:
                         dict_["channel_types"].append(st.value)
                 else:
                     dict_["channel_types"].append(t.value)
+
+        if self._max_value:
+            dict_['max_value'] = self.max_value
+        if self._min_value:
+            dict_['min_value'] = self.min_value
 
         return dict_
 
@@ -734,6 +764,7 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
             "type": self._type.value,
             "options": [option.to_dict() for option in reversed(self.options)],
             "description": self._description,
+            "default_permission": self._default_permission,
         }
 
         return dict_

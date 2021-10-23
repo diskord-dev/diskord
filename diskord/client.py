@@ -154,7 +154,7 @@ class Client:
         :func:`on_connect`, Otherwise :func:`sync_application_commands` will be called.
 
         This defaults to ``False`` and is strongly recommended to be ``False``.
-    application_commands_guild_ids: List[:class:`int`]
+    application_command_guild_ids: List[:class:`int`]
         The list of guilds in which all application commands would be registered.
         If this is provided, Then it would essentially prevent the creation of global
         application commands.
@@ -265,8 +265,8 @@ class Client:
         self.overwrite_application_commands: bool = options.pop(
             "overwrite_application_commands", False
         )
-        self.application_commands_guild_ids: List[int] = options.pop(
-            "application_commands_guild_ids", []
+        self.application_command_guild_ids: List[int] = options.pop(
+            "application_command_guild_ids", []
         )
 
         connector: Optional[aiohttp.BaseConnector] = options.pop("connector", None)
@@ -1793,7 +1793,7 @@ class Client:
     @property
     def application_commands(self):
         """Dict[:class:`int`, :class:`diskord.application.ApplicationCommand`]: Returns a mapping with ID of command to the application command."""
-        return self._connection._commands_store._commands # type: ignore
+        return list(self._connection._commands_store._commands.values()) # type: ignore
 
     # Commands management
 

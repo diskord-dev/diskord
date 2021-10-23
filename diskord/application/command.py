@@ -27,6 +27,7 @@ from __future__ import annotations
 from typing import Callable, Any, Dict, List
 import asyncio
 import logging
+import traceback
 
 from ..utils import get as utils_get
 from ..application_commands import ApplicationCommandMixin
@@ -57,6 +58,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
     extras: :class:`dict`
         A dict of user provided extras to attach to the Command.
     """
+    _type: ApplicationCommandType
 
     def __init__(self, callback: Callable, **attrs: Any):
         self._callback = callback
@@ -71,7 +73,10 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
         self._cog = None
         self._state = None
 
-        self._from_data(dict())
+        self._id: Optional[int] = None
+        self._application_id: Optional[int] = None
+        self._guild_id: Optional[int] = None
+        self._version: Optional[int] = None
         self._update_callback_data()
 
     def is_global_command(self) -> bool:
@@ -247,8 +252,8 @@ class ApplicationCommandStore:
         command._state = self._state
         client = command._client
 
-        if client.application_commands_guild_ids and not command._guild_ids:
-            command._guild_ids = client.application_commands_guild_ids
+        if client.application_command_guild_ids and not command._guild_ids:
+            command._guild_ids = client.application_command_guild_ids
 
         self._pending.append(command)
 
@@ -345,6 +350,7 @@ class ApplicationCommandStore:
 
             self.add_application_command(registered._from_data(command))
             self.remove_pending_command(registered)
+
 
         # Deleting the command that weren't found in internal cache
         # this parameter is set to False by default because of the fact that
