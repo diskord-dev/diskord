@@ -27,6 +27,7 @@ from __future__ import annotations
 from typing import Callable, Any, Dict, List
 import asyncio
 import logging
+import traceback
 
 from ..utils import get as utils_get
 from ..application_commands import ApplicationCommandMixin

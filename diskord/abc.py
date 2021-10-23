@@ -1307,11 +1307,11 @@ class Messageable:
             The content of the message to send.
         tts: :class:`bool`
             Indicates if the message should be sent using text-to-speech.
-        embed: :class:`~discord.Embed`
+        embed: :class:`~diskord.Embed`
             The rich embed for the content.
-        file: :class:`~discord.File`
+        file: :class:`~diskord.File`
             The file to upload.
-        files: List[:class:`~discord.File`]
+        files: List[:class:`~diskord.File`]
             A list of files to upload. Must be a maximum of 10.
         nonce: :class:`int`
             The nonce to use for sending this message. If the message was successfully sent,
@@ -1320,18 +1320,18 @@ class Messageable:
             If provided, the number of seconds to wait in the background
             before deleting the message we just sent. If the deletion fails,
             then it is silently ignored.
-        allowed_mentions: :class:`~discord.AllowedMentions`
+        allowed_mentions: :class:`~diskord.AllowedMentions`
             Controls the mentions being processed in this message. If this is
-            passed, then the object is merged with :attr:`~discord.Client.allowed_mentions`.
+            passed, then the object is merged with :attr:`~diskord.Client.allowed_mentions`.
             The merging behaviour only overrides attributes that have been explicitly passed
-            to the object, otherwise it uses the attributes set in :attr:`~discord.Client.allowed_mentions`.
-            If no object is passed at all then the defaults given by :attr:`~discord.Client.allowed_mentions`
+            to the object, otherwise it uses the attributes set in :attr:`~diskord.Client.allowed_mentions`.
+            If no object is passed at all then the defaults given by :attr:`~diskord.Client.allowed_mentions`
             are used instead.
 
             .. versionadded:: 1.4
 
-        reference: Union[:class:`~discord.Message`, :class:`~discord.MessageReference`, :class:`~discord.PartialMessage`]
-            A reference to the :class:`~discord.Message` to which you are replying, this can be created using
+        reference: Union[:class:`~diskord.Message`, :class:`~diskord.MessageReference`, :class:`~diskord.PartialMessage`]
+            A reference to the :class:`~diskord.Message` to which you are replying, this can be created using
             :meth:`~discord.Message.to_reference` or passed directly as a :class:`~discord.Message`. You can control
             whether this mentions the author of the referenced message using the :attr:`~discord.AllowedMentions.replied_user`
             attribute of ``allowed_mentions`` or by setting ``mention_author``.
@@ -1339,27 +1339,27 @@ class Messageable:
             .. versionadded:: 1.6
 
         mention_author: Optional[:class:`bool`]
-            If set, overrides the :attr:`~discord.AllowedMentions.replied_user` attribute of ``allowed_mentions``.
+            If set, overrides the :attr:`~diskord.AllowedMentions.replied_user` attribute of ``allowed_mentions``.
 
             .. versionadded:: 1.6
-        view: :class:`discord.ui.View`
+        view: :class:`diskord.ui.View`
             A Discord UI View to add to the message.
-        embeds: List[:class:`~discord.Embed`]
+        embeds: List[:class:`~diskord.Embed`]
             A list of embeds to upload. Must be a maximum of 10.
 
             .. versionadded:: 2.0
-        stickers: Sequence[Union[:class:`~discord.GuildSticker`, :class:`~discord.StickerItem`]]
+        stickers: Sequence[Union[:class:`~diskord.GuildSticker`, :class:`~diskord.StickerItem`]]
             A list of stickers to upload. Must be a maximum of 3.
 
             .. versionadded:: 2.0
 
         Raises
         --------
-        ~discord.HTTPException
+        ~diskord.HTTPException
             Sending the message failed.
-        ~discord.Forbidden
+        ~diskord.Forbidden
             You do not have the proper permissions to send the message.
-        ~discord.InvalidArgument
+        ~diskord.InvalidArgument
             The ``files`` list is not of the appropriate size,
             you specified both ``file`` and ``files``,
             or you specified both ``embed`` and ``embeds``,
@@ -1368,7 +1368,7 @@ class Messageable:
 
         Returns
         ---------
-        :class:`~discord.Message`
+        :class:`~diskord.Message`
             The message that was sent.
         """
 
