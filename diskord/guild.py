@@ -3245,43 +3245,6 @@ class Guild(Hashable):
 
     # Application commands management
 
-    def get_application_command(self, command_id: int, /) -> ApplicationCommand:
-        """
-        Gets an application command for this guild with the command's ID.
-
-        The command for provided ID must belong to this guild.
-
-        Parameters
-        ----------
-
-        command_id: :class:`int`
-            The ID of the command to get.
-
-        Returns
-        -------
-
-        :class:`ApplicationCommand`
-            The required command.
-        """
-        return self._state._commands_store.get_application_command(command_id)
-
-    def remove_application_command(self, command_id: int, /):
-        """
-        Removes an application command from internal application commands list for this
-        guild.
-
-        The command for provided ID must belong to this guild.
-
-        If any error is raised during command removal, It is silently suppressed.
-
-        Parameters
-        -----------
-
-        command_id: :class:`int`
-            The ID of the command to remove.
-        """
-        return self._state._commands_store.remove_application_command(command_id)
-
     async def fetch_application_command(self, command_id: int, /) -> ApplicationCommand:
         """|coro|
 
@@ -3319,6 +3282,7 @@ class Guild(Hashable):
         """|coro|
 
         Fetches the permissions of all application commands in this guild.
+
         Returns
         -------
 
@@ -3335,10 +3299,6 @@ class Guild(Hashable):
         """|coro|
 
         Fetches the permissions of an application command in this guild by command ID.
-
-        .. note::
-            This function is an API call, Use :func:`get_application_command_permission`
-            for general usage.
 
         Returns
         -------
