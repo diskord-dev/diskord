@@ -75,7 +75,7 @@ class ApplicationCommandGuildPermissions:
     instead to create custom permissions.
     """
     __slots__ = ('_command_id', '_application_id', '_guild_id', '_permissions', '_state')
-    
+
     def __init__(self, data: GuildApplicationCommandPermissionsPayload, state: ConnectionState):
         self._command_id: int = int(data['id'])
         self._application_id: int = int(data['application_id'])
@@ -260,7 +260,7 @@ class ApplicationCommandMixin:
         self._default_permission = data.get("default_permission", getattr(self, "_default_permission", True))  # type: ignore
         self._name = data.get("name", getattr(self, '_name', None))
         self._description = data.get("description", getattr(self, '_description', None))
-        self._type = try_enum(data.get("type", 1)) # type: ignore
+        self._type = try_enum(ApplicationCommandType, int(data['type'])) # type: ignore
         return self
 
     @property

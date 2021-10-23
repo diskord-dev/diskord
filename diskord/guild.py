@@ -3263,9 +3263,7 @@ class Guild(Hashable):
         :class:`ApplicationCommand`
             The required command.
         """
-        for command in self._application_commands:
-            if command.id == command_id and self.id == command.guild_id:
-                return command
+        return self._state._commands_store.get_application_command(command_id)
 
     def remove_application_command(self, command_id: int, /):
         """
@@ -3282,14 +3280,7 @@ class Guild(Hashable):
         command_id: :class:`int`
             The ID of the command to remove.
         """
-        from .application_commands import ApplicationCommand  # due to circular import
-
-        for command in self._state._application_commands:
-            if command.id == command_id and self.id == command.guild_id:
-                try:
-                    return self._state._application_commands.remove(command)
-                except ValueError:
-                    return
+        return self._state._commands_store.remove_application_command(command_id)
 
     async def fetch_application_command(self, command_id: int, /) -> ApplicationCommand:
         """|coro|
@@ -3322,31 +3313,23 @@ class Guild(Hashable):
             application_id=self._state.user.id,
             guild_id=self.id,
         )
+        return ApplicationCommand(data)
 
     async def fetch_application_command_permissions(self):
         """|coro|
 
-        Fetches the permissions of an application command in this guild.
-
-        .. note::
-            This function is an API call, Use :func:`get_application_command_permissions`
-            for general usage.
-
+        Fetches the permissions of all application commands in this guild.
         Returns
         -------
 
         List[:class:`ApplicationCommandGuildPermissions`]
             The list of permissions for each command.
         """
-        response = await self.http.get_guild_application_command_permissions(
+        data = await self.http.get_guild_application_command_permissions(
             application_id=self.user.id,
             guild_id=self.id,
         )
-        for perm in response:
-            perm["permissions"] = [
-                ApplicationCommandPermission(**p) for p in perm["permissions"]
-            ]
-        return ApplicationCommandGuildPermissions(**response)
+        return [ApplicationCommandGuildPermissions(perm) for perm in data]
 
     async def fetch_application_command_permission(self, command_id: int, /):
         """|coro|
@@ -3363,12 +3346,9 @@ class Guild(Hashable):
         :class:`ApplicationCommandGuildPermissions`
             The permissions for the provided command.
         """
-        response = await self.http.get_application_command_permissions(
+        data = await self.http.get_application_command_permissions(
             application_id=self.user.id,
             guild_id=self.id,
             command_id=command_id,
         )
-        response["permissions"] = [
-            ApplicationCommandPermission(**perm) for perm in response["permissions"]
-        ]
-        return ApplicationCommandGuildPermissions(**response)
+        return ApplicationCommandGuildPermissions(data)
