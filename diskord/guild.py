@@ -245,6 +245,9 @@ class Guild(Hashable):
         The guild's NSFW level.
 
         .. versionadded:: 2.0
+    premium_progress_bar_enabled: :class:`bool`
+        Whether the guild has enabled progress bar to track premium subscriptions or
+        server boosts count.
     """
 
     __slots__ = (
@@ -270,6 +273,7 @@ class Guild(Hashable):
         "premium_subscription_count",
         "preferred_locale",
         "nsfw_level",
+        "premium_progress_bar_enabled"
         "_members",
         "_channels",
         "_icon",
@@ -474,6 +478,7 @@ class Guild(Hashable):
             guild, "public_updates_channel_id"
         )
         self.nsfw_level: NSFWLevel = try_enum(NSFWLevel, guild.get("nsfw_level", 0))
+        self.premium_progress_bar_enabled: bool = guild.get('premium_progress_bar_enabled', False)
 
         self._stage_instances: Dict[int, StageInstance] = {}
         for s in guild.get("stage_instances", []):
