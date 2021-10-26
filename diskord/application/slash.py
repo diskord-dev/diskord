@@ -907,7 +907,7 @@ class SlashSubCommand(SlashCommandChild):
         self._type = OptionType.sub_command
 
 
-def option(name: str, **attrs) -> Option:
+def option(name: str, **attrs) -> Callable[..., Any]:
     """A decorator-based interface to add options to a slash command.
 
     Usage: ::
@@ -924,7 +924,7 @@ def option(name: str, **attrs) -> Option:
         will be raised.
     """
 
-    def inner(func):
+    def inner(func) -> Option:
         # Originally the Option object was inserted directly in
         # annotations but that was problematic so it was changed to
         # this.
@@ -960,7 +960,7 @@ def option(name: str, **attrs) -> Option:
     return inner
 
 
-def slash_command(**options) -> SlashCommand:
+def slash_command(**options) -> Callable[..., Any]:
     """A decorator that converts a function to :class:`SlashCommand`
 
     Usage: ::
@@ -970,7 +970,7 @@ def slash_command(**options) -> SlashCommand:
             await ctx.respond('Hello world')
     """
 
-    def inner(func: Callable):
+    def inner(func: Callable) -> SlashCommand:
         if not inspect.iscoroutinefunction(func):
             raise TypeError("Callback function must be a coroutine.")
 
