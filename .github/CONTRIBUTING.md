@@ -1,4 +1,4 @@
-# Contriubting to AIOCord
+# Contriubting to Diskord
 First off, We would like to thank you for showing interest in contributing to this library, it really helps us a lot. :grin:
 
 ## What this isn't for.
