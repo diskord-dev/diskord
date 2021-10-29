@@ -947,7 +947,7 @@ def option(name: str, **attrs) -> Callable[..., Any]:
         if required is None:
             required = param.default is inspect._empty
 
-        type = params[arg].annotation
+        type = attrs.pop('type', params[arg].annotation)
 
         if type is inspect._empty:  # no annotations were passed.
             type = str
