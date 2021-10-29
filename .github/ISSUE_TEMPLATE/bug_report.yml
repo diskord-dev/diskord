@@ -47,14 +47,14 @@ body:
       label: Intents
       description: >
         What intents are you using for your bot?
-        This is the `discord.Intents` class you pass to the client.
+        This is the `diskord.Intents` class you pass to the client.
     validations:
       required: true
   - type: textarea
     attributes:
       label: System Information
       description: >
-        Run `python -m discord -v` and paste this information below.
+        Run `python -m diskord -v` and paste this information below.
 
         This command required v1.1.0 or higher of the library. If this errors out then show some basic
         information involving your system such as operating system and Python version.

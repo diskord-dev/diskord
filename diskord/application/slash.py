@@ -148,7 +148,7 @@ class Option:
         self._options = []
         self._min_value = min_value
         self._max_value = max_value
-        self.autocomplete: Callable[[str], List[OptionChoice]] = autocomplete
+        self.autocomplete: Callable[[str, Interaction], List[OptionChoice]] = autocomplete
 
         if self._choices is None:
             self._choices = []
