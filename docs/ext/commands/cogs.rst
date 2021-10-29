@@ -11,7 +11,7 @@ The gist:
 
 - Each cog is a Python class that subclasses :class:`.commands.Cog`.
 - Every command is marked with the :func:`.commands.command` decorator.
-- Every application command is marked with :func:`diskord.slash_command`, :func:`diskord.user_command` or :func:`diskord.message_command`.
+- Every application command is marked with :func:`diskord.application.slash_command`, :func:`diskord.application.user_command` or :func:`diskord.application.message_command`.
 - Every listener is marked with the :meth:`.commands.Cog.listener` decorator.
 - Cogs are then registered with the :meth:`.Bot.add_cog` call.
 - Cogs are subsequently removed with the :meth:`.Bot.remove_cog` call.
@@ -45,6 +45,12 @@ This example cog defines a ``Greetings`` category for your commands, with a sing
             else:
                 await ctx.send(f'Hello {member.name}... This feels familiar.')
             self._last_member = member
+       
+        @diskord.application.slash_command()
+        async def slap(self, ctx, member: diskord.Member = None):
+            """Slap someone else."""
+            member = member or 'themselve.'
+            await ctx.send(f'{ctx.author} slapped {member}')
 
 A couple of technical notes to take into consideration:
 
