@@ -281,6 +281,9 @@ class ApplicationCommandStore:
         command._state = self._state
         client = command._client
 
+        if command.id is not None:
+            self.add_application_command(command)
+
         if client.application_command_guild_ids and not command._guild_ids:
             command._guild_ids = client.application_command_guild_ids
 

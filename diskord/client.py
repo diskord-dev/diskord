@@ -1811,15 +1811,17 @@ class Client:
         :func:`sync_application_commands` must be called afterwards to synchronise all the
         commands properly.
 
+        If the provided command's :attr:`~application.ApplicationCommand.id` is not None,
+        The command would be added directly to application commands list instead of pending
+        list.
+
         Parameters
         ----------
-
         command: :class:`application.ApplicationCommand`
             The application command to add.
 
         Returns
         -------
-
         :class:`application.ApplicationCommand`
             The added command.
         """
