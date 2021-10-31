@@ -99,7 +99,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
 
         self._id: Optional[int]
         try:
-            self._id = int(data['id'])
+            self._id = int(attrs['id'])
         except KeyError:
             self._id = None
 
@@ -281,13 +281,9 @@ class ApplicationCommandStore:
         command._state = self._state
         client = command._client
 
-        if command.id is not None:
-            self.add_application_command(command)
-
         if client.application_command_guild_ids and not command._guild_ids:
             command._guild_ids = client.application_command_guild_ids
 
-        self._pending.append(command)
 
         if not hasattr(command.callback, "__application_command_params__"):
             command.callback.__application_command_params__ = {}
@@ -295,10 +291,14 @@ class ApplicationCommandStore:
         for opt in command.callback.__application_command_params__.values():
             command.append_option(opt)
 
+        if command.id is not None:
+            self.add_application_command(command)
+        else:
+            self._pending.append(command)
+
         # reset the params so they don't conflict if user decides to re-add this
         # command.
         command.callback.__application_command_params__ = {}
-
         return command
 
     def remove_pending_command(self, command: ApplicationCommand):
