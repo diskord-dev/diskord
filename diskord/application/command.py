@@ -71,6 +71,9 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
         :meth:`~diskord.Client.register_application_commands` in :func:`~diskord.on_connect`
         to register this command manually.
 
+        This allows you to register application commands in a separate (independent) way without
+        worrying about commands registration problems like accidentally overwriting commands.
+
         The ID must be integer and valid *registered* application command ID.
 
     Attributes
