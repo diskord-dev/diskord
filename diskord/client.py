@@ -1835,7 +1835,6 @@ class Client:
 
         Parameters
         ----------
-
         command: :class:`application.ApplicationCommand`
             The application command to register.
         """
@@ -1851,11 +1850,10 @@ class Client:
         be called.
 
         .. note::
-            To remove a command from API, Use :func:`delete_application_command`
+            To remove a command from Discord, Use :func:`delete_application_command`
 
         Parameters
         ----------
-
         command_id: :class:`int`
             The ID of command to delete.
         """
@@ -1952,10 +1950,8 @@ class Client:
         ----------
         command_id: :class:`int`
             The ID of command to delete.
-
         guild_id: :class:`int`
             The guild ID this command belongs to. If not global.
-
         """
         if guild_id is not MISSING:
             await self.http.delete_guild_command(self.user.id, guild_id, command_id)
@@ -1977,7 +1973,6 @@ class Client:
         ----------
         command_id: :class:`int`
             The ID of command.
-
         guild_id: :class:`int`
             The guild which command belongs to, If not global.
 
@@ -2197,6 +2192,11 @@ class Client:
             @bot.slash_command(description='My cool slash command.')
             async def test(ctx):
                 await ctx.respond('Hello world')
+
+        Parameters
+        ----------
+        **options:
+            The parameters of :class:`~application.SlashCommand`
         """
 
         def inner(func: Callable):
@@ -2218,6 +2218,11 @@ class Client:
             @bot.user_command()
             async def test(ctx, user):
                 await ctx.respond('Hello world')
+
+        Parameters
+        ----------
+        **options:
+            The parameters of :class:`~application.UserCommand`
         """
 
         def inner(func: Callable):
@@ -2237,6 +2242,11 @@ class Client:
             @bot.message_command()
             async def test(ctx, message):
                 await ctx.respond('Hello world')
+
+        Parameters
+        ----------
+        **options:
+            The parameters of :class:`~application.MessageCommand`
         """
 
         def inner(func: Callable):
@@ -2262,7 +2272,6 @@ class Client:
 
         Parameters
         ----------
-
         interaction: :class:`Interaction`
             The interaction of which context would be returned.
         cls: :class:`InteractionContext`
@@ -2270,13 +2279,11 @@ class Client:
 
         Returns
         -------
-
         :class:`InteractionContext`
             The context of interaction.
 
         Raises
         ------
-
         TypeError:
             The ``cls`` parameter is not of proper type.
         """
