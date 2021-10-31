@@ -47,6 +47,32 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
 
     This class also inherits :class:`diskord.ApplicationCommand`
 
+    Parameters
+    ----------
+    callback:
+        The callback function of this command.
+    name: :class:`str`
+        The name of application command. By default, callback's name is used.
+    description: :class:`str`
+        The description of application command. Defaults to the docstring of callback
+        or ``No description.``
+    guild_ids: List[:class:`int`]
+        The list of guild IDs to register command in, if not global.
+    default_permission: :class:`bool`
+        The default permission of the application command. Setting this to ``False``
+        disables the command for everyone unless certain permission overwrite is configured.
+    extras: :class:`dict`
+        A dict of user provided extras to attach to the Command. Use this to attach some
+        extra info to command that you might need later.
+    id: :class:`int`
+        The ID of the command, If this is provided, this command will not be registered
+        by library. Instead, it will be added to application commands cache directly and
+        interactions will be handled directly. As such, there will be no need to call
+        :meth:`~diskord.Client.register_application_commands` in :func:`~diskord.on_connect`
+        to register this command manually.
+
+        The ID must be integer and valid *registered* application command ID.
+
     Attributes
     ----------
     checks: List[Callable[:class:`InteractionContext`, bool]]
@@ -55,8 +81,6 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
 
         For more info on checks and how to register them, See :func:`~ext.commands.check`
         documentation as these checks actually come from there.
-    extras: :class:`dict`
-        A dict of user provided extras to attach to the Command.
     """
     _type: ApplicationCommandType
 
@@ -73,7 +97,12 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
         self._cog = None
         self._state = None
 
-        self._id: Optional[int] = None
+        self._id: Optional[int]
+        try:
+            self._id = int(data['id'])
+        except KeyError:
+            self._id = None
+
         self._application_id: Optional[int] = None
         self._guild_id: Optional[int] = None
         self._version: Optional[int] = None
@@ -81,7 +110,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
 
     def is_global_command(self) -> bool:
         """:class:`bool`: Whether the command is global command or not."""
-        return len(self._guild_ids) == 0
+        return (not self._guild_ids)
 
     def _update_callback_data(self):
         self.permissions: List[ApplicationCommandPermissions] = []
