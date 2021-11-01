@@ -24,7 +24,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
-from typing import Callable, Any, Dict, List
+from typing import Callable, Any, Dict, List, Optional
 import asyncio
 import logging
 import traceback
@@ -89,7 +89,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
 
     def __init__(self, callback: Callable, **attrs: Any):
         self._callback = callback
-        self._guild_ids = attrs.pop("guild_ids", [])
+        self._guild_ids = attrs.pop("guild_ids", None)
         self._description = (
             attrs.pop("description", callback.__doc__) or "No description"
         )
@@ -161,7 +161,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
         self._update_callback_data()
 
     @property
-    def guild_ids(self) -> List[int]:
+    def guild_ids(self) -> Optional[List[int]]:
         """List[:class:`int`]: The list of guild IDs in which this command will/was register.
 
         Unlike :attr:`ApplicationCommand.guild_id` this is the list of guild IDs in which command
@@ -282,11 +282,6 @@ class ApplicationCommandStore:
             )
 
         command._state = self._state
-        client = command._client
-
-        if client.application_command_guild_ids and not command._guild_ids:
-            command._guild_ids = client.application_command_guild_ids
-
 
         if not hasattr(command.callback, "__application_command_params__"):
             command.callback.__application_command_params__ = {}
@@ -360,6 +355,7 @@ class ApplicationCommandStore:
         )
 
     async def sync_pending(self, *, delete_unregistered_commands: bool = False, ignore_guild_register_fail: bool = True):
+
         _log.info("Synchronizing internal cache commands.")
 
         if not self._pending:
@@ -374,15 +370,20 @@ class ApplicationCommandStore:
 
         # Synchronising the fetched commands with internal cache.
         for command in commands:
+            # trying to find the command in the pending commands
+            # that matches the fetched command traits.
             registered = utils_get(
                 [c for c in self._pending if not c.guild_ids],
                 name=command["name"],
-                type=command["type"],
+                type=try_enum(ApplicationCommandType, int(command["type"])),
             )
             if registered is None:
+                # the command not found, so append it to list of unfound
+                # commands.
                 non_registered.append(command)
                 continue
 
+            # command found, sync it and add it.
             self.add_application_command(registered._from_data(command))
             self.remove_pending_command(registered)
 
@@ -401,11 +402,11 @@ class ApplicationCommandStore:
                     await self._state.http.delete_global_command(client.user.id, command["id"])
 
         # Registering the remaining commands
-        while len(self._pending):
+        while self._pending:
             index = len(self._pending) - 1
             command = self._pending[index]
             if command.guild_ids:
-                for guild_id in command.guild_ids:
+                for guild_id in set(command.guild_ids):
                     try:
                         cmd = await self._state.http.upsert_guild_command(
                             client.user.id, guild_id, command.to_dict()
