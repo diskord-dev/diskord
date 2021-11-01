@@ -266,7 +266,7 @@ class Client:
             "overwrite_application_commands", False
         )
         self.application_command_guild_ids: List[int] = options.pop(
-            "application_command_guild_ids", []
+            "application_command_guild_ids", None
         )
 
         connector: Optional[aiohttp.BaseConnector] = options.pop("connector", None)
@@ -1825,6 +1825,9 @@ class Client:
         :class:`application.ApplicationCommand`
             The added command.
         """
+        if command._guild_ids is None and self.application_command_guild_ids is not None:
+            command._guild_ids = self.application_command_guild_ids
+
         return self._connection._commands_store.add_pending_command(command)
 
     def remove_pending_command(self, command: application.ApplicationCommand, /):
