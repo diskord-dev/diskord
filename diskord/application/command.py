@@ -24,7 +24,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
-from typing import Callable, Any, Dict, List, Optional
+from typing import Callable, Any, Dict, List, Optional, TYPE_CHECKING
 import asyncio
 import logging
 import traceback
@@ -36,6 +36,9 @@ from ..enums import OptionType, ApplicationCommandType, try_enum
 from .mixins import ChecksMixin
 from .types import Check
 from .permissions import ApplicationCommandPermissions
+
+if TYPE_CHECKING:
+    from .types.interactions import ApplicationCommand as ApplicationCommandPayload
 
 _log = logging.getLogger(__name__)
 
@@ -464,8 +467,8 @@ class ApplicationCommandStore:
         # Registering the guild commands now
 
         # strucutre:
-        # { guild_id: { command_id: command } }
-        guilds: Dict[int, Dict[int, ApplicationCommand]] = {}
+        # { guild_id: [ command-payload-data... ] }
+        guilds: Dict[int, List[ApplicationCommandPayload]] = {}
 
         for cmd in (command for command in self._pending if command.guild_ids):
             data = cmd.to_dict()
