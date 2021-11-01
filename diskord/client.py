@@ -2088,58 +2088,37 @@ class Client:
 
     # TODO: Add other API methods
 
-    async def sync_application_commands(
-        self,
-        *,
-        delete_unregistered_commands: bool = False,
-        ignore_guild_register_fail: bool = True,
-    ):
+    async def sync_application_commands(self, **kwargs: Any):
         """|coro|
 
-        Updates the internal cache of application commands with the ones that are already
-        registered on the API.
+        Synchronizes the application commands with the ones that are in the client's cache.
 
         Unlike :func:`clean_register_application_commands`, This doesn't bulk overwrite the
         registered commands. Instead, it fetches the registered commands and sync the
-        internal cache with the new commands.
+        internal cache with the new commands and removes the commands that weren't
+        found in cache.
 
         This must be used when you don't intend to overwrite all the previous commands but
-        want to add new ones.
+        want to add new ones. The aim is to avoid overwriting the global commands that
+        take upto 1 hour to re-register.
 
-        This function is called under-the-hood inside the :func:`on_connect` event.
-
-        .. warning::
-            If you decided to override the :func:`on_connect` event, You MUST call this manually
-            or the commands will not be registered.
+        This function is called under-the-hood inside the :meth:`.start` method.
 
         Parameters
         ----------
-
         delete_unregistered_commands: :class:`bool`
             Whether or not to delete the commands that were sent by API but are not
-            found in internal cache. Defaults to ``False``
-
-        ignore_guild_register_fail: :class:`bool`
-            Whether to ignore the error raised if making an application command in a guild
-            failed. If this is set to ``True``, The traceback would be printed if the
-            application command couldn't be upserted in a guild but the commands sync
-            process will not be interrupted. Defaults to ``True``
+            found in internal cache. Defaults to ``True``. If this is set to False,
+            previous global commands won't be deleted.
         """
-        await self._connection._commands_store.sync_pending(
-            delete_unregistered_commands=delete_unregistered_commands,
-            ignore_guild_register_fail=ignore_guild_register_fail
-            )
-
-        # batch-editing the permissions
+        await self._connection._commands_store.sync_application_commands(**kwargs)
         await self.sync_application_commands_permissions()
 
         _log.info(
             "Application commands have been synchronised with the internal cache successfully."
         )
 
-    async def clean_register_application_commands(
-        self, *, ignore_guild_register_fail: bool = True
-    ):
+    async def clean_register_application_commands(self):
         """|coro|
 
         Overwrites all the application commands and registers the ones that were added
@@ -2151,21 +2130,10 @@ class Client:
         .. danger::
             This function overwrites all the commands and can lead to unexpected issues,
             Consider using :func:`sync_application_commands`
-
-        Parameters
-        ----------
-        ignore_guild_register_fail: :class:`bool`
-            Whether to ignore the error raised if making an application command in a guild
-            failed. If this is set to ``True``, The traceback would be printed if the
-            application command couldn't be upserted in a guild but the commands registration
-            process will not be interrupted. Defaults to ``True``
         """
 
-        await self._connection._commands_store.clean_register(ignore_guild_register_fail=ignore_guild_register_fail)
-
-        # finally, batch-editing the permissions
+        await self._connection._commands_store.clean_register()
         await self.sync_application_commands_permissions()
-
         _log.info("Clean Registered commands successfully.")
 
     async def register_application_commands(self):

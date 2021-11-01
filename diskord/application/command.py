@@ -357,7 +357,7 @@ class ApplicationCommandStore:
             name=f"discord-application-command-autocomplete-dispatch-{interaction.data['id']}",
         )
 
-    async def sync_pending(self, *, delete_unregistered_commands: bool = False, ignore_guild_register_fail: bool = True):
+    async def sync_application_commands(self, *, delete_unregistered_commands: bool = True):
 
         _log.info("Synchronizing internal cache commands.")
 
@@ -391,10 +391,7 @@ class ApplicationCommandStore:
             self.remove_pending_command(registered)
 
 
-        # Deleting the command that weren't found in internal cache
-        # this parameter is set to False by default because of the fact that
-        # it can be very expensive to delete the commands on every restart and would
-        # lead to ratelimit often.
+        # Deleting the command that weren't created.
         if delete_unregistered_commands:
             for command in non_registered:
                 if command.get("guild_id"):
@@ -405,33 +402,49 @@ class ApplicationCommandStore:
                     await self._state.http.delete_global_command(client.user.id, command["id"])
 
         # Registering the remaining commands
+
+        guilds = {}
+
+        # registering the guild commands. they don't take an hour to update
+        # so we don't mind bulk upserting them.
+        for command in self._pending:
+            for guild in set(command.guild_ids):
+                if not guild in guilds:
+                    guilds[guild] = []
+
+                guilds[guild].append(command.to_dict())
+
+        for guild in guilds:
+            try:
+                cmds = await self._state.http.bulk_upsert_guild_commands(
+                    client.user.id, guild, guilds[guild]
+                )
+            except Forbidden as e:
+                # the bot is missing application.commands scope so cannot
+                # make the command in the guild
+                traceback.print_exc()
+                continue
+            else:
+                for cmd in cmds:
+                    command = utils_get(
+                        self._pending,
+                        name=cmd["name"],
+                        type=try_enum(ApplicationCommandType, int(cmd["type"])),
+                    )
+                    self.add_application_command(command._from_data(cmd))
+                    self.remove_pending_command(command)
+
+        # now time for rest of global commands that are
+        # new. at this point, self._pending should only have *new* *global*
+        # commands.
         while self._pending:
             index = len(self._pending) - 1
             command = self._pending[index]
-            if command.guild_ids:
-                for guild_id in set(command.guild_ids):
-                    try:
-                        cmd = await self._state.http.upsert_guild_command(
-                            client.user.id, guild_id, command.to_dict()
-                        )
-                    except Forbidden as e:
-                        # the bot is missing application.commands scope so cannot
-                        # make the command in the guild
-                        if ignore_guild_register_fail:
-                            traceback.print_exc()
-                            continue
-                        else:
-                            raise e
-                    else:
-                        self.add_application_command(command._from_data(cmd))
-                        self._pending.pop(index)
-            else:
-                data = command.to_dict()
-                cmd = await self._state.http.upsert_global_command(client.user.id, data)
-                self.add_application_command(command._from_data(cmd))
-                self._pending.pop(index)
+            data = await self._state.http.upsert_global_command(client.user.id, command.to_dict())
+            self.add_application_command(command._from_data(data))
+            self._pending.pop(index)
 
-    async def clean_register(self, *, ignore_guild_register_fail: bool = True):
+    async def clean_register(self):
         # This needs a refactor as current implementation is kind of hacky and can
         # be unstable.
 
@@ -485,11 +498,8 @@ class ApplicationCommandStore:
                 )
             except Forbidden as e:
                 # bot doesn't has application.commands scope
-                if ignore_guild_register_fail:
-                    traceback.print_exc()
-                    continue
-                else:
-                    raise e
+                traceback.print_exc()
+                continue
             else:
                 for cmd in cmds:
                     command = utils_get(
