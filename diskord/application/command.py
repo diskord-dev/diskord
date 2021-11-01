@@ -419,12 +419,14 @@ class ApplicationCommandStore:
                             continue
                         else:
                             raise e
+                    else:
+                        self.add_application_command(command._from_data(cmd))
+                        self._pending.pop(index)
             else:
                 data = command.to_dict()
                 cmd = await self._state.http.upsert_global_command(client.user.id, data)
-
-            self.add_application_command(command._from_data(cmd))
-            self._pending.pop(index)
+                self.add_application_command(command._from_data(cmd))
+                self._pending.pop(index)
 
     async def clean_register(self, *, ignore_guild_register_fail: bool = True):
         # This needs a refactor as current implementation is kind of hacky and can
@@ -461,7 +463,9 @@ class ApplicationCommandStore:
 
         # Registering the guild commands now
 
-        guilds = {}
+        # strucutre:
+        # { guild_id: { command_id: command } }
+        guilds: Dict[int, Dict[int, ApplicationCommand]] = {}
 
         for cmd in (command for command in self._pending if command.guild_ids):
             data = cmd.to_dict()
@@ -483,11 +487,12 @@ class ApplicationCommandStore:
                     continue
                 else:
                     raise e
-            for cmd in cmds:
-                command = utils_get(
-                    self._pending,
-                    name=cmd["name"],
-                    type=try_enum(ApplicationCommandType, int(cmd["type"])),
-                )
-                self.add_application_command(command._from_data(cmd))
-                self.remove_pending_command(command)
+            else:
+                for cmd in cmds:
+                    command = utils_get(
+                        self._pending,
+                        name=cmd["name"],
+                        type=try_enum(ApplicationCommandType, int(cmd["type"])),
+                    )
+                    self.add_application_command(command._from_data(cmd))
+                    self.remove_pending_command(command)
