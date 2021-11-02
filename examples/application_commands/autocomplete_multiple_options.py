@@ -41,5 +41,5 @@ async def autocomplete(value: str, option: diskord.application.Option, interacti
 @bot.slash_command()
 @diskord.application.option('color', autocomplete=autocomplete)
 @diskord.application.option('organism', autocomplete=autocomplete)
-async def organism(self, ctx, color: str, organism: str):
+async def organism(ctx, color: str, organism: str):
     await ctx.send(f'A {color} colored {organism}.')
