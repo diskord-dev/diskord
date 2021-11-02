@@ -76,7 +76,7 @@ async def ping(ctx):
 
 bot.run('token')
 ```
-You can find more examples in the examples directory.
+You can find more examples in the [`examples`](examples/) directory.
 
 ## Links
 * [Latest Documentation](https://diskord.readthedocs.io/en/latest/index.html)
