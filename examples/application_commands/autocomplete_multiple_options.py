@@ -43,3 +43,5 @@ async def autocomplete(value: str, option: diskord.application.Option, interacti
 @diskord.application.option('organism', autocomplete=autocomplete)
 async def organism(ctx, color: str, organism: str):
     await ctx.send(f'A {color} colored {organism}.')
+
+bot.run('token')
