@@ -329,7 +329,7 @@ class ApplicationCommandMixin:
 
 
     def __repr__(self):
-        return f'<{self.__class__.__name__} name={self.name!r} description={self.description!r} type={self.type!r}'
+        return f'<{self.__class__.__name__} name={self.name!r} description={self.description!r} type={self.type!r}>'
 
 
 class ApplicationCommand(ApplicationCommandMixin):
