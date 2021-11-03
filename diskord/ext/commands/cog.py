@@ -278,7 +278,7 @@ class Cog(metaclass=CogMeta):
         Returns
         -------
         List[:class:`diskord.ApplicationCommand`]
-            A :class:`list` of :class:`discord.ApplicationCommand` that are
+            A :class:`list` of :class:`diskord.ApplicationCommand` that are
             defined inside this cog.
 
             .. note::

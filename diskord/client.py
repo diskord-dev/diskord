@@ -398,7 +398,7 @@ class Client:
 
         If this is not passed via ``__init__`` then this is retrieved
         through the gateway when an event contains the data. Usually
-        after :func:`~discord.on_connect` is called.
+        after :func:`~diskord.on_connect` is called.
 
         .. versionadded:: 2.0
         """
@@ -406,7 +406,7 @@ class Client:
 
     @property
     def application_flags(self) -> ApplicationFlags:
-        """:class:`~discord.ApplicationFlags`: The client's application flags.
+        """:class:`~diskord.ApplicationFlags`: The client's application flags.
 
         .. versionadded:: 2.0
         """
@@ -442,7 +442,7 @@ class Client:
     ) -> asyncio.Task:
         wrapped = self._run_event(coro, event_name, *args, **kwargs)
         # Schedules the task
-        return asyncio.create_task(wrapped, name=f"discord.py: {event_name}")
+        return asyncio.create_task(wrapped, name=f"diskord.py: {event_name}")
 
     def dispatch(self, event: str, *args: Any, **kwargs: Any) -> None:
         _log.debug("Dispatching event %s", event)
@@ -491,7 +491,7 @@ class Client:
 
         By default this prints to :data:`sys.stderr` however it could be
         overridden to have a different implementation.
-        Check :func:`~discord.on_error` for more details.
+        Check :func:`~diskord.on_error` for more details.
         """
         print(f"Ignoring exception in {event_method}", file=sys.stderr)
         traceback.print_exc()
@@ -809,7 +809,7 @@ class Client:
 
     @property
     def allowed_mentions(self) -> Optional[AllowedMentions]:
-        """Optional[:class:`~discord.AllowedMentions`]: The allowed mention configuration.
+        """Optional[:class:`~diskord.AllowedMentions`]: The allowed mention configuration.
 
         .. versionadded:: 1.4
         """
@@ -826,7 +826,7 @@ class Client:
 
     @property
     def intents(self) -> Intents:
-        """:class:`~discord.Intents`: The intents configured for this connection.
+        """:class:`~diskord.Intents`: The intents configured for this connection.
 
         .. versionadded:: 1.5
         """
@@ -836,7 +836,7 @@ class Client:
 
     @property
     def users(self) -> List[User]:
-        """List[:class:`~discord.User`]: Returns a list of all the users the bot can see."""
+        """List[:class:`~diskord.User`]: Returns a list of all the users the bot can see."""
         return list(self._connection._users.values())
 
     def get_channel(
@@ -927,7 +927,7 @@ class Client:
 
         Returns
         --------
-        Optional[:class:`~discord.User`]
+        Optional[:class:`~diskord.User`]
             The user or ``None`` if not found.
         """
         return self._connection.get_user(id)
@@ -1166,8 +1166,8 @@ class Client:
 
         .. code-block:: python3
 
-            game = discord.Game("with the API")
-            await client.change_presence(status=discord.Status.idle, activity=game)
+            game = diskord.Game("with the API")
+            await client.change_presence(status=diskord.Status.idle, activity=game)
 
         .. versionchanged:: 2.0
             Removed the ``afk`` keyword-only parameter.
@@ -1428,7 +1428,7 @@ class Client:
     ) -> Invite:
         """|coro|
 
-        Gets an :class:`.Invite` from a discord.gg URL or ID.
+        Gets an :class:`.Invite` from a discord. URL or ID.
 
         .. note::
 
@@ -1439,7 +1439,7 @@ class Client:
         Parameters
         -----------
         url: Union[:class:`.Invite`, :class:`str`]
-            The Discord invite ID or URL (must be a discord.gg URL).
+            The Discord invite ID or URL (must be a discord. URL).
         with_counts: :class:`bool`
             Whether to include count information in the invite. This fills the
             :attr:`.Invite.approximate_member_count` and :attr:`.Invite.approximate_presence_count`
@@ -1550,13 +1550,13 @@ class Client:
     async def fetch_user(self, user_id: int, /) -> User:
         """|coro|
 
-        Retrieves a :class:`~discord.User` based on their ID.
+        Retrieves a :class:`~diskord.User` based on their ID.
         You do not have to share any guilds with the user to get this information,
         however many operations do require that you do.
 
         .. note::
 
-            This method is an API call. If you have :attr:`discord.Intents.members` and member cache enabled, consider :meth:`get_user` instead.
+            This method is an API call. If you have :attr:`diskord.Intents.members` and member cache enabled, consider :meth:`get_user` instead.
 
         Parameters
         -----------
@@ -1572,7 +1572,7 @@ class Client:
 
         Returns
         --------
-        :class:`~discord.User`
+        :class:`~diskord.User`
             The user you requested.
         """
         data = await self.http.get_user(user_id)
@@ -1709,7 +1709,7 @@ class Client:
 
         Parameters
         -----------
-        user: :class:`~discord.abc.Snowflake`
+        user: :class:`~diskord.abc.Snowflake`
             The user to create a DM with.
 
         Returns
@@ -1726,7 +1726,7 @@ class Client:
         return state.add_dm_channel(data)
 
     def add_view(self, view: View, *, message_id: Optional[int] = None) -> None:
-        """Registers a :class:`~discord.ui.View` for persistent listening.
+        """Registers a :class:`~diskord.ui.View` for persistent listening.
 
         This method should be used for when a view is comprised of components
         that last longer than the lifecycle of the program.
@@ -1735,7 +1735,7 @@ class Client:
 
         Parameters
         ------------
-        view: :class:`discord.ui.View`
+        view: :class:`diskord.ui.View`
             The view to register for dispatching.
         message_id: Optional[:class:`int`]
             The message ID that the view is attached to. This is currently used to

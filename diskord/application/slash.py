@@ -829,7 +829,7 @@ class SlashCommandGroup(SlashCommandChild):
 
         @role.sub_command(description="Clears the permissions of the role.")
         @diskord.option('role', description='The role to clear permissions of.')
-        async def clear(ctx, role: discord.Role):
+        async def clear(ctx, role: diskord.Role):
             await ctx.respond('Permissions cleared!')
 
 

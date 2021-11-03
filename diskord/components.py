@@ -147,7 +147,7 @@ class Button(Component):
 
     .. note::
 
-        The user constructible and usable type to create a button is :class:`discord.ui.Button`
+        The user constructible and usable type to create a button is :class:`diskord.ui.Button`
         not this one.
 
     .. versionadded:: 2.0
@@ -221,7 +221,7 @@ class SelectMenu(Component):
     .. note::
 
         The user constructible and usable type to create a select menu is
-        :class:`discord.ui.Select` not this one.
+        :class:`diskord.ui.Select` not this one.
 
     .. versionadded:: 2.0
 

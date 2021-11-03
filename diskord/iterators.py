@@ -560,7 +560,7 @@ class GuildIterator(_AsyncIterator["Guild"]):
 
     Parameters
     -----------
-    bot: :class:`discord.Client`
+    bot: :class:`diskord.Client`
         The client to retrieve the guilds from.
     limit: :class:`int`
         Maximum number of guilds to retrieve.
