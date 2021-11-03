@@ -178,7 +178,7 @@ A great thing about option choices is that you can easily generate custom autoco
 
 Example: ::
 
-  async def autocomplete_items(value, interaction):
+  async def autocomplete_items(value, option, interaction):
     items = {
       'Bun': 'bun',
       'Cookie': 'cookie',

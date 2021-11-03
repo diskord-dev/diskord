@@ -266,7 +266,7 @@ class Client:
             "overwrite_application_commands", False
         )
         self.application_command_guild_ids: List[int] = options.pop(
-            "application_command_guild_ids", []
+            "application_command_guild_ids", None
         )
 
         connector: Optional[aiohttp.BaseConnector] = options.pop("connector", None)
@@ -1811,18 +1811,23 @@ class Client:
         :func:`sync_application_commands` must be called afterwards to synchronise all the
         commands properly.
 
+        If the provided command's :attr:`~application.ApplicationCommand.id` is not None,
+        The command would be added directly to application commands list instead of pending
+        list.
+
         Parameters
         ----------
-
         command: :class:`application.ApplicationCommand`
             The application command to add.
 
         Returns
         -------
-
         :class:`application.ApplicationCommand`
             The added command.
         """
+        if command._guild_ids is None and self.application_command_guild_ids is not None:
+            command._guild_ids = self.application_command_guild_ids
+
         return self._connection._commands_store.add_pending_command(command)
 
     def remove_pending_command(self, command: application.ApplicationCommand, /):
@@ -1833,7 +1838,6 @@ class Client:
 
         Parameters
         ----------
-
         command: :class:`application.ApplicationCommand`
             The application command to register.
         """
@@ -1849,11 +1853,10 @@ class Client:
         be called.
 
         .. note::
-            To remove a command from API, Use :func:`delete_application_command`
+            To remove a command from Discord, Use :func:`delete_application_command`
 
         Parameters
         ----------
-
         command_id: :class:`int`
             The ID of command to delete.
         """
@@ -1950,10 +1953,8 @@ class Client:
         ----------
         command_id: :class:`int`
             The ID of command to delete.
-
         guild_id: :class:`int`
             The guild ID this command belongs to. If not global.
-
         """
         if guild_id is not MISSING:
             await self.http.delete_guild_command(self.user.id, guild_id, command_id)
@@ -1975,7 +1976,6 @@ class Client:
         ----------
         command_id: :class:`int`
             The ID of command.
-
         guild_id: :class:`int`
             The guild which command belongs to, If not global.
 
@@ -2088,58 +2088,37 @@ class Client:
 
     # TODO: Add other API methods
 
-    async def sync_application_commands(
-        self,
-        *,
-        delete_unregistered_commands: bool = False,
-        ignore_guild_register_fail: bool = True,
-    ):
+    async def sync_application_commands(self, **kwargs: Any):
         """|coro|
 
-        Updates the internal cache of application commands with the ones that are already
-        registered on the API.
+        Synchronizes the application commands with the ones that are in the client's cache.
 
         Unlike :func:`clean_register_application_commands`, This doesn't bulk overwrite the
         registered commands. Instead, it fetches the registered commands and sync the
-        internal cache with the new commands.
+        internal cache with the new commands and removes the commands that weren't
+        found in cache.
 
         This must be used when you don't intend to overwrite all the previous commands but
-        want to add new ones.
+        want to add new ones. The aim is to avoid overwriting the global commands that
+        take upto 1 hour to re-register.
 
-        This function is called under-the-hood inside the :func:`on_connect` event.
-
-        .. warning::
-            If you decided to override the :func:`on_connect` event, You MUST call this manually
-            or the commands will not be registered.
+        This function is called under-the-hood inside the :meth:`.start` method.
 
         Parameters
         ----------
-
         delete_unregistered_commands: :class:`bool`
             Whether or not to delete the commands that were sent by API but are not
-            found in internal cache. Defaults to ``False``
-
-        ignore_guild_register_fail: :class:`bool`
-            Whether to ignore the error raised if making an application command in a guild
-            failed. If this is set to ``True``, The traceback would be printed if the
-            application command couldn't be upserted in a guild but the commands sync
-            process will not be interrupted. Defaults to ``True``
+            found in internal cache. Defaults to ``True``. If this is set to False,
+            previous global commands won't be deleted.
         """
-        await self._connection._commands_store.sync_pending(
-            delete_unregistered_commands=delete_unregistered_commands,
-            ignore_guild_register_fail=ignore_guild_register_fail
-            )
-
-        # batch-editing the permissions
+        await self._connection._commands_store.sync_application_commands(**kwargs)
         await self.sync_application_commands_permissions()
 
         _log.info(
             "Application commands have been synchronised with the internal cache successfully."
         )
 
-    async def clean_register_application_commands(
-        self, *, ignore_guild_register_fail: bool = True
-    ):
+    async def clean_register_application_commands(self):
         """|coro|
 
         Overwrites all the application commands and registers the ones that were added
@@ -2151,21 +2130,10 @@ class Client:
         .. danger::
             This function overwrites all the commands and can lead to unexpected issues,
             Consider using :func:`sync_application_commands`
-
-        Parameters
-        ----------
-        ignore_guild_register_fail: :class:`bool`
-            Whether to ignore the error raised if making an application command in a guild
-            failed. If this is set to ``True``, The traceback would be printed if the
-            application command couldn't be upserted in a guild but the commands registration
-            process will not be interrupted. Defaults to ``True``
         """
 
-        await self._connection._commands_store.clean_register(ignore_guild_register_fail=ignore_guild_register_fail)
-
-        # finally, batch-editing the permissions
+        await self._connection._commands_store.clean_register()
         await self.sync_application_commands_permissions()
-
         _log.info("Clean Registered commands successfully.")
 
     async def register_application_commands(self):
@@ -2195,6 +2163,11 @@ class Client:
             @bot.slash_command(description='My cool slash command.')
             async def test(ctx):
                 await ctx.respond('Hello world')
+
+        Parameters
+        ----------
+        **options:
+            The parameters of :class:`~application.SlashCommand`
         """
 
         def inner(func: Callable):
@@ -2216,6 +2189,11 @@ class Client:
             @bot.user_command()
             async def test(ctx, user):
                 await ctx.respond('Hello world')
+
+        Parameters
+        ----------
+        **options:
+            The parameters of :class:`~application.UserCommand`
         """
 
         def inner(func: Callable):
@@ -2235,6 +2213,11 @@ class Client:
             @bot.message_command()
             async def test(ctx, message):
                 await ctx.respond('Hello world')
+
+        Parameters
+        ----------
+        **options:
+            The parameters of :class:`~application.MessageCommand`
         """
 
         def inner(func: Callable):
@@ -2260,7 +2243,6 @@ class Client:
 
         Parameters
         ----------
-
         interaction: :class:`Interaction`
             The interaction of which context would be returned.
         cls: :class:`InteractionContext`
@@ -2268,13 +2250,11 @@ class Client:
 
         Returns
         -------
-
         :class:`InteractionContext`
             The context of interaction.
 
         Raises
         ------
-
         TypeError:
             The ``cls`` parameter is not of proper type.
         """

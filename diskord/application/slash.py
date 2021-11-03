@@ -101,7 +101,7 @@ class Option:
 
         Example: ::
 
-            async def autocomplete(value, interaction):
+            async def autocomplete(value, option, interaction):
                 data = {
                     'Bun': 'bun',
                     'Cookie': 'cookie',
@@ -588,9 +588,9 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
         resolved_option = self.get_option(name=option['name'])
 
         if self.cog is not None:
-            choices = await resolved_option.autocomplete(self.cog, option['value'], interaction)
+            choices = await resolved_option.autocomplete(self.cog, option['value'], resolved_option, interaction)
         else:
-            choices = await resolved_option.autocomplete(option['value'], interaction)
+            choices = await resolved_option.autocomplete(option['value'], resolved_option, interaction)
 
         if not isinstance(choices, list):
             raise TypeError(f'autocomplete for {resolved_option.name} returned {choices.__class__.__name__}, Expected list.')
