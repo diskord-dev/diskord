@@ -56,8 +56,8 @@ class Item(Generic[V]):
 
     The current UI items supported are:
 
-    - :class:`discord.ui.Button`
-    - :class:`discord.ui.Select`
+    - :class:`diskord.ui.Button`
+    - :class:`diskord.ui.Select`
 
     .. versionadded:: 2.0
     """
