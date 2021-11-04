@@ -410,6 +410,9 @@ class ApplicationCommandStore:
         # registering the guild commands. they don't take an hour to update
         # so we don't mind bulk upserting them.
         for command in self._pending:
+            if not command.guild_ids:
+                continue
+
             for guild in set(command.guild_ids):
                 if not guild in guilds:
                     guilds[guild] = []
