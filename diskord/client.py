@@ -2137,8 +2137,6 @@ class Client:
         want to add new ones. The aim is to avoid overwriting the global commands that
         take upto 1 hour to re-register.
 
-        This function is called under-the-hood inside the :meth:`.start` method.
-
         Parameters
         ----------
         delete_unregistered_commands: :class:`bool`
