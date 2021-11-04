@@ -1888,13 +1888,18 @@ class Client:
     async def create_application_command(
         self,
         command: application.ApplicationCommand,
-    ):
+    ) -> application.ApplicationCommand:
         """Registers an application command.
 
         Parameters
         ----------
         command: :class:`application.ApplicationCommand`
             The command that will be created.
+
+        Returns
+        -------
+        :class:`application.ApplicationCommand`
+            The created command.
         """
         payload = command.to_dict()
         command._state = self._connection
@@ -1914,6 +1919,7 @@ class Client:
             )
             self._connection._commands_store.add_application_command(command._from_data(data))
 
+        return command
 
     async def delete_application_command(
         self,
@@ -2116,8 +2122,6 @@ class Client:
             command_id=command_id,
         )
         return ApplicationCommandGuildPermissions(response)
-
-    # TODO: Add other API methods
 
     async def sync_application_commands(self, **kwargs: Any):
         """|coro|
