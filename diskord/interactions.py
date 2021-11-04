@@ -892,7 +892,8 @@ class InteractionContext:
         The bot this interaction context belongs to.
     interaction: :class:`Interaction`
         The actual interaction this context belongs to.
-
+    command: :class:`ApplicationCommand`
+        The command that invoked this context.
     """
 
     def __init__(self, client: Client, interaction: Interaction) -> None:
@@ -941,6 +942,7 @@ class InteractionContext:
 
     @utils.copy_doc(Message.reply)
     async def reply(self, content: Optional[str] = None, **kwargs: Any) -> Message:
+        """Equivalent to :meth:`Message.reply`"""
         return await self.message.reply(content, **kwargs)
 
     @property
@@ -951,21 +953,21 @@ class InteractionContext:
     # actions
 
     @property
-    # @utils.copy_doc(InteractionResponse.send_message)
     def respond(self) -> Callable:
+        """Equivalent to :meth:`InteractionResponse.send_message`"""
         return self.interaction.response.send_message
 
     @property
-    # @utils.copy_doc(PartialMessageable.send)
     def send(self) -> Callable[..., Message]:
+        """Equivalent to :meth:`InteractionResponse.send_message`"""
         return self.respond
 
     @property
-    # @utils.copy_doc(InteractionResponse.defer)
     def defer(self) -> Callable:
+        """Equivalent to :meth:`InteractionResponse.defer`"""
         return self.interaction.response.defer
 
     @property
-    # @utils.copy_doc(Interaction.followup)
     def followup(self) -> Callable:
+        """Returns the followup webhook for :attr:`.interaction`"""
         return self.interaction.followup
