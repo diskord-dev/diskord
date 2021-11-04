@@ -339,6 +339,9 @@ class ApplicationCommandStore:
     async def _dispatch_autocomplete(self, interaction):
         command = self.get_application_command(int(interaction.data['id']))
 
+        if not command:
+            return
+
         for option in interaction.data['options']:
             if option['type'] == OptionType.sub_command.value:
                 command = command.get_child(name=option['name'])
@@ -364,7 +367,6 @@ class ApplicationCommandStore:
         if not self._pending:
             # since we don't have any commands pending to register then
             # we just return
-            _log.info('No commands are pending, No changes made.')
             return
 
         client = self._state._get_client()
@@ -381,7 +383,7 @@ class ApplicationCommandStore:
                 type=try_enum(ApplicationCommandType, int(command["type"])),
             )
             if registered is None:
-                # the command not found, so append it to list of unfound
+                # the command not found, so append it to list of uncached
                 # commands.
                 non_registered.append(command)
                 continue
@@ -450,7 +452,6 @@ class ApplicationCommandStore:
 
         if not self._pending:
             # since we don't have any commands pending, we will do nothing and return
-            _log.info('No commands are pending, No changes made.')
             return
 
         client = self._state._get_client()

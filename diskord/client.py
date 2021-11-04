@@ -27,6 +27,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import signal
+import copy
 import sys
 import traceback
 import inspect
@@ -1884,6 +1885,36 @@ class Client:
         """
         return self._connection._commands_store.get_application_command(command_id)
 
+    async def create_application_command(
+        self,
+        command: application.ApplicationCommand,
+    ):
+        """Registers an application command.
+
+        Parameters
+        ----------
+        command: :class:`application.ApplicationCommand`
+            The command that will be created.
+        """
+        payload = command.to_dict()
+        command._state = self._connection
+        if command.guild_ids:
+            for guild in command.guild_ids:
+                data = await self.http.upsert_guild_command(
+                    application_id=self.user.id,
+                    guild_id=guild,
+                    payload=payload,
+                )
+                cmd = copy.copy(command)
+                self._connection._commands_store.add_application_command(cmd._from_data(data))
+        else:
+            data = await self.http.upsert_global_command(
+                application_id=application_id,
+                payload=payload,
+            )
+            self._connection._commands_store.add_application_command(command._from_data(data))
+
+
     async def delete_application_command(
         self,
         command_id: int = MISSING,
@@ -2114,10 +2145,6 @@ class Client:
         await self._connection._commands_store.sync_application_commands(**kwargs)
         await self.sync_application_commands_permissions()
 
-        _log.info(
-            "Application commands have been synchronised with the internal cache successfully."
-        )
-
     async def clean_register_application_commands(self):
         """|coro|
 
@@ -2134,7 +2161,6 @@ class Client:
 
         await self._connection._commands_store.clean_register()
         await self.sync_application_commands_permissions()
-        _log.info("Clean Registered commands successfully.")
 
     async def register_application_commands(self):
         """|coro|
