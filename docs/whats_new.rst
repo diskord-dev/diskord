@@ -11,6 +11,41 @@ Changelog
 This page keeps a detailed human friendly rendering of what's new and changed
 in specific versions.
 
+.. _vp2p6p2
+
+v2.6.2
+--------
+
+Breaking Changes
+~~~~~~~~~~~~~~~~
+
+- Autocomplete callbacks now take :class:`~diskord.application.Option` as a second parameter before interaction and after value.
+- Removed ``ignore_guild_register_fail`` from commands registration methods.
+- Guild IDs related to application commands now default to ``None`` instead of empty list.
+    - :attr:`diskord.Client.application_commands_guild_ids` now default to None.
+    - :attr:`diskord.application.ApplicationCommand.guild_ids` now default to None.
+- Redesigned application commands registration.
+    - Guild commands are bulk overwritten on every call.
+    - Global commands are not re-registered if they are not updated.
+    - :meth:`diskord.Client.sync_application_commands` now bulk overwrites guild commands. Use :meth:`~diskord.Client.create_application_command` instead.
+
+Additions
+~~~~~~~~~
+
+- Add support for bypassing registration process by adding ``id`` parameter in application command.
+- Add support for guild boosts progress bar.
+- Add :meth:`diskord.Client.create_application_command`
+
+Bug Fixes
+~~~~~~~~~
+
+- Fix reference error on guild command registration fail.
+- Duplicate guild IDs in application commands are now properly ignored.
+- Fix ``type`` kwarg being ignored by :func:`diskord.application.option` decorator.
+- Other minor fixes.
+
+Documentation also has been fixed and now has proper hyperlinks on attributes.
+
 .. _vp2p6p1
 
 v2.6.1
