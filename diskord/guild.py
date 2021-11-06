@@ -245,6 +245,9 @@ class Guild(Hashable):
         The guild's NSFW level.
 
         .. versionadded:: 2.0
+    premium_progress_bar_enabled: :class:`bool`
+        Whether the guild has enabled progress bar to track premium subscriptions or
+        server boosts count.
     """
 
     __slots__ = (
@@ -270,6 +273,7 @@ class Guild(Hashable):
         "premium_subscription_count",
         "preferred_locale",
         "nsfw_level",
+        "premium_progress_bar_enabled",
         "_members",
         "_channels",
         "_icon",
@@ -474,6 +478,7 @@ class Guild(Hashable):
             guild, "public_updates_channel_id"
         )
         self.nsfw_level: NSFWLevel = try_enum(NSFWLevel, guild.get("nsfw_level", 0))
+        self.premium_progress_bar_enabled: bool = guild.get('premium_progress_bar_enabled', False)
 
         self._stage_instances: Dict[int, StageInstance] = {}
         for s in guild.get("stage_instances", []):
@@ -1092,8 +1097,8 @@ class Guild(Hashable):
         .. code-block:: python3
 
             overwrites = {
-                guild.default_role: discord.PermissionOverwrite(read_messages=False),
-                guild.me: discord.PermissionOverwrite(read_messages=True)
+                guild.default_role: diskord.PermissionOverwrite(read_messages=False),
+                guild.me: diskord.PermissionOverwrite(read_messages=True)
             }
 
             channel = await guild.create_text_channel('secret', overwrites=overwrites)
@@ -1435,6 +1440,7 @@ class Guild(Hashable):
         preferred_locale: str = MISSING,
         rules_channel: Optional[TextChannel] = MISSING,
         public_updates_channel: Optional[TextChannel] = MISSING,
+        premium_progress_bar_enabled: Optional[bool] = MISSING,
     ) -> Guild:
         r"""|coro|
 
@@ -1512,6 +1518,9 @@ class Guild(Hashable):
             The new channel that is used for public updates from Discord. This is only available to
             guilds that contain ``PUBLIC`` in :attr:`Guild.features`. Could be ``None`` for no
             public updates channel.
+        premium_progress_bar_enabled: :class:`bool`
+            Whether to enable the boosts progress bar or not, Setting ``True`` enables it
+            and vice versa.
         reason: Optional[:class:`str`]
             The reason for editing this guild. Shows up on the audit log.
 
@@ -1657,6 +1666,9 @@ class Guild(Hashable):
                     )
 
             fields["features"] = features
+
+        if premium_progress_bar_enabled is not MISSING:
+            fields['premium_progress_bar_enabled'] = bool(premium_progress_bar_enabled)
 
         data = await http.edit_guild(self.id, reason=reason, **fields)
         return Guild(data=data, state=self._state)
@@ -2847,7 +2859,7 @@ class Guild(Hashable):
 
         Getting entries for a specific action: ::
 
-            async for entry in guild.audit_logs(action=discord.AuditLogAction.ban):
+            async for entry in guild.audit_logs(action=diskord.AuditLogAction.ban):
                 print(f'{entry.user} banned {entry.target}')
 
         Getting entries made by a specific user: ::

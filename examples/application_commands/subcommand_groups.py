@@ -27,9 +27,9 @@ async def grouptop(ctx):
 async def group(ctx):
   pass
 
-@group.sub_command(ctx)
+@group.sub_command()
 async def groupcmd(ctx):
-  await ctx.respond('i am in a group!')
+  await ctx.respond('i am in a command in a group!')
   
-# the usage would be /grouptop group groupcmd
+# the usage would be "/grouptop group groupcmd"
 bot.run('token')

@@ -7,7 +7,6 @@
     <sup>This library is a maintained fork of now archived library, <a href="https://github.com/Rapptz/discord.py">discord.py</a>.</sup>
     <p>
         A modern and easy to use API wrapper around Discord API written in Python.
-        <br><br>
     </p>
 </div>
 
@@ -77,7 +76,7 @@ async def ping(ctx):
 
 bot.run('token')
 ```
-You can find more examples in the examples directory.
+You can find more examples in the [`examples`](examples/) directory.
 
 ## Links
 * [Latest Documentation](https://diskord.readthedocs.io/en/latest/index.html)

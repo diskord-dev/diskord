@@ -24,7 +24,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
-from typing import Callable, Any, Dict, List
+from typing import Callable, Any, Dict, List, Optional, TYPE_CHECKING
 import asyncio
 import logging
 import traceback
@@ -37,6 +37,9 @@ from .mixins import ChecksMixin
 from .types import Check
 from .permissions import ApplicationCommandPermissions
 
+if TYPE_CHECKING:
+    from .types.interactions import ApplicationCommand as ApplicationCommandPayload
+
 _log = logging.getLogger(__name__)
 
 class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
@@ -47,6 +50,35 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
 
     This class also inherits :class:`diskord.ApplicationCommand`
 
+    Parameters
+    ----------
+    callback:
+        The callback function of this command.
+    name: :class:`str`
+        The name of application command. By default, callback's name is used.
+    description: :class:`str`
+        The description of application command. Defaults to the docstring of callback
+        or ``No description.``
+    guild_ids: List[:class:`int`]
+        The list of guild IDs to register command in, if not global.
+    default_permission: :class:`bool`
+        The default permission of the application command. Setting this to ``False``
+        disables the command for everyone unless certain permission overwrite is configured.
+    extras: :class:`dict`
+        A dict of user provided extras to attach to the Command. Use this to attach some
+        extra info to command that you might need later.
+    id: :class:`int`
+        The ID of the command, If this is provided, this command will not be registered
+        by library. Instead, it will be added to application commands cache directly and
+        interactions will be handled directly. As such, there will be no need to call
+        :meth:`~diskord.Client.register_application_commands` in :func:`~diskord.on_connect`
+        to register this command manually.
+
+        This allows you to register application commands in a separate (independent) way without
+        worrying about commands registration problems like accidentally overwriting commands.
+
+        The ID must be integer and valid *registered* application command ID.
+
     Attributes
     ----------
     checks: List[Callable[:class:`InteractionContext`, bool]]
@@ -55,14 +87,12 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
 
         For more info on checks and how to register them, See :func:`~ext.commands.check`
         documentation as these checks actually come from there.
-    extras: :class:`dict`
-        A dict of user provided extras to attach to the Command.
     """
     _type: ApplicationCommandType
 
     def __init__(self, callback: Callable, **attrs: Any):
         self._callback = callback
-        self._guild_ids = attrs.pop("guild_ids", [])
+        self._guild_ids = attrs.pop("guild_ids", None)
         self._description = (
             attrs.pop("description", callback.__doc__) or "No description"
         )
@@ -73,7 +103,12 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
         self._cog = None
         self._state = None
 
-        self._id: Optional[int] = None
+        self._id: Optional[int]
+        try:
+            self._id = int(attrs['id'])
+        except KeyError:
+            self._id = None
+
         self._application_id: Optional[int] = None
         self._guild_id: Optional[int] = None
         self._version: Optional[int] = None
@@ -81,7 +116,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
 
     def is_global_command(self) -> bool:
         """:class:`bool`: Whether the command is global command or not."""
-        return len(self._guild_ids) == 0
+        return (not self._guild_ids)
 
     def _update_callback_data(self):
         self.permissions: List[ApplicationCommandPermissions] = []
@@ -129,7 +164,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
         self._update_callback_data()
 
     @property
-    def guild_ids(self) -> List[int]:
+    def guild_ids(self) -> Optional[List[int]]:
         """List[:class:`int`]: The list of guild IDs in which this command will/was register.
 
         Unlike :attr:`ApplicationCommand.guild_id` this is the list of guild IDs in which command
@@ -250,12 +285,6 @@ class ApplicationCommandStore:
             )
 
         command._state = self._state
-        client = command._client
-
-        if client.application_command_guild_ids and not command._guild_ids:
-            command._guild_ids = client.application_command_guild_ids
-
-        self._pending.append(command)
 
         if not hasattr(command.callback, "__application_command_params__"):
             command.callback.__application_command_params__ = {}
@@ -263,10 +292,14 @@ class ApplicationCommandStore:
         for opt in command.callback.__application_command_params__.values():
             command.append_option(opt)
 
+        if command.id is not None:
+            self.add_application_command(command)
+        else:
+            self._pending.append(command)
+
         # reset the params so they don't conflict if user decides to re-add this
         # command.
         command.callback.__application_command_params__ = {}
-
         return command
 
     def remove_pending_command(self, command: ApplicationCommand):
@@ -306,6 +339,9 @@ class ApplicationCommandStore:
     async def _dispatch_autocomplete(self, interaction):
         command = self.get_application_command(int(interaction.data['id']))
 
+        if not command:
+            return
+
         for option in interaction.data['options']:
             if option['type'] == OptionType.sub_command.value:
                 command = command.get_child(name=option['name'])
@@ -324,13 +360,13 @@ class ApplicationCommandStore:
             name=f"discord-application-command-autocomplete-dispatch-{interaction.data['id']}",
         )
 
-    async def sync_pending(self, *, delete_unregistered_commands: bool = False, ignore_guild_register_fail: bool = True):
+    async def sync_application_commands(self, *, delete_unregistered_commands: bool = True):
+
         _log.info("Synchronizing internal cache commands.")
 
         if not self._pending:
             # since we don't have any commands pending to register then
             # we just return
-            _log.info('No commands are pending, No changes made.')
             return
 
         client = self._state._get_client()
@@ -339,23 +375,25 @@ class ApplicationCommandStore:
 
         # Synchronising the fetched commands with internal cache.
         for command in commands:
+            # trying to find the command in the pending commands
+            # that matches the fetched command traits.
             registered = utils_get(
                 [c for c in self._pending if not c.guild_ids],
                 name=command["name"],
-                type=command["type"],
+                type=try_enum(ApplicationCommandType, int(command["type"])),
             )
             if registered is None:
+                # the command not found, so append it to list of uncached
+                # commands.
                 non_registered.append(command)
                 continue
 
+            # command found, sync it and add it.
             self.add_application_command(registered._from_data(command))
             self.remove_pending_command(registered)
 
 
-        # Deleting the command that weren't found in internal cache
-        # this parameter is set to False by default because of the fact that
-        # it can be very expensive to delete the commands on every restart and would
-        # lead to ratelimit often.
+        # Deleting the command that weren't created.
         if delete_unregistered_commands:
             for command in non_registered:
                 if command.get("guild_id"):
@@ -366,37 +404,57 @@ class ApplicationCommandStore:
                     await self._state.http.delete_global_command(client.user.id, command["id"])
 
         # Registering the remaining commands
-        while len(self._pending):
+
+        guilds = {}
+
+        # registering the guild commands. they don't take an hour to update
+        # so we don't mind bulk upserting them.
+        for command in self._pending:
+            if not command.guild_ids:
+                continue
+
+            for guild in set(command.guild_ids):
+                if not guild in guilds:
+                    guilds[guild] = []
+
+                guilds[guild].append(command.to_dict())
+
+        for guild in guilds:
+            try:
+                cmds = await self._state.http.bulk_upsert_guild_commands(
+                    client.user.id, guild, guilds[guild]
+                )
+            except Forbidden as e:
+                # the bot is missing application.commands scope so cannot
+                # make the command in the guild
+                traceback.print_exc()
+                continue
+            else:
+                for cmd in cmds:
+                    command = utils_get(
+                        self._pending,
+                        name=cmd["name"],
+                        type=try_enum(ApplicationCommandType, int(cmd["type"])),
+                    )
+                    self.add_application_command(command._from_data(cmd))
+                    self.remove_pending_command(command)
+
+        # now time for rest of global commands that are
+        # new. at this point, self._pending should only have *new* *global*
+        # commands.
+        while self._pending:
             index = len(self._pending) - 1
             command = self._pending[index]
-            if command.guild_ids:
-                for guild_id in command.guild_ids:
-                    try:
-                        cmd = await self._state.http.upsert_guild_command(
-                            client.user.id, guild_id, command.to_dict()
-                        )
-                    except Forbidden as e:
-                        # the bot is missing application.commands scope so cannot
-                        # make the command in the guild
-                        if ignore_guild_register_fail:
-                            traceback.print_exc()
-                            continue
-                        else:
-                            raise e
-            else:
-                data = command.to_dict()
-                cmd = await self._state.http.upsert_global_command(client.user.id, data)
-
-            self.add_application_command(command._from_data(cmd))
+            data = await self._state.http.upsert_global_command(client.user.id, command.to_dict())
+            self.add_application_command(command._from_data(data))
             self._pending.pop(index)
 
-    async def clean_register(self, *, ignore_guild_register_fail: bool = True):
+    async def clean_register(self):
         # This needs a refactor as current implementation is kind of hacky and can
         # be unstable.
 
         if not self._pending:
             # since we don't have any commands pending, we will do nothing and return
-            _log.info('No commands are pending, No changes made.')
             return
 
         client = self._state._get_client()
@@ -425,7 +483,9 @@ class ApplicationCommandStore:
 
         # Registering the guild commands now
 
-        guilds = {}
+        # strucutre:
+        # { guild_id: [ command-payload-data... ] }
+        guilds: Dict[int, List[ApplicationCommandPayload]] = {}
 
         for cmd in (command for command in self._pending if command.guild_ids):
             data = cmd.to_dict()
@@ -442,16 +502,14 @@ class ApplicationCommandStore:
                 )
             except Forbidden as e:
                 # bot doesn't has application.commands scope
-                if ignore_guild_register_fail:
-                    traceback.print_exc()
-                    continue
-                else:
-                    raise e
-            for cmd in cmds:
-                command = utils_get(
-                    self._pending,
-                    name=cmd["name"],
-                    type=try_enum(ApplicationCommandType, int(cmd["type"])),
-                )
-                self.add_application_command(command._from_data(cmd))
-                self.remove_pending_command(command)
+                traceback.print_exc()
+                continue
+            else:
+                for cmd in cmds:
+                    command = utils_get(
+                        self._pending,
+                        name=cmd["name"],
+                        type=try_enum(ApplicationCommandType, int(cmd["type"])),
+                    )
+                    self.add_application_command(command._from_data(cmd))
+                    self.remove_pending_command(command)

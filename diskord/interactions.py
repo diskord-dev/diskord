@@ -337,7 +337,7 @@ class Interaction:
         allowed_mentions: :class:`AllowedMentions`
             Controls the mentions being processed in this message.
             See :meth:`.abc.Messageable.send` for more information.
-        view: Optional[:class:`~discord.ui.View`]
+        view: Optional[:class:`~diskord.ui.View`]
             The updated view to update this message with. If ``None`` is passed then
             the view is removed.
 
@@ -533,7 +533,7 @@ class InteractionResponse:
             ``embeds`` parameter.
         tts: :class:`bool`
             Indicates if the message should be sent using text-to-speech.
-        view: :class:`discord.ui.View`
+        view: :class:`diskord.ui.View`
             The view to send with the message.
         file: :class:`File`
             The file to send. This cannot be mixed with ``files`` parameter.
@@ -775,7 +775,7 @@ class InteractionMessage(Message):
     This allows you to edit or delete the message associated with
     the interaction response. To retrieve this object see :meth:`Interaction.original_message`.
 
-    This inherits from :class:`discord.Message` with changes to
+    This inherits from :class:`diskord.Message` with changes to
     :meth:`edit` and :meth:`delete` to work.
 
     .. versionadded:: 2.0
@@ -815,7 +815,7 @@ class InteractionMessage(Message):
         allowed_mentions: :class:`AllowedMentions`
             Controls the mentions being processed in this message.
             See :meth:`.abc.Messageable.send` for more information.
-        view: Optional[:class:`~discord.ui.View`]
+        view: Optional[:class:`~diskord.ui.View`]
             The updated view to update this message with. If ``None`` is passed then
             the view is removed.
 
@@ -892,7 +892,8 @@ class InteractionContext:
         The bot this interaction context belongs to.
     interaction: :class:`Interaction`
         The actual interaction this context belongs to.
-
+    command: :class:`ApplicationCommand`
+        The command that invoked this context.
     """
 
     def __init__(self, client: Client, interaction: Interaction) -> None:
@@ -941,6 +942,7 @@ class InteractionContext:
 
     @utils.copy_doc(Message.reply)
     async def reply(self, content: Optional[str] = None, **kwargs: Any) -> Message:
+        """Equivalent to :meth:`Message.reply`"""
         return await self.message.reply(content, **kwargs)
 
     @property
@@ -951,21 +953,21 @@ class InteractionContext:
     # actions
 
     @property
-    # @utils.copy_doc(InteractionResponse.send_message)
     def respond(self) -> Callable:
+        """Equivalent to :meth:`InteractionResponse.send_message`"""
         return self.interaction.response.send_message
 
     @property
-    # @utils.copy_doc(PartialMessageable.send)
     def send(self) -> Callable[..., Message]:
+        """Equivalent to :meth:`InteractionResponse.send_message`"""
         return self.respond
 
     @property
-    # @utils.copy_doc(InteractionResponse.defer)
     def defer(self) -> Callable:
+        """Equivalent to :meth:`InteractionResponse.defer`"""
         return self.interaction.response.defer
 
     @property
-    # @utils.copy_doc(Interaction.followup)
     def followup(self) -> Callable:
+        """Returns the followup webhook for :attr:`.interaction`"""
         return self.interaction.followup

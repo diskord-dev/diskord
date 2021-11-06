@@ -278,7 +278,7 @@ class Cog(metaclass=CogMeta):
         Returns
         -------
         List[:class:`diskord.ApplicationCommand`]
-            A :class:`list` of :class:`discord.ApplicationCommand` that are
+            A :class:`list` of :class:`diskord.ApplicationCommand` that are
             defined inside this cog.
 
             .. note::
@@ -497,13 +497,6 @@ class Cog(metaclass=CogMeta):
 
         for index, command in enumerate(self.__cog_application_commands__):
             command._cog = self
-            if command.id is not None:
-                # if we're here then command is registered and synced and we
-                # just have to add it to application commands list and it
-                # would start working as normal.
-                bot._connection._commands_store.add_application_command(command)
-                continue
-
             try:
                 bot.add_pending_command(command)
             except Exception as e:

@@ -101,7 +101,7 @@ class Option:
 
         Example: ::
 
-            async def autocomplete(value, interaction):
+            async def autocomplete(value, option, interaction):
                 data = {
                     'Bun': 'bun',
                     'Cookie': 'cookie',
@@ -148,7 +148,7 @@ class Option:
         self._options = []
         self._min_value = min_value
         self._max_value = max_value
-        self.autocomplete: Callable[[str], List[OptionChoice]] = autocomplete
+        self.autocomplete: Callable[[str, Interaction], List[OptionChoice]] = autocomplete
 
         if self._choices is None:
             self._choices = []
@@ -588,9 +588,9 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
         resolved_option = self.get_option(name=option['name'])
 
         if self.cog is not None:
-            choices = await resolved_option.autocomplete(self.cog, option['value'], interaction)
+            choices = await resolved_option.autocomplete(self.cog, option['value'], resolved_option, interaction)
         else:
-            choices = await resolved_option.autocomplete(option['value'], interaction)
+            choices = await resolved_option.autocomplete(option['value'], resolved_option, interaction)
 
         if not isinstance(choices, list):
             raise TypeError(f'autocomplete for {resolved_option.name} returned {choices.__class__.__name__}, Expected list.')
@@ -829,7 +829,7 @@ class SlashCommandGroup(SlashCommandChild):
 
         @role.sub_command(description="Clears the permissions of the role.")
         @diskord.option('role', description='The role to clear permissions of.')
-        async def clear(ctx, role: discord.Role):
+        async def clear(ctx, role: diskord.Role):
             await ctx.respond('Permissions cleared!')
 
 
@@ -907,7 +907,7 @@ class SlashSubCommand(SlashCommandChild):
         self._type = OptionType.sub_command
 
 
-def option(name: str, **attrs) -> Option:
+def option(name: str, **attrs) -> Callable[..., Any]:
     """A decorator-based interface to add options to a slash command.
 
     Usage: ::
@@ -924,7 +924,7 @@ def option(name: str, **attrs) -> Option:
         will be raised.
     """
 
-    def inner(func):
+    def inner(func) -> Option:
         # Originally the Option object was inserted directly in
         # annotations but that was problematic so it was changed to
         # this.
@@ -947,7 +947,7 @@ def option(name: str, **attrs) -> Option:
         if required is None:
             required = param.default is inspect._empty
 
-        type = params[arg].annotation
+        type = attrs.pop('type', params[arg].annotation)
 
         if type is inspect._empty:  # no annotations were passed.
             type = str
@@ -960,7 +960,7 @@ def option(name: str, **attrs) -> Option:
     return inner
 
 
-def slash_command(**options) -> SlashCommand:
+def slash_command(**options) -> Callable[..., Any]:
     """A decorator that converts a function to :class:`SlashCommand`
 
     Usage: ::
@@ -970,7 +970,7 @@ def slash_command(**options) -> SlashCommand:
             await ctx.respond('Hello world')
     """
 
-    def inner(func: Callable):
+    def inner(func: Callable) -> SlashCommand:
         if not inspect.iscoroutinefunction(func):
             raise TypeError("Callback function must be a coroutine.")
 

@@ -97,6 +97,7 @@ GuildFeature = Literal[
     "VERIFIED",
     "VIP_REGIONS",
     "WELCOME_SCREEN_ENABLED",
+    "ROLE_ICONS",
 ]
 
 
@@ -139,6 +140,7 @@ class Guild(_BaseGuildPreview, _GuildOptional):
     premium_tier: PremiumTier
     preferred_locale: str
     public_updates_channel_id: Optional[Snowflake]
+    premium_progress_bar_enabled: bool
 
 
 class InviteGuild(Guild, total=False):

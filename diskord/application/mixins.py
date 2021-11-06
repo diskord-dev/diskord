@@ -41,10 +41,7 @@ if TYPE_CHECKING:
 
 
 class ChildrenMixin:
-    """A mixin that implements children for slash commands or slash subcommand groups.
-
-    This is not meant to be initalized manually and is here for documentation purposes.
-    """
+    """A mixin that implements children for slash commands or slash subcommand groups."""
 
     @property
     def children(self) -> List[SlashCommandChild]:

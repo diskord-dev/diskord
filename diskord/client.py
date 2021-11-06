@@ -27,6 +27,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import signal
+import copy
 import sys
 import traceback
 import inspect
@@ -266,7 +267,7 @@ class Client:
             "overwrite_application_commands", False
         )
         self.application_command_guild_ids: List[int] = options.pop(
-            "application_command_guild_ids", []
+            "application_command_guild_ids", None
         )
 
         connector: Optional[aiohttp.BaseConnector] = options.pop("connector", None)
@@ -398,7 +399,7 @@ class Client:
 
         If this is not passed via ``__init__`` then this is retrieved
         through the gateway when an event contains the data. Usually
-        after :func:`~discord.on_connect` is called.
+        after :func:`~diskord.on_connect` is called.
 
         .. versionadded:: 2.0
         """
@@ -406,7 +407,7 @@ class Client:
 
     @property
     def application_flags(self) -> ApplicationFlags:
-        """:class:`~discord.ApplicationFlags`: The client's application flags.
+        """:class:`~diskord.ApplicationFlags`: The client's application flags.
 
         .. versionadded:: 2.0
         """
@@ -442,7 +443,7 @@ class Client:
     ) -> asyncio.Task:
         wrapped = self._run_event(coro, event_name, *args, **kwargs)
         # Schedules the task
-        return asyncio.create_task(wrapped, name=f"discord.py: {event_name}")
+        return asyncio.create_task(wrapped, name=f"diskord.py: {event_name}")
 
     def dispatch(self, event: str, *args: Any, **kwargs: Any) -> None:
         _log.debug("Dispatching event %s", event)
@@ -491,7 +492,7 @@ class Client:
 
         By default this prints to :data:`sys.stderr` however it could be
         overridden to have a different implementation.
-        Check :func:`~discord.on_error` for more details.
+        Check :func:`~diskord.on_error` for more details.
         """
         print(f"Ignoring exception in {event_method}", file=sys.stderr)
         traceback.print_exc()
@@ -809,7 +810,7 @@ class Client:
 
     @property
     def allowed_mentions(self) -> Optional[AllowedMentions]:
-        """Optional[:class:`~discord.AllowedMentions`]: The allowed mention configuration.
+        """Optional[:class:`~diskord.AllowedMentions`]: The allowed mention configuration.
 
         .. versionadded:: 1.4
         """
@@ -826,7 +827,7 @@ class Client:
 
     @property
     def intents(self) -> Intents:
-        """:class:`~discord.Intents`: The intents configured for this connection.
+        """:class:`~diskord.Intents`: The intents configured for this connection.
 
         .. versionadded:: 1.5
         """
@@ -836,7 +837,7 @@ class Client:
 
     @property
     def users(self) -> List[User]:
-        """List[:class:`~discord.User`]: Returns a list of all the users the bot can see."""
+        """List[:class:`~diskord.User`]: Returns a list of all the users the bot can see."""
         return list(self._connection._users.values())
 
     def get_channel(
@@ -927,7 +928,7 @@ class Client:
 
         Returns
         --------
-        Optional[:class:`~discord.User`]
+        Optional[:class:`~diskord.User`]
             The user or ``None`` if not found.
         """
         return self._connection.get_user(id)
@@ -1166,8 +1167,8 @@ class Client:
 
         .. code-block:: python3
 
-            game = discord.Game("with the API")
-            await client.change_presence(status=discord.Status.idle, activity=game)
+            game = diskord.Game("with the API")
+            await client.change_presence(status=diskord.Status.idle, activity=game)
 
         .. versionchanged:: 2.0
             Removed the ``afk`` keyword-only parameter.
@@ -1428,7 +1429,7 @@ class Client:
     ) -> Invite:
         """|coro|
 
-        Gets an :class:`.Invite` from a discord.gg URL or ID.
+        Gets an :class:`.Invite` from a discord. URL or ID.
 
         .. note::
 
@@ -1439,7 +1440,7 @@ class Client:
         Parameters
         -----------
         url: Union[:class:`.Invite`, :class:`str`]
-            The Discord invite ID or URL (must be a discord.gg URL).
+            The Discord invite ID or URL (must be a discord. URL).
         with_counts: :class:`bool`
             Whether to include count information in the invite. This fills the
             :attr:`.Invite.approximate_member_count` and :attr:`.Invite.approximate_presence_count`
@@ -1550,13 +1551,13 @@ class Client:
     async def fetch_user(self, user_id: int, /) -> User:
         """|coro|
 
-        Retrieves a :class:`~discord.User` based on their ID.
+        Retrieves a :class:`~diskord.User` based on their ID.
         You do not have to share any guilds with the user to get this information,
         however many operations do require that you do.
 
         .. note::
 
-            This method is an API call. If you have :attr:`discord.Intents.members` and member cache enabled, consider :meth:`get_user` instead.
+            This method is an API call. If you have :attr:`diskord.Intents.members` and member cache enabled, consider :meth:`get_user` instead.
 
         Parameters
         -----------
@@ -1572,7 +1573,7 @@ class Client:
 
         Returns
         --------
-        :class:`~discord.User`
+        :class:`~diskord.User`
             The user you requested.
         """
         data = await self.http.get_user(user_id)
@@ -1709,7 +1710,7 @@ class Client:
 
         Parameters
         -----------
-        user: :class:`~discord.abc.Snowflake`
+        user: :class:`~diskord.abc.Snowflake`
             The user to create a DM with.
 
         Returns
@@ -1726,7 +1727,7 @@ class Client:
         return state.add_dm_channel(data)
 
     def add_view(self, view: View, *, message_id: Optional[int] = None) -> None:
-        """Registers a :class:`~discord.ui.View` for persistent listening.
+        """Registers a :class:`~diskord.ui.View` for persistent listening.
 
         This method should be used for when a view is comprised of components
         that last longer than the lifecycle of the program.
@@ -1735,7 +1736,7 @@ class Client:
 
         Parameters
         ------------
-        view: :class:`discord.ui.View`
+        view: :class:`diskord.ui.View`
             The view to register for dispatching.
         message_id: Optional[:class:`int`]
             The message ID that the view is attached to. This is currently used to
@@ -1811,18 +1812,23 @@ class Client:
         :func:`sync_application_commands` must be called afterwards to synchronise all the
         commands properly.
 
+        If the provided command's :attr:`~application.ApplicationCommand.id` is not None,
+        The command would be added directly to application commands list instead of pending
+        list.
+
         Parameters
         ----------
-
         command: :class:`application.ApplicationCommand`
             The application command to add.
 
         Returns
         -------
-
         :class:`application.ApplicationCommand`
             The added command.
         """
+        if command._guild_ids is None and self.application_command_guild_ids is not None:
+            command._guild_ids = self.application_command_guild_ids
+
         return self._connection._commands_store.add_pending_command(command)
 
     def remove_pending_command(self, command: application.ApplicationCommand, /):
@@ -1833,7 +1839,6 @@ class Client:
 
         Parameters
         ----------
-
         command: :class:`application.ApplicationCommand`
             The application command to register.
         """
@@ -1849,11 +1854,10 @@ class Client:
         be called.
 
         .. note::
-            To remove a command from API, Use :func:`delete_application_command`
+            To remove a command from Discord, Use :func:`delete_application_command`
 
         Parameters
         ----------
-
         command_id: :class:`int`
             The ID of command to delete.
         """
@@ -1880,6 +1884,42 @@ class Client:
             The command matching the ID.
         """
         return self._connection._commands_store.get_application_command(command_id)
+
+    async def create_application_command(
+        self,
+        command: application.ApplicationCommand,
+    ) -> application.ApplicationCommand:
+        """Registers an application command.
+
+        Parameters
+        ----------
+        command: :class:`application.ApplicationCommand`
+            The command that will be created.
+
+        Returns
+        -------
+        :class:`application.ApplicationCommand`
+            The created command.
+        """
+        payload = command.to_dict()
+        command._state = self._connection
+        if command.guild_ids:
+            for guild in command.guild_ids:
+                data = await self.http.upsert_guild_command(
+                    application_id=self.user.id,
+                    guild_id=guild,
+                    payload=payload,
+                )
+                cmd = copy.copy(command)
+                self._connection._commands_store.add_application_command(cmd._from_data(data))
+        else:
+            data = await self.http.upsert_global_command(
+                application_id=application_id,
+                payload=payload,
+            )
+            self._connection._commands_store.add_application_command(command._from_data(data))
+
+        return command
 
     async def delete_application_command(
         self,
@@ -1950,10 +1990,8 @@ class Client:
         ----------
         command_id: :class:`int`
             The ID of command to delete.
-
         guild_id: :class:`int`
             The guild ID this command belongs to. If not global.
-
         """
         if guild_id is not MISSING:
             await self.http.delete_guild_command(self.user.id, guild_id, command_id)
@@ -1975,7 +2013,6 @@ class Client:
         ----------
         command_id: :class:`int`
             The ID of command.
-
         guild_id: :class:`int`
             The guild which command belongs to, If not global.
 
@@ -2086,60 +2123,31 @@ class Client:
         )
         return ApplicationCommandGuildPermissions(response)
 
-    # TODO: Add other API methods
-
-    async def sync_application_commands(
-        self,
-        *,
-        delete_unregistered_commands: bool = False,
-        ignore_guild_register_fail: bool = True,
-    ):
+    async def sync_application_commands(self, **kwargs: Any):
         """|coro|
 
-        Updates the internal cache of application commands with the ones that are already
-        registered on the API.
+        Synchronizes the application commands with the ones that are in the client's cache.
 
         Unlike :func:`clean_register_application_commands`, This doesn't bulk overwrite the
         registered commands. Instead, it fetches the registered commands and sync the
-        internal cache with the new commands.
+        internal cache with the new commands and removes the commands that weren't
+        found in cache.
 
         This must be used when you don't intend to overwrite all the previous commands but
-        want to add new ones.
-
-        This function is called under-the-hood inside the :func:`on_connect` event.
-
-        .. warning::
-            If you decided to override the :func:`on_connect` event, You MUST call this manually
-            or the commands will not be registered.
+        want to add new ones. The aim is to avoid overwriting the global commands that
+        take upto 1 hour to re-register.
 
         Parameters
         ----------
-
         delete_unregistered_commands: :class:`bool`
             Whether or not to delete the commands that were sent by API but are not
-            found in internal cache. Defaults to ``False``
-
-        ignore_guild_register_fail: :class:`bool`
-            Whether to ignore the error raised if making an application command in a guild
-            failed. If this is set to ``True``, The traceback would be printed if the
-            application command couldn't be upserted in a guild but the commands sync
-            process will not be interrupted. Defaults to ``True``
+            found in internal cache. Defaults to ``True``. If this is set to False,
+            previous global commands won't be deleted.
         """
-        await self._connection._commands_store.sync_pending(
-            delete_unregistered_commands=delete_unregistered_commands,
-            ignore_guild_register_fail=ignore_guild_register_fail
-            )
-
-        # batch-editing the permissions
+        await self._connection._commands_store.sync_application_commands(**kwargs)
         await self.sync_application_commands_permissions()
 
-        _log.info(
-            "Application commands have been synchronised with the internal cache successfully."
-        )
-
-    async def clean_register_application_commands(
-        self, *, ignore_guild_register_fail: bool = True
-    ):
+    async def clean_register_application_commands(self):
         """|coro|
 
         Overwrites all the application commands and registers the ones that were added
@@ -2151,22 +2159,10 @@ class Client:
         .. danger::
             This function overwrites all the commands and can lead to unexpected issues,
             Consider using :func:`sync_application_commands`
-
-        Parameters
-        ----------
-        ignore_guild_register_fail: :class:`bool`
-            Whether to ignore the error raised if making an application command in a guild
-            failed. If this is set to ``True``, The traceback would be printed if the
-            application command couldn't be upserted in a guild but the commands registration
-            process will not be interrupted. Defaults to ``True``
         """
 
-        await self._connection._commands_store.clean_register(ignore_guild_register_fail=ignore_guild_register_fail)
-
-        # finally, batch-editing the permissions
+        await self._connection._commands_store.clean_register()
         await self.sync_application_commands_permissions()
-
-        _log.info("Clean Registered commands successfully.")
 
     async def register_application_commands(self):
         """|coro|
@@ -2195,6 +2191,11 @@ class Client:
             @bot.slash_command(description='My cool slash command.')
             async def test(ctx):
                 await ctx.respond('Hello world')
+
+        Parameters
+        ----------
+        **options:
+            The parameters of :class:`~application.SlashCommand`
         """
 
         def inner(func: Callable):
@@ -2216,6 +2217,11 @@ class Client:
             @bot.user_command()
             async def test(ctx, user):
                 await ctx.respond('Hello world')
+
+        Parameters
+        ----------
+        **options:
+            The parameters of :class:`~application.UserCommand`
         """
 
         def inner(func: Callable):
@@ -2235,6 +2241,11 @@ class Client:
             @bot.message_command()
             async def test(ctx, message):
                 await ctx.respond('Hello world')
+
+        Parameters
+        ----------
+        **options:
+            The parameters of :class:`~application.MessageCommand`
         """
 
         def inner(func: Callable):
@@ -2260,7 +2271,6 @@ class Client:
 
         Parameters
         ----------
-
         interaction: :class:`Interaction`
             The interaction of which context would be returned.
         cls: :class:`InteractionContext`
@@ -2268,13 +2278,11 @@ class Client:
 
         Returns
         -------
-
         :class:`InteractionContext`
             The context of interaction.
 
         Raises
         ------
-
         TypeError:
             The ``cls`` parameter is not of proper type.
         """
