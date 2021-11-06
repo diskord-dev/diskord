@@ -11,7 +11,7 @@ Changelog
 This page keeps a detailed human friendly rendering of what's new and changed
 in specific versions.
 
-.. _vp2p6p2
+.. _vp2p6p2:
 
 v2.6.2
 --------
@@ -46,7 +46,7 @@ Bug Fixes
 
 Documentation also has been fixed and now has proper hyperlinks on attributes.
 
-.. _vp2p6p1
+.. _vp2p6p1:
 
 v2.6.1
 --------
