@@ -69,6 +69,11 @@ class ScheduledEvent:
     location: Optional[:class:`str`]
         The external location name where the event is being hosted.
     """
+    __slots__ = (
+        'guild', '_state', 'id', 'channel_id', 'creator_id', 'entity_id', 'name'
+        'description', 'user_count', 'starts_at', 'ends_at', 'privacy_level', 'status',
+        'entity_type', 'speaker_ids', 'location'
+    )
     def __init__(self, data: ScheduledEventPayload, guild: Guild):
         self.guild = guild
         self._state = guild._state
@@ -86,13 +91,14 @@ class ScheduledEvent:
         self.starts_at: datetime.datetime = utils.parse_time(data.get('scheduled_start_time')) # type: ignore
         self.ends_at: Optional[datetime.datetime] = utils.parse_time(data.get('scheduled_end_time')) # type: ignore
 
+        self.privacy_level: EventPrivacyLevel = try_enum(EventPrivacyLevel, int(data['privacy_level']))
+        self.status: EventStatus = try_enum(EventStatus, int(data['status']))
+        self.entity_type: EntityType = try_enum(EntityType, int(data['entity_type']))
+
         md = data.get('entity_metadata')
         if md:
             self._unroll_metadata(md)
 
-        self.privacy_level: EventPrivacyLevel = try_enum(EventPrivacyLevel, int(data['privacy_level']))
-        self.status: EventStatus = try_enum(EventStatus, int(data['status']))
-        self.entity_type: EntityType = try_enum(EntityType, int(data['entity_type']))
 
     def _unroll_metadata(self, data: EntityMetadata):
         self.speaker_ids: List[int] = [int(i) for i in data.get('speaker_ids', [])]
