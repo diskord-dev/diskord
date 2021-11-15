@@ -77,7 +77,7 @@ from .threads import Thread, ThreadMember
 from .sticker import GuildSticker
 from .file import File
 from .welcome_screen import WelcomeScreen, WelcomeScreenChannel
-
+from .events import ScheduledEvent
 
 __all__ = ("Guild",)
 
@@ -95,6 +95,7 @@ if TYPE_CHECKING:
         Thread as ThreadPayload,
     )
     from .types.voice import GuildVoiceState
+    from .types.events import ScheduledEvent as ScheduledEventPayload
     from .permissions import Permissions
     from .channel import (
         VoiceChannel,
@@ -291,6 +292,7 @@ class Guild(Hashable):
         "_public_updates_channel_id",
         "_stage_instances",
         "_threads",
+        "_scheduled_events"
     )
 
     _PREMIUM_GUILD_LIMITS: ClassVar[Dict[Optional[int], _GuildLimit]] = {
@@ -417,6 +419,14 @@ class Guild(Hashable):
 
         return role
 
+    def _add_scheduled_event(self, data: ScheduledEventPayload) -> ScheduledEvent:
+        event = ScheduledEvent(data, guild=self)
+        self._scheduled_events[event.id] = event
+        return event
+
+    def _remove_scheduled_event(self, event_id: int, /) -> ScheduledEvent:
+        return self._scheduled_events.pop(event_id, None)
+
     def _from_data(self, guild: GuildPayload) -> None:
         # according to Stan, this is always available even if the guild is unavailable
         # I don't have this guarantee when someone updates the guild.
@@ -502,6 +512,10 @@ class Guild(Hashable):
 
         for obj in guild.get("voice_states", []):
             self._update_voice_state(obj, int(obj["channel_id"]))
+
+        self._scheduled_events = {}
+        for ev in guild.get('guild_scheduled_events', []):
+            self._add_scheduled_event(ev)
 
     # TODO: refactor/remove?
     def _sync(self, data: GuildPayload) -> None:

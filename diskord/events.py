@@ -70,7 +70,7 @@ class ScheduledEvent:
         The external location name where the event is being hosted.
     """
     __slots__ = (
-        'guild', '_state', 'id', 'channel_id', 'creator_id', 'entity_id', 'name'
+        'guild', '_state', 'id', 'channel_id', 'creator_id', 'entity_id', 'name',
         'description', 'user_count', 'starts_at', 'ends_at', 'privacy_level', 'status',
         'entity_type', 'speaker_ids', 'location'
     )

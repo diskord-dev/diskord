@@ -1760,7 +1760,7 @@ class HTTPClient:
 
     def edit_scheduled_event(self, guild_id: Snowflake, event_id: Snowflake, payload) -> Response[events.ScheduledEvent]:
         return self.request(
-            Route('PATCH', '/guilds/{guild_id}/scheduled-events/{event_id}', guild_id=guild_id, event_id=event_id)
+            Route('PATCH', '/guilds/{guild_id}/scheduled-events/{event_id}', guild_id=guild_id, event_id=event_id),
             json=payload
             )
 
