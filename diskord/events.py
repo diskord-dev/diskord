@@ -102,4 +102,4 @@ class ScheduledEvent:
 
     def _unroll_metadata(self, data: EntityMetadata):
         self.speaker_ids: List[int] = [int(i) for i in data.get('speaker_ids', [])]
-        self.location: str = data.get('location')
+        self.location: Optional[str] = data.get('location')
