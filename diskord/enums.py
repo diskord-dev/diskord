@@ -70,6 +70,9 @@ __all__ = (
     "ApplicationCommandType",
     "OptionType",
     "ApplicationCommandPermissionType",
+    "EventStatus",
+    "EventPrivacyLevel",
+    "EntityType"
 )
 
 
