@@ -901,6 +901,32 @@ class Guild(Hashable):
         return self._stage_instances.get(stage_instance_id)
 
     @property
+    def scheduled_events(self) -> List[ScheduledEvent]:
+        """List[:class:`ScheduledEvent`]: Returns a :class:`list` of the guild's scheduled
+        events.
+
+        .. versionadded:: 2.7
+        """
+        return list(self._scheduled_events.values())
+
+    def get_scheduled_event(self, event_id: int, /) -> Optional[ScheduledEvent]:
+        """Returns a scheduled event with the given ID.
+
+        .. versionadded:: 2.7
+
+        Parameters
+        -----------
+        event_id: :class:`int`
+            The ID to search for.
+
+        Returns
+        --------
+        Optional[:class:`ScheduledEvent`]
+            The scheduled event or ``None`` if not found.
+        """
+        return self._scheduled_events.get(event_id)
+
+    @property
     def owner(self) -> Optional[Member]:
         """Optional[:class:`Member`]: The member that owns the guild."""
         return self.get_member(self.owner_id)  # type: ignore
