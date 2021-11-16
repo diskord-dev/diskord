@@ -885,6 +885,20 @@ class Intents(BaseFlags):
         """
         return 1 << 14
 
+    @flag_value
+    def scheduled_events(self):
+        """:class:`bool`: Whether guild scheduled events related gateway events are enabled.
+
+        This corresponds to the following events:
+
+        - :func:`on_scheduled_event_create`
+        - :func:`on_scheduled_event_update`
+        - :func:`on_scheduled_event_delete`
+
+        Guild scheduled events cache is enabled by this.
+        """
+        return 1 << 16
+
 
 @fill_with_flags()
 class MemberCacheFlags(BaseFlags):
