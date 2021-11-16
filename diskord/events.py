@@ -24,10 +24,11 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Union
 
 from . import utils
 from .enums import EntityType, EventPrivacyLevel, EventStatus, try_enum
+from .channel import StageChannel, VoiceChannel
 
 if TYPE_CHECKING:
     from .guild import Guild
@@ -118,3 +119,155 @@ class ScheduledEvent:
         available if the event is not externally hosted.
         """
         return self.guild.get_channel(self.channel_id)
+
+    async def delete(self):
+        """|coro|
+
+        Deletes the scheduled event.
+
+        This requires :attr:`~Permissions.manage_events` permission to work.
+
+        Raises
+        --------
+        HTTPException
+            Deleting the event failed.
+        Forbidden
+            You do not have permissions to delete the event.
+        """
+        await self._state.http.delete_scheduled_event(
+            guild_id=self.guild.id,
+            event_id=self.id,
+        )
+        return self
+
+    async def edit(self, *,
+        name: Optional[str] = None,
+        starts_at: Optional[datetime.datetime] = None,
+        ends_at: Optional[datetime.datetime] = None,
+        description: Optional[str] = None,
+        entity_type: Optional[EntityType] = None,
+        privacy_level: EventPrivacyLevel = EventPrivacyLevel.guild_only,
+        channel: Optional[Union[VoiceChannel, StageChannel]] = None,
+        location: Optional[str] = None,
+        status: Optional[EventStatus] = None,
+        ):
+        """|coro|
+
+        Edit the scheduled event.
+
+        This requires :attr:`~Permissions.manage_events` permission to work.
+
+        Parameters
+        ----------
+        name: :class:`str`
+            The name of event.
+        starts_at: :class:`datetime.datetime`
+            The scheduled time when the event would start.
+        ends_at: :class:`datetime.datetime`
+            The scheduled time when the event would end.
+        description: :class:`str`
+            The description of event.
+        entity_type: :class:`EntityType`
+            The type of entity where event is hosted.
+        privacy_level: :class:`EventPrivacyLevel`
+            The privacy level of this event. Defaults to :attr:`EventPrivacyLevel.guild_only`
+        channel: Union[:class:`VoiceChannel`, :class:`StageChannel`]
+            The channel that this event would be hosted in.
+        location: :class:`str`
+            External location of event if it is externally hosted.
+
+        Raises
+        --------
+        HTTPException
+            Editing the event failed.
+        Forbidden
+            You do not have permissions to edit the event.
+        """
+        if location is not None and channel is not None:
+            raise TypeError('location and channel keyword arguments cannot be mixed.')
+
+        payload = {}
+
+        if name is not None:
+            payload['name'] = str(name)
+        if starts_at is not None:
+            payload['scheduled_start_time'] = starts_at.isoformat()
+        if ends_at is not None:
+            payload['scheduled_end_time'] = ends_at.isoformat()
+        if description is not None:
+            payload['description'] = str(description)
+        if entity_type is not None:
+            payload['entity_type'] = entity_type.value
+        elif entity_type is None:
+            if location is not None:
+                entity_type = EntityType.external
+            elif isinstance(channel, StageChannel):
+                entity_type = EntityType.stage_instance
+            elif isinstance(channel, VoiceChannel):
+                entity_type = EntityType.voice
+            if entity_type:
+                payload['entity_type'] = entity_type.value
+
+        if privacy_level is not None:
+            payload['privacy_level'] = privacy_level.value
+        if channel is not None:
+            payload['channel_id'] = channel.id
+        if location is not None:
+            payload['entity_metadata'] = {}
+            payload['entity_metadata']['location'] = location
+        if status is not None:
+            payload['status'] = status.value
+
+        data = await self._state.http.edit_scheduled_event(
+            guild_id=self.guild.id,
+            event_id=self.id,
+            payload=payload,
+        )
+        return ScheduledEvent(data, guild=self.guild)
+
+    async def start(self):
+        """|coro|
+
+        Starts the event.
+
+        This only works if :attr:`.status` is currently :attr:`EventStatus.scheduled`
+
+        Raises
+        --------
+        HTTPException
+            Event has either been completed or is active already.
+        Forbidden
+            You do not have permissions to start the event.
+        """
+        await self.edit(status=EventStatus.active)
+
+    async def end(self):
+        """|coro|
+
+        Ends the event.
+
+        This only works if :attr:`.status` is currently :attr:`EventStatus.active`
+
+        Raises
+        --------
+        HTTPException
+            Event has either been completed already or is not active.
+        Forbidden
+            You do not have permissions to end the event.
+        """
+        await self.edit(status=EventStatus.completed)
+
+    async def cancel(self):
+        """|coro|
+
+        Cancels the event.
+
+        Raises
+        --------
+        HTTPException
+            Cancellation failed.
+        Forbidden
+            You do not have permissions to cancel the event.
+        """
+        await self.edit(status=EventStatus.canceled)
+
