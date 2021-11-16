@@ -175,6 +175,8 @@ class ScheduledEvent:
             The channel that this event would be hosted in.
         location: :class:`str`
             External location of event if it is externally hosted.
+        status: :class:`EventStatus`
+            The status of event.
 
         Raises
         --------
