@@ -99,7 +99,22 @@ class ScheduledEvent:
         if md:
             self._unroll_metadata(md)
 
-
     def _unroll_metadata(self, data: EntityMetadata):
         self.speaker_ids: List[int] = [int(i) for i in data.get('speaker_ids', [])]
         self.location: Optional[str] = data.get('location')
+
+    @property
+    def creator(self) -> Optional[Member]:
+        """
+        Optional[:class:`Member`]: The member who created this event. If member has left the
+        guild then this would be None.
+        """
+        return self.guild.get_member(self.creator_id) # type: ignore
+
+    @property
+    def channel(self) -> GuildChannel:
+        """
+        Optional[:class:`abc.GuildChannel`]: The channel where event is hosted only
+        available if the event is not externally hosted.
+        """
+        return self.guild.get_channel(self.channel_id)
