@@ -138,7 +138,6 @@ class ScheduledEvent:
             guild_id=self.guild.id,
             event_id=self.id,
         )
-        return self
 
     async def edit(self, *,
         name: Optional[str] = None,
@@ -150,7 +149,7 @@ class ScheduledEvent:
         channel: Optional[Union[VoiceChannel, StageChannel]] = None,
         location: Optional[str] = None,
         status: Optional[EventStatus] = None,
-        ):
+        ) -> ScheduledEvent:
         """|coro|
 
         Edit the scheduled event.
@@ -177,6 +176,11 @@ class ScheduledEvent:
             External location of event if it is externally hosted.
         status: :class:`EventStatus`
             The status of event.
+
+        Returns
+        --------
+        :class:`ScheduledEvent`
+            The updated event.
 
         Raises
         --------
@@ -273,3 +277,29 @@ class ScheduledEvent:
         """
         await self.edit(status=EventStatus.canceled)
 
+    async def users(self, *, limit: int = 100) -> List[User]:
+        """|coro|
+
+        Fetches the users that have subscribed to this event.
+
+        Parameters
+        ----------
+        limit: :class:`int`
+            The limit of users to get. Defaults to ``100``
+
+        Returns
+        -------
+        List[:class:`User`]
+            The list of users.
+
+        Raises
+        --------
+        HTTPException
+            Fetching of users failed.
+        """
+        users = await self._state.http.get_scheduled_event_users(
+            guild_id=self.guild.id,
+            event_id=self.id,
+            limit=limit,
+        )
+        return [User(state=self.state, data=user) for user in users]

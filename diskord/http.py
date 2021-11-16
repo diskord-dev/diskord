@@ -1776,7 +1776,7 @@ class HTTPClient:
         return self.request(
             Route('GET', '/guilds/{guild_id}/scheduled-events/{event_id}/users', guild_id=guild_id, event_id=event_id),
             params={
-                'with_guild_member': with_member,
+                'with_guild_member': 'true' if with_member else 'false',
                 'limit': limit,
             }
         )
