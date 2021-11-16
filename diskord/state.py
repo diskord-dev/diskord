@@ -1592,9 +1592,14 @@ class ConnectionState:
         # TODO: This has more things to do here (i.e checking status to determine)
         # how the event was removed/deleted. This can help us dispatch more events
         # like event_end, event_canceled etc.
+        # NOTE: There currently seems to be a bug on Discord's side of status being
+        # scheduled regardless of action so I'll do it later.
+        # Ref: https://github.com/discord/discord-api-docs/issues/4105
 
         event = guild._remove_scheduled_event(int(data['id']))
-        self.dispatch('scheduled_event_delete', event)
+        if event:
+            event._update(data)
+            self.dispatch('scheduled_event_delete', event)
 
     def parse_typing_start(self, data) -> None:
         self.dispatch("raw_typing", RawTypingEvent(data))
