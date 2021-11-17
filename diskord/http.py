@@ -1742,7 +1742,7 @@ class HTTPClient:
 
     # Guild Scheduled events management
 
-    def get_scheduled_events(self, guild_id: Snowflake, with_user_counts: bool = True) -> List[Response[events.ScheduledEvent]]:
+    def get_scheduled_events(self, guild_id: Snowflake, with_user_counts: bool = True) -> Response[List[events.ScheduledEvent]]:
         return self.request(
             Route('GET', '/guilds/{guild_id}/scheduled-events', guild_id=guild_id),
             params={
@@ -1772,7 +1772,7 @@ class HTTPClient:
     def get_scheduled_event_users(self, guild_id: Snowflake, event_id: Snowflake, *,
         with_member: bool = False,
         limit: int = 100,
-        ) -> List[Response[User]]:
+        ) -> Response[List[user.User]]:
         return self.request(
             Route('GET', '/guilds/{guild_id}/scheduled-events/{event_id}/users', guild_id=guild_id, event_id=event_id),
             params={
@@ -2097,7 +2097,7 @@ class HTTPClient:
         self,
         application_id: Snowflake,
         command_id: Snowflake,
-        payload: interactions.EditApplicationCommand,
+        payload,
     ) -> Response[interactions.ApplicationCommand]:
         valid_keys = ("name", "description", "options", "default_permission")
         payload = {k: v for k, v in payload.items() if k in valid_keys}  # type: ignore
@@ -2162,7 +2162,7 @@ class HTTPClient:
         self,
         application_id: Snowflake,
         guild_id: Snowflake,
-        payload: interactions.EditApplicationCommand,
+        payload,
     ) -> Response[interactions.ApplicationCommand]:
         r = Route(
             "POST",
@@ -2177,7 +2177,7 @@ class HTTPClient:
         application_id: Snowflake,
         guild_id: Snowflake,
         command_id: Snowflake,
-        payload: interactions.EditApplicationCommand,
+        payload,
     ) -> Response[interactions.ApplicationCommand]:
         valid_keys = (
             "name",
@@ -2213,7 +2213,7 @@ class HTTPClient:
         self,
         application_id: Snowflake,
         guild_id: Snowflake,
-        payload: List[interactions.EditApplicationCommand],
+        payload,
     ) -> Response[List[interactions.ApplicationCommand]]:
         r = Route(
             "PUT",

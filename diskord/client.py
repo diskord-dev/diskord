@@ -43,6 +43,7 @@ from typing import (
     Sequence,
     TYPE_CHECKING,
     Tuple,
+    Type,
     TypeVar,
     Union,
 )
@@ -295,8 +296,6 @@ class Client:
         self._ready: asyncio.Event = asyncio.Event()
         self._connection._get_websocket = self._get_websocket
         self._connection._get_client = lambda: self
-
-        self._connection._commands_store._pending: List[application.ApplicationCommand] = []
 
         if VoiceClient.warn_nacl:
             VoiceClient.warn_nacl = False
@@ -855,7 +854,7 @@ class Client:
         Optional[Union[:class:`.abc.GuildChannel`, :class:`.Thread`, :class:`.abc.PrivateChannel`]]
             The returned channel or ``None`` if not found.
         """
-        return self._connection.get_channel(id)
+        return self._connection.get_channel(id) # type: ignore
 
     def get_partial_messageable(
         self, id: int, *, type: Optional[ChannelType] = None
@@ -1204,7 +1203,7 @@ class Client:
                 continue
 
             if activity is not None:
-                me.activities = (activity,)
+                me.activities = (activity,) # type: ignore
             else:
                 me.activities = ()
 
@@ -1798,7 +1797,7 @@ class Client:
 
     # Commands management
 
-    def add_pending_command(self, command: ApplicationCommand) -> application.ApplicationCommand:
+    def add_pending_command(self, command: application.ApplicationCommand) -> application.ApplicationCommand:
         """Adds an application command to internal list of *pending* commands that will be
         registered on bot connect.
 
@@ -1914,7 +1913,7 @@ class Client:
                 self._connection._commands_store.add_application_command(cmd._from_data(data))
         else:
             data = await self.http.upsert_global_command(
-                application_id=application_id,
+                application_id=self.user.id,
                 payload=payload,
             )
             self._connection._commands_store.add_application_command(command._from_data(data))
@@ -1978,26 +1977,6 @@ class Client:
             )
 
         return [ApplicationCommand(command, self._connection) for command in commands]
-
-    async def delete_application_command(
-        self, command_id: int, /, *, guild_id: int = MISSING
-    ) -> ApplicationCommand:
-        """|coro|
-
-        Delets a global or guild application command.
-
-        Parameters
-        ----------
-        command_id: :class:`int`
-            The ID of command to delete.
-        guild_id: :class:`int`
-            The guild ID this command belongs to. If not global.
-        """
-        if guild_id is not MISSING:
-            await self.http.delete_guild_command(self.user.id, guild_id, command_id)
-
-        else:
-            await self.http.delete_global_command(self.user.id, command_id)
 
     async def fetch_application_command(
         self, command_id, /, *, guild_id: int = MISSING
@@ -2095,7 +2074,7 @@ class Client:
             application_id=self.user.id,
             guild_id=guild_id,
         )
-        return ApplicationCommandGuildPermissions(response, self._connection)
+        return [ApplicationCommandGuildPermissions(r, self._connection) for r in response]
 
     async def fetch_application_command_permission(
         self, *, guild_id: int, command_id: int
@@ -2121,7 +2100,7 @@ class Client:
             guild_id=guild_id,
             command_id=command_id,
         )
-        return ApplicationCommandGuildPermissions(response)
+        return ApplicationCommandGuildPermissions(response, state=self._connection)
 
     async def sync_application_commands(self, **kwargs: Any):
         """|coro|
@@ -2183,7 +2162,7 @@ class Client:
 
     # Decorators
 
-    def slash_command(self, **options) -> application.SlashCommand:
+    def slash_command(self, **options) -> Callable[..., Any]:
         """A decorator-based interface to add slash commands to the bot.
 
         Usage: ::
@@ -2198,18 +2177,18 @@ class Client:
             The parameters of :class:`~application.SlashCommand`
         """
 
-        def inner(func: Callable):
+        def inner(func: Callable[..., Any]) -> application.SlashCommand:
             if not inspect.iscoroutinefunction(func):
                 raise TypeError("Callback function must be a coroutine.")
 
             options["name"] = options.get("name") or func.__name__
 
             command = application.SlashCommand(func, **options)
-            return self.add_pending_command(command)
+            return self.add_pending_command(command) # type: ignore
 
         return inner
 
-    def user_command(self, **options) -> application.SlashCommand:
+    def user_command(self, **options) -> Callable[..., Any]:
         """A decorator-based interface to add user commands to the bot.
 
         Usage: ::
@@ -2224,16 +2203,16 @@ class Client:
             The parameters of :class:`~application.UserCommand`
         """
 
-        def inner(func: Callable):
+        def inner(func: Callable[..., Any]) -> application.UserCommand:
             if not inspect.iscoroutinefunction(func):
                 raise TypeError("Callback function must be a coroutine.")
 
             command = application.UserCommand(func, **options)
-            return self.add_pending_command(command)
+            return self.add_pending_command(command) # type: ignore
 
         return inner
 
-    def message_command(self, **options) -> application.SlashCommand:
+    def message_command(self, **options) -> Callable[..., Any]:
         """A decorator-based interface to add message commands to the bot.
 
         Usage: ::
@@ -2248,19 +2227,19 @@ class Client:
             The parameters of :class:`~application.MessageCommand`
         """
 
-        def inner(func: Callable):
+        def inner(func: Callable[..., Any]) -> application.MessageCommand:
             if not inspect.iscoroutinefunction(func):
                 raise TypeError("Callback function must be a coroutine.")
 
             command = application.MessageCommand(func, **options)
-            return self.add_pending_command(command)
+            return self.add_pending_command(command) # type: ignore
 
         return inner
 
     # Command handling
 
     def get_interaction_context(
-        self, interaction: Interaction, *, cls: InteractionContext = None
+        self, interaction: Interaction, *, cls: Type[InteractionContext] = None
     ) -> InteractionContext:
         """
         Gets the :class:`InteractionContext` for an application command interaction.

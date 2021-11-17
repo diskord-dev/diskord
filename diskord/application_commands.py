@@ -52,6 +52,7 @@ if TYPE_CHECKING:
     )
     from .state import ConnectionState
     from .guild import Guild
+    from .application.permissions import ApplicationCommandPermissions as ACP
 
 __all__ = (
     "ApplicationCommand",
@@ -105,7 +106,7 @@ class ApplicationCommandGuildPermissions:
         return self._state._get_guild(self.guild_id)
 
     @property
-    def permissions(self) -> ApplicationCommandPermission:
+    def permissions(self) -> List[ApplicationCommandPermission]:
         """List[:class:`ApplicationCommandPermission`]: The list of permissions that are configured."""
         return self._permissions
 
@@ -139,25 +140,21 @@ class ApplicationCommandPermission:
 class ApplicationCommandMixin:
     if TYPE_CHECKING:
         _state: ConnectionState
-        _guild_id: int
-        _id: int
-        _application_id: int
-        _version: int
         _name: str
         _description: str
         _default_permission: bool
         _type: ApplicationCommandType
 
-    async def _edit_permissions(self, permissions: ApplicationCommandPermissions):
+    async def _edit_permissions(self, permissions: ACP):
         user = self._state._get_client().user
-        permissions.command = self
         permissions_payload = {'permissions': [perm.to_dict() for perm in permissions.overwrites]}
+        permissions.command = self # type: ignore
 
         data = await self._state.http.edit_application_command_permissions(
             application_id=user.id,
             guild_id=permissions.guild_id,
-            command_id=self.id,
-            payload=permissions_payload
+            command_id=self.id, # type: ignore
+            payload=permissions_payload # type: ignore
         )
         return data
 
@@ -168,7 +165,7 @@ class ApplicationCommandMixin:
         description: str = None,
         options: List[Option] = None, # type: ignore
         default_permission: bool = None,
-        permissions: ApplicationCommandPermissions = None,
+        permissions: ACP = None,
     ):
         """|coro|
 
@@ -219,14 +216,14 @@ class ApplicationCommandMixin:
 
         if self.guild_id:
             ret = await self._state.http.edit_guild_command(
-                command_id=self.id,
+                command_id=self.id, # type: ignore
                 guild_id=self.guild_id,
                 application_id=user.id,
                 payload=payload,
             )
         else:
             ret = await self._state.http.edit_global_command(
-                command_id=self.id,
+                command_id=self.id, # type: ignore
                 application_id=user.id,
                 payload=payload,
             )
@@ -240,23 +237,23 @@ class ApplicationCommandMixin:
         """
         if self.guild_id:
             ret = await self._state.http.delete_guild_command(
-                command_id=self.id,
+                command_id=self.id, # type: ignore
                 guild_id=self.guild_id,
                 application_id=self._state.user.id,
             )
         else:
             ret = await self._state.http.delete_global_command(
-                command_id=self.id,
+                command_id=self.id, # type: ignore
                 application_id=self._state.user.id,
             )
 
         self._state._commands_store.remove_application_command(self.id)  # type: ignore
 
     def _from_data(self, data: ApplicationCommandPayload):
-        self._id: int = _get_as_snowflake(data, "id")
-        self._application_id: int = _get_as_snowflake(data, "application_id")
-        self._guild_id: int = _get_as_snowflake(data, "guild_id")
-        self._version: int = _get_as_snowflake(data, "version")
+        self._id: Optional[int] = _get_as_snowflake(data, "id")
+        self._application_id: Optional[int] = _get_as_snowflake(data, "application_id")
+        self._guild_id: Optional[int] = _get_as_snowflake(data, "guild_id")
+        self._version: Optional[int] = _get_as_snowflake(data, "version")
         self._default_permission = data.get("default_permission", getattr(self, "_default_permission", True))  # type: ignore
         self._name = data.get("name", getattr(self, '_name', None))
         self._description = data.get("description", getattr(self, '_description', None))
@@ -274,8 +271,8 @@ class ApplicationCommandMixin:
         return self._description
 
     @property
-    def guild_id(self) -> int:
-        """:class:`int`: The ID of the guild this command belongs to.
+    def guild_id(self) -> Optional[int]:
+        """Optional[:class:`int`]: The ID of the guild this command belongs to.
 
         Every command is stored per-guild basis and this attribute represents that guild's ID.
         To get the list of guild IDs in which this command was initially registered, use
@@ -375,9 +372,9 @@ class ApplicationSlashCommand(ApplicationCommand):
         The options that belong to this command. (including subcommands or groups.)
     """
     def __init__(self, data: ApplicationCommandPayload, state: ConnectionState):
-        self._options: List[ApplicationCommandOption] = (
+        self._options: List[ApplicationCommandOption] = [
             ApplicationCommandOption(option, state=state) for option in data.get('options', [])
-        )
+        ]
         super().__init__(data, state)
 
     def _from_data(self, data: ApplicationCommandPayload) -> ApplicationCommand:
@@ -441,7 +438,7 @@ class OptionChoice:
         }
 
     @classmethod
-    def from_dict(cls, dict_: Dict[str, Any]):
+    def from_dict(cls, dict_):
         return cls(name=dict_["name"], value=dict_["value"])
 
     def __repr__(self):
@@ -501,16 +498,8 @@ class ApplicationCommandOption:
         self.description = data['description']
         self.type = try_enum(OptionType, int(data['type']))
         self.required = data.get('required', filterfalse)
-        self.choices = [OptionChoice.from_dict(choice) for choice in data.get('options', [])]
+        self.choices = [OptionChoice.from_dict(choice) for choice in data.get('choices', [])]
         self.autocomplete = data.get('autocomplete', False)
-        self.channel_types = data.get('channel_types')
-
-        if self.channel_types is not None:
-            original = self.channel_types
-            self.channel_types = []
-
-            for t in original:
-                self.channel_types.append(try_enum(ChannelType, int(t)))
-
-        self.max_value = options.get('max_value')
-        self.min_value = options.get('min_value')
+        self.channel_types = data.get('channel_types', [])
+        self.max_value = data.get('max_value')
+        self.min_value = data.get('min_value')

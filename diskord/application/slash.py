@@ -123,32 +123,32 @@ class Option:
         The minimum value the user can provide. If the :attr:`~Option.type` is
         :attr:`~OptionType.integer` or :attr:`~OptionType.number`
     """
+    _type: OptionType
 
     def __init__(
         self,
         *,
         name: str,
         description: Optional[str] = None,
-        type: Optional[OptionType] = str,
+        type: Optional[OptionType] = OptionType.string,
         choices: List[OptionChoice] = None,
         required: bool = True,
         arg: Optional[str] = None,
         converter: "Converter" = None, # type: ignore
-        autocomplete: Callable[[str], List[OptionChoice]] = None,
+        autocomplete: Optional[Callable[[str, Interaction], List[OptionChoice]]] = None,
         min_value: Optional[Union[int, float]] = None,
         max_value: Optional[Union[int, float]] = None,
         **attrs,
     ):
-        self.callback: Callable[..., Any] = attrs.get("callback")
         self._name = name
         self._description = description or "No description"
         self._required = required
         self._channel_types: List[ChannelType] = attrs.get("channel_types", [])  # type: ignore
-        self._choices: List[OptionChoice] = choices
+        self._choices: List[OptionChoice] = choices or []
         self._options = []
         self._min_value = min_value
         self._max_value = max_value
-        self.autocomplete: Callable[[str, Interaction], List[OptionChoice]] = autocomplete
+        self.autocomplete = autocomplete
 
         if self._choices is None:
             self._choices = []
@@ -162,9 +162,11 @@ class Option:
             self._type = type
         else:
             try:
-                self._type: OptionType = OptionType.from_datatype(type, option=self)
+                self._type = OptionType.from_datatype(type, option=self)
             except TypeError:
-                self._type: OptionType = type
+                self._type = type # type: ignore
+
+        self.callback: Callable[..., Any] = attrs.get("callback") # type: ignore
 
     def __repr__(self):
         return f"<Option name={self._name!r} description={self._description!r}>"
@@ -282,7 +284,6 @@ class Option:
         from ..application_commands import OptionChoice
 
         choice = OptionChoice(**attrs)
-        choice._option = self
         self._choices.insert(index, choice)
         return choice
 
@@ -299,7 +300,6 @@ class Option:
         :class:`OptionChoice`
             The appended choice.
         """
-        choice._option = self
         self._choices.append(choice)
         return choice
 
@@ -762,10 +762,15 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
         dict_ = {
             "name": self._name,
             "type": self._type.value,
-            "options": [option.to_dict() for option in reversed(self.options)],
             "description": self._description,
             "default_permission": self._default_permission,
         }
+
+        if self.options:
+            dict_["options"] = [option.to_dict() for option in reversed(self.options)]
+        if self.children:
+            # commands with children cannot have options
+            dict_["options"] = [child.to_dict() for child in self.children]
 
         return dict_
 
@@ -804,12 +809,17 @@ class SlashCommandChild(SlashCommand):
         return self._parent
 
     def to_dict(self) -> dict:
-        return {
+        ret = {
             "name": self._name,
             "description": self._description,
             "type": self._type.value,
-            "options": [option.to_dict() for option in reversed(self.options)],
         }
+        if self.options:
+            ret["options"] = [option.to_dict() for option in reversed(self.options)]
+        if self.children:
+            ret["options"] = [child.to_dict() for child in self.children]
+
+        return ret
 
 
 class SlashCommandGroup(SlashCommandChild):

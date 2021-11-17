@@ -42,6 +42,8 @@ if TYPE_CHECKING:
 
 class ChildrenMixin:
     """A mixin that implements children for slash commands or slash subcommand groups."""
+    _children: List[SlashCommandChild]
+    _options: List[Option]
 
     @property
     def children(self) -> List[SlashCommandChild]:
@@ -80,7 +82,6 @@ class ChildrenMixin:
             The appended child.
         """
         child._parent = self # type: ignore
-        self._options.append(child)
         self._children.append(child)
 
         if not hasattr(child.callback, "__application_command_params__"):
@@ -119,6 +120,7 @@ class ChildrenMixin:
 
 class OptionsMixin:
     """A mixin that implements basic slash commands and subcommands options."""
+    _options: List[Option]
 
     @property
     def options(self):
@@ -204,6 +206,7 @@ class OptionsMixin:
 
 class ChecksMixin:
     """A mixin that implements checks for application commands."""
+    checks: List[Check]
 
     def add_check(self, predicate: Check):
         """
@@ -263,12 +266,12 @@ class ChecksMixin:
             A boolean indicating if the command can be invoked.
         """
         if hasattr(ctx.bot, "can_run"):
-            if not await ctx.bot.can_run(ctx):
+            if not await ctx.bot.can_run(ctx): # type: ignore
                 raise ApplicationCommandCheckFailure(
-                    f"The global check functions for command {self.qualified_name} failed."
+                    f"The global check functions for command {self.name} failed." # type: ignore
                 )
 
-        cog = self.cog
+        cog = self.cog # type: ignore
         if cog is not None:
             local_check = type(cog)._get_overridden_method(cog.cog_check)
             if local_check is not None:

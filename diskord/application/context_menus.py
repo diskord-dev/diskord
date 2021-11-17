@@ -24,7 +24,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
-from typing import Callable, Any, TYPE_CHECKING
+from typing import Callable, Any, List, TYPE_CHECKING
 import inspect
 
 from ..enums import ApplicationCommandType
@@ -90,17 +90,18 @@ class UserCommand(ContextMenuCommand):
         """
         context.command = self
         interaction: Interaction = context.interaction
-        args = [context]
+        args: List[Any] = [context]
+        data: Any = interaction.data
 
-        if not interaction.data["type"] == self.type.value:
+        if not interaction.data.get('type') == self.type.value:
             raise TypeError(
-                f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}'
+                f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}' # type: ignore
             )
 
-        resolved = interaction.data["resolved"]
+        resolved = data["resolved"]
         if interaction.guild:
-            member_with_user = resolved["members"][interaction.data["target_id"]]
-            member_with_user["user"] = resolved["users"][interaction.data["target_id"]]
+            member_with_user = resolved["members"][data["target_id"]]
+            member_with_user["user"] = resolved["users"][data["target_id"]]
             user = Member(
                 data=member_with_user,
                 guild=interaction.guild,
@@ -109,7 +110,7 @@ class UserCommand(ContextMenuCommand):
         else:
             user = User(
                 state=context.client._connection,
-                data=resolved["users"][interaction.data["target_id"]],
+                data=resolved["users"][data["target_id"]],
             )
 
         args.append(user)
@@ -149,24 +150,25 @@ class MessageCommand(ContextMenuCommand):
         """
         context.command = self
         interaction: Interaction = context.interaction
-        args = [context]
+        args: List[Any] = [context]
+        idata: Any = interaction.data
 
-        if not interaction.data["type"] == self.type.value:
+        if not idata["type"] == self.type.value:
             raise TypeError(
-                f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}'
+                f'interaction type does not matches the command type. Interaction type is {interaction.data["type"]} and command type is {self.type}' # type: ignore
             )
 
-        data = interaction.data["resolved"]["messages"][interaction.data["target_id"]]
+        data = idata["resolved"]["messages"][idata["target_id"]]
         if interaction.guild:
             message = Message(
                 state=interaction.guild._state,
-                channel=interaction.channel,
+                channel=interaction.channel, # type: ignore
                 data=data,
             )
         else:
             message = Message(
                 state=context.client._connection,
-                channel=interaction.user,
+                channel=interaction.user, # type: ignore
                 data=data,
             )
 

@@ -38,7 +38,10 @@ from .types import Check
 from .permissions import ApplicationCommandPermissions
 
 if TYPE_CHECKING:
-    from .types.interactions import ApplicationCommand as ApplicationCommandPayload
+    from .slash import SlashCommand
+    from ..types.interactions import ApplicationCommand as ApplicationCommandPayload
+    from ..state import ConnectionState
+    from ..interactions import Interaction, InteractionContext
 
 _log = logging.getLogger(__name__)
 
@@ -101,7 +104,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
         self.extras: Dict[str, Any] = attrs.pop("extras", {})
 
         self._cog = None
-        self._state = None
+        self._state = None # type: ignore
 
         self._id: Optional[int]
         try:
@@ -159,7 +162,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
         self._options = []
 
         for opt in value.__application_command_params__.values():
-            self.append_option(opt)
+            self.append_option(opt) # type: ignore
 
         self._update_callback_data()
 
@@ -180,7 +183,7 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
         """
         return self._cog
 
-    async def invoke(self):
+    async def invoke(self, context: InteractionContext):
         raise NotImplementedError
 
     async def _edit_permissions(self, permissions: ApplicationCommandPermissions):
@@ -254,6 +257,9 @@ class ApplicationCommand(ApplicationCommandMixin, ChecksMixin):
         """
         return utils_get(self.permissions, guild_id=guild_id)
 
+    def to_dict(self) -> Dict[str, Any]:
+        raise NotImplementedError
+
     def __repr__(self):
         return f"<{self.__class__.__name__} name={self.name!r} description={self.description!r} guild_id={self.guild_id!r} id={self.id!r}"
 
@@ -273,7 +279,7 @@ class ApplicationCommandStore:
             return
 
     def add_application_command(self, command: ApplicationCommand):
-        self._commands[command.id] = command
+        self._commands[command.id] = command # type: ignore
 
     def remove_application_command(self, id: int):
         return self._commands.pop(id, None) # type: ignore
@@ -290,7 +296,7 @@ class ApplicationCommandStore:
             command.callback.__application_command_params__ = {}
 
         for opt in command.callback.__application_command_params__.values():
-            command.append_option(opt)
+            command.append_option(opt) # type: ignore
 
         if command.id is not None:
             self.add_application_command(command)
@@ -322,8 +328,8 @@ class ApplicationCommandStore:
 
     def dispatch(self, interaction: Interaction):
         try:
-            command_id = int(interaction.data['id'])
-        except KeyError:
+            command_id = int(interaction.data['id']) # type: ignore
+        except (KeyError, ValueError):
             return
 
         command = self.get_application_command(command_id)
@@ -337,18 +343,18 @@ class ApplicationCommandStore:
         )
 
     async def _dispatch_autocomplete(self, interaction):
-        command = self.get_application_command(int(interaction.data['id']))
+        command: SlashCommand = self.get_application_command(int(interaction.data['id'])) # type: ignore
 
         if not command:
             return
 
         for option in interaction.data['options']:
             if option['type'] == OptionType.sub_command.value:
-                command = command.get_child(name=option['name'])
+                command = command.get_child(name=option['name']) # type: ignore
             elif option['type'] == OptionType.sub_command_group.value:
                 grp = command.get_child(name=option['name'])
                 # first element is the command being used.
-                command = grp.get_child(name=option['options'][0]['name'])
+                command = grp.get_child(name=option['options'][0]['name']) # type: ignore
 
         choices = await command.resolve_autocomplete_choices(interaction)
         await interaction.response.autocomplete(choices)
@@ -357,7 +363,7 @@ class ApplicationCommandStore:
     def dispatch_autocomplete(self, interaction: Interaction):
         asyncio.create_task(
             self._dispatch_autocomplete(interaction),
-            name=f"discord-application-command-autocomplete-dispatch-{interaction.data['id']}",
+            name=f"discord-application-command-autocomplete-dispatch-{interaction.data['id']}", # type: ignore
         )
 
     async def sync_application_commands(self, *, delete_unregistered_commands: bool = True):
@@ -380,7 +386,7 @@ class ApplicationCommandStore:
             registered = utils_get(
                 [c for c in self._pending if not c.guild_ids],
                 name=command["name"],
-                type=try_enum(ApplicationCommandType, int(command["type"])),
+                type=try_enum(ApplicationCommandType, int(command["type"])), # type: ignore
             )
             if registered is None:
                 # the command not found, so append it to list of uncached
@@ -434,10 +440,10 @@ class ApplicationCommandStore:
                     command = utils_get(
                         self._pending,
                         name=cmd["name"],
-                        type=try_enum(ApplicationCommandType, int(cmd["type"])),
+                        type=try_enum(ApplicationCommandType, int(cmd["type"])), # type: ignore
                     )
                     self.add_application_command(command._from_data(cmd))
-                    self.remove_pending_command(command)
+                    self.remove_pending_command(command) # type: ignore
 
         # now time for rest of global commands that are
         # new. at this point, self._pending should only have *new* *global*
@@ -476,16 +482,14 @@ class ApplicationCommandStore:
             command = utils_get(
                 self._pending,
                 name=cmd["name"],
-                type=try_enum(ApplicationCommandType, int(cmd["type"])),
+                type=try_enum(ApplicationCommandType, int(cmd["type"])), # type: ignore
             )
             self.add_application_command(command._from_data(cmd))
-            self.remove_pending_command(command)
+            self.remove_pending_command(command) # type: ignore
 
         # Registering the guild commands now
 
-        # strucutre:
-        # { guild_id: [ command-payload-data... ] }
-        guilds: Dict[int, List[ApplicationCommandPayload]] = {}
+        guilds = {}
 
         for cmd in (command for command in self._pending if command.guild_ids):
             data = cmd.to_dict()
@@ -509,7 +513,7 @@ class ApplicationCommandStore:
                     command = utils_get(
                         self._pending,
                         name=cmd["name"],
-                        type=try_enum(ApplicationCommandType, int(cmd["type"])),
+                        type=try_enum(ApplicationCommandType, int(cmd["type"])), # type: ignore
                     )
                     self.add_application_command(command._from_data(cmd))
-                    self.remove_pending_command(command)
+                    self.remove_pending_command(command) # type: ignore

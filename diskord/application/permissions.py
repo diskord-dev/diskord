@@ -26,6 +26,7 @@ from typing import Optional, Callable, Any, TYPE_CHECKING
 from ..enums import ApplicationCommandPermissionType
 
 if TYPE_CHECKING:
+    from ..enums import ApplicationCommandType
     from .command import ApplicationCommand
 
 __all__ = ('ApplicationCommandPermissions', 'CommandPermissionOverwrite', 'permission')
@@ -117,7 +118,7 @@ class CommandPermissionOverwrite:
         Whether to allow the command for provided user or role ID. Defaults to ``False``
     """
     if TYPE_CHECKING:
-        type: ApplicationCommandType
+        type: ApplicationCommandPermissionType
 
     def __init__(self, *,
         role_id: Optional[int] = None,
@@ -138,14 +139,14 @@ class CommandPermissionOverwrite:
             self.type = ApplicationCommandPermissionType.user
 
 
-    def _get_id(self) -> int:
+    def _get_id(self) -> Optional[int]:
         if self.type == ApplicationCommandPermissionType.user:
             return self.user_id
 
         return self.role_id
 
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self):
         return {
             'id': self._get_id(),
             'type': self.type.value,
@@ -175,7 +176,7 @@ def permission(*, guild_id: int, **options: Any):
 
         for original_guild_id in func.__application_command_permissions__:
             if original_guild_id == guild_id:
-                perm._permissions[original_guild_id].append(CommandPermissionOverwrite(**options))
+                func.__application_command_permissions__[original_guild_id].append(CommandPermissionOverwrite(**options))
                 return func
 
         func.__application_command_permissions__[guild_id] = []
