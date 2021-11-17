@@ -70,6 +70,9 @@ __all__ = (
     "ApplicationCommandType",
     "OptionType",
     "ApplicationCommandPermissionType",
+    "EventStatus",
+    "EventPrivacyLevel",
+    "EntityType"
 )
 
 
@@ -743,6 +746,23 @@ class ApplicationCommandPermissionType(Enum, comparable=True):
     role = 1
     user = 2
 
+class EventPrivacyLevel(Enum, comparable=True):
+    public = 1
+    guild_only = 2
+
+class EntityType(Enum, comparable=True):
+    none = 0
+    stage_instance = 1
+    voice = 2
+    external = 3
+
+class EventStatus(Enum, comparable=True):
+    scheduled = 1
+    active = 2
+    completed = 3
+    canceled = 4
+
+    cancelled = 4
 
 T = TypeVar("T")
 

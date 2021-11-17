@@ -1062,6 +1062,31 @@ to handle it, which defaults to print a traceback and ignoring the exception.
 
     :param guild: The :class:`Guild` that has changed availability.
 
+.. function:: on_scheduled_event_create(event)
+
+    Called when a scheduled event is created in a guild.
+
+    This requires :attr:`Intents.scheduled_events` to be enabled.
+
+    :param event: The :class:`ScheduledEvent` that was created.
+
+.. function:: on_scheduled_event_delete(event)
+
+    Called when a scheduled event is deleted or cancelled.
+
+    This requires :attr:`Intents.scheduled_events` to be enabled.
+
+    :param event: The :class:`ScheduledEvent` that was deleted or cancelled.
+
+.. function:: on_scheduled_event_update(before, after)
+
+    Called when a scheduled event is update i.e properties changed or status changed.
+
+    This requires :attr:`Intents.scheduled_events` to be enabled.
+
+    :param before: The previous :class:`ScheduledEvent` before update.
+    :param after: The previous :class:`ScheduledEvent` after update.
+
 .. function:: on_voice_state_update(member, before, after)
 
     Called when a :class:`Member` changes their :class:`VoiceState`.
@@ -2826,6 +2851,127 @@ of :class:`enum.Enum`.
 
         The option is a floating option number.
 
+.. class:: EventStatus
+
+    Represents the status of a :class:`ScheduledEvent`.
+
+    .. versionadded:: 2.7
+
+    .. container:: operations
+
+        .. describe:: x == y
+
+            Checks if two status are equal.
+        .. describe:: x != y
+
+            Checks if two status are not equal.
+        .. describe:: x > y
+
+            Checks if a status is higher than another.
+        .. describe:: x < y
+
+            Checks if a status is lower than another.
+        .. describe:: x >= y
+
+            Checks if a status is higher or equal to another.
+        .. describe:: x <= y
+
+            Checks if a status is lower or equal to another.
+
+    .. attribute:: scheduled
+
+        The event is scheduled to start in future.
+
+    .. attribute:: active
+
+        The event is currently running.
+
+    .. attribute:: completed
+
+        The event has been completed.
+
+    .. attribute:: cancelled
+
+        The event has been cancelled.
+
+.. class:: EventPrivacyLevel
+
+    Represents the privacy level of a :class:`ScheduledEvent`.
+
+    .. versionadded:: 2.7
+
+    .. container:: operations
+
+        .. describe:: x == y
+
+            Checks if two privacy levels are equal.
+        .. describe:: x != y
+
+            Checks if two privacy levels are not equal.
+        .. describe:: x > y
+
+            Checks if a privacy levels is higher than another.
+        .. describe:: x < y
+
+            Checks if a privacy levels is lower than another.
+        .. describe:: x >= y
+
+            Checks if a privacy levels is higher or equal to another.
+        .. describe:: x <= y
+
+            Checks if a privacy levels is lower or equal to another.
+
+    .. attribute:: public
+
+        The event is public and able to be discovered.
+
+    .. attribute:: guild_only
+
+        The event is exposed to guild only.
+
+.. class:: EntityType
+
+    Represents the entity type of a :class:`ScheduledEvent` that represents where the
+    event will be hosted.
+
+    .. versionadded:: 2.7
+
+    .. container:: operations
+
+        .. describe:: x == y
+
+            Checks if two entity types are equal.
+        .. describe:: x != y
+
+            Checks if two entity types are not equal.
+        .. describe:: x > y
+
+            Checks if a entity types is higher than another.
+        .. describe:: x < y
+
+            Checks if a entity types is lower than another.
+        .. describe:: x >= y
+
+            Checks if a entity types is higher or equal to another.
+        .. describe:: x <= y
+
+            Checks if a entity types is lower or equal to another.
+
+    .. attribute:: none
+
+        The entity is unknown or none.
+
+    .. attribute:: voice
+
+        The event is hosted in a voice channel.
+
+    .. attribute:: stage_instance
+
+        The event is hosted in a stage channel.
+
+    .. attribute:: external
+
+        The event is hosted in an external location.
 
 
 Async Iterator
@@ -4170,6 +4316,14 @@ GuildSticker
 .. attributetable:: GuildSticker
 
 .. autoclass:: GuildSticker()
+    :members:
+
+ScheduledEvent
+~~~~~~~~~~~~~~
+
+.. attributetable:: ScheduledEvent
+
+.. autoclass:: ScheduledEvent()
     :members:
 
 RawMessageDeleteEvent

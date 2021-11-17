@@ -63,6 +63,9 @@ from .enums import (
     ContentFilter,
     NotificationLevel,
     NSFWLevel,
+    EntityType,
+    EventPrivacyLevel,
+    EventStatus,
 )
 from .mixins import Hashable
 from .user import User
@@ -77,7 +80,7 @@ from .threads import Thread, ThreadMember
 from .sticker import GuildSticker
 from .file import File
 from .welcome_screen import WelcomeScreen, WelcomeScreenChannel
-
+from .events import ScheduledEvent
 
 __all__ = ("Guild",)
 
@@ -95,6 +98,7 @@ if TYPE_CHECKING:
         Thread as ThreadPayload,
     )
     from .types.voice import GuildVoiceState
+    from .types.events import ScheduledEvent as ScheduledEventPayload
     from .permissions import Permissions
     from .channel import (
         VoiceChannel,
@@ -291,6 +295,7 @@ class Guild(Hashable):
         "_public_updates_channel_id",
         "_stage_instances",
         "_threads",
+        "_scheduled_events"
     )
 
     _PREMIUM_GUILD_LIMITS: ClassVar[Dict[Optional[int], _GuildLimit]] = {
@@ -417,6 +422,14 @@ class Guild(Hashable):
 
         return role
 
+    def _add_scheduled_event(self, data: ScheduledEventPayload) -> ScheduledEvent:
+        event = ScheduledEvent(data, guild=self)
+        self._scheduled_events[event.id] = event
+        return event
+
+    def _remove_scheduled_event(self, event_id: int, /) -> ScheduledEvent:
+        return self._scheduled_events.pop(event_id, None)
+
     def _from_data(self, guild: GuildPayload) -> None:
         # according to Stan, this is always available even if the guild is unavailable
         # I don't have this guarantee when someone updates the guild.
@@ -502,6 +515,10 @@ class Guild(Hashable):
 
         for obj in guild.get("voice_states", []):
             self._update_voice_state(obj, int(obj["channel_id"]))
+
+        self._scheduled_events = {}
+        for ev in guild.get('guild_scheduled_events', []):
+            self._add_scheduled_event(ev)
 
     # TODO: refactor/remove?
     def _sync(self, data: GuildPayload) -> None:
@@ -885,6 +902,32 @@ class Guild(Hashable):
             The stage instance or ``None`` if not found.
         """
         return self._stage_instances.get(stage_instance_id)
+
+    @property
+    def scheduled_events(self) -> List[ScheduledEvent]:
+        """List[:class:`ScheduledEvent`]: Returns a :class:`list` of the guild's scheduled
+        events.
+
+        .. versionadded:: 2.7
+        """
+        return list(self._scheduled_events.values())
+
+    def get_scheduled_event(self, event_id: int, /) -> Optional[ScheduledEvent]:
+        """Returns a scheduled event with the given ID.
+
+        .. versionadded:: 2.7
+
+        Parameters
+        -----------
+        event_id: :class:`int`
+            The ID to search for.
+
+        Returns
+        --------
+        Optional[:class:`ScheduledEvent`]
+            The scheduled event or ``None`` if not found.
+        """
+        return self._scheduled_events.get(event_id)
 
     @property
     def owner(self) -> Optional[Member]:
@@ -3324,3 +3367,148 @@ class Guild(Hashable):
             command_id=command_id,
         )
         return ApplicationCommandGuildPermissions(data)
+
+    # scheduled events
+
+    async def fetch_scheduled_events(self, with_user_counts: bool = False) -> List[ScheduledEvent]:
+        """|coro|
+
+        Fetches the scheduled events for this guild.
+
+        This is an API call. For general usage, consider using :meth:`.scheduled_events`
+        to get cached events.
+
+        Parameters
+        ----------
+        with_user_counts: :class:`bool`
+            Whether the event should be fetched with user counts. Defaults
+            to False
+
+        Returns
+        -------
+        List[:class:`ScheduledEvent`]
+            List of events in guild.
+
+        Raises
+        ------
+        HTTPException:
+            The fetching of events failed.
+        """
+        events = await self._state.http.get_scheduled_events(
+            guild_id=self.id,
+            with_user_counts=with_user_counts
+        )
+        return [ScheduledEvent(ev, guild=self) for ev in events]
+
+    async def fetch_scheduled_event(self, event_id: int, /) -> ScheduledEvent:
+        """|coro|
+
+        Fetches the scheduled event of provided ID from this guild.
+
+        This is an API call. For general usage, consider using :meth:`.get_scheduled_event`
+        to get event from cache.
+
+        Parameters
+        ----------
+        event_id: :class:`int`
+            The ID of event.
+
+        Returns
+        -------
+        :class:`ScheduledEvent`
+            The requested event.
+
+        Raises
+        ------
+        NotFound
+            Provided ID is not valid event.
+        HTTPException
+            The fetching failed.
+        """
+        data = await self._state.http.get_scheduled_event(
+            guild_id=self.id,
+            event_id=event_id,
+        )
+        return ScheduledEvent(data, guild=self)
+
+    async def create_scheduled_event(self, *,
+        name: str,
+        starts_at: datetime.datetime,
+        ends_at: Optional[datetime.datetime] = None,
+        description: Optional[str] = None,
+        entity_type: Optional[EntityType] = None,
+        privacy_level: EventPrivacyLevel = EventPrivacyLevel.guild_only,
+        channel: Optional[Union[VoiceChannel, StageChannel]] = None,
+        location: Optional[str] = None,
+    ):
+        """|coro|
+
+        Creates a guild scheduled event.
+
+        Requires :attr:`~Permissions.manage_events` permission in the targeted guild.
+
+        Parameters
+        ----------
+        name: :class:`str`
+            The name of event.
+        starts_at: :class:`datetime.datetime`
+            The scheduled time when the event would start.
+        ends_at: :class:`datetime.datetime`
+            The scheduled time when the event would end.
+        description: :class:`str`
+            The description of event.
+        entity_type: :class:`EntityType`
+            The type of entity where event is hosted.
+        privacy_level: :class:`EventPrivacyLevel`
+            The privacy level of this event. Defaults to :attr:`EventPrivacyLevel.guild_only`
+        channel: Union[:class:`VoiceChannel`, :class:`StageChannel`]
+            The channel that this event would be hosted in.
+        location: :class:`str`
+            External location of event if it is externally hosted.
+
+        Returns
+        -------
+        :class:`ScheduledEvent`
+            The created event.
+
+        Raises
+        ------
+        Forbidden
+            You cannot create events.
+        HTTPException
+            The creation failed.
+        """
+        if location is not None and channel is not None:
+            raise TypeError('location and channel keyword arguments cannot be mixed.')
+
+        payload = {}
+        payload['name'] = str(name)
+        payload['scheduled_start_time'] = starts_at.isoformat()
+
+        if ends_at is not None:
+            payload['scheduled_end_time'] = ends_at.isoformat()
+        if description is not None:
+            payload['description'] = str(description)
+        if entity_type is None:
+            if location is not None:
+                entity_type = EntityType.external
+            elif isinstance(channel, StageChannel):
+                entity_type = EntityType.stage_instance
+            elif isinstance(channel, VoiceChannel):
+                entity_type = EntityType.voice
+
+        payload['entity_type'] = entity_type.value
+
+        if privacy_level is not None:
+            payload['privacy_level'] = privacy_level.value
+        if channel is not None:
+            payload['channel_id'] = channel.id
+        if location is not None:
+            payload['entity_metadata'] = {}
+            payload['entity_metadata']['location'] = location
+
+        data = await self._state.http.create_scheduled_event(
+            guild_id=self.id,
+            payload=payload
+        )
+        return ScheduledEvent(data, guild=self)

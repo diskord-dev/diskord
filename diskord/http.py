@@ -93,6 +93,7 @@ if TYPE_CHECKING:
         voice,
         sticker,
         welcome_screen,
+        events,
     )
     from .types.snowflake import Snowflake, SnowflakeList
 
@@ -1737,6 +1738,47 @@ class HTTPClient:
     ) -> Response[widget.WidgetSettings]:
         return self.request(
             Route("PATCH", "/guilds/{guild_id}/widget", guild_id=guild_id), json=payload
+        )
+
+    # Guild Scheduled events management
+
+    def get_scheduled_events(self, guild_id: Snowflake, with_user_counts: bool = True) -> List[Response[events.ScheduledEvent]]:
+        return self.request(
+            Route('GET', '/guilds/{guild_id}/scheduled-events', guild_id=guild_id),
+            params={
+                'with_user_counts': with_user_counts,
+            }
+        )
+
+    def get_scheduled_event(self, guild_id: Snowflake, event_id: Snowflake) -> Response[events.ScheduledEvent]:
+        return self.request(
+            Route('GET', '/guilds/{guild_id}/scheduled-events/{event_id}', guild_id=guild_id, event_id=event_id)
+        )
+
+    def create_scheduled_event(self, guild_id: Snowflake, payload) -> Response[events.ScheduledEvent]:
+        return self.request(Route('POST', '/guilds/{guild_id}/scheduled-events', guild_id=guild_id), json=payload)
+
+    def edit_scheduled_event(self, guild_id: Snowflake, event_id: Snowflake, payload) -> Response[events.ScheduledEvent]:
+        return self.request(
+            Route('PATCH', '/guilds/{guild_id}/scheduled-events/{event_id}', guild_id=guild_id, event_id=event_id),
+            json=payload
+            )
+
+    def delete_scheduled_event(self, guild_id: Snowflake, event_id: Snowflake):
+        return self.request(
+            Route('DELETE', '/guilds/{guild_id}/scheduled-events/{event_id}', guild_id=guild_id, event_id=event_id)
+        )
+
+    def get_scheduled_event_users(self, guild_id: Snowflake, event_id: Snowflake, *,
+        with_member: bool = False,
+        limit: int = 100,
+        ) -> List[Response[User]]:
+        return self.request(
+            Route('GET', '/guilds/{guild_id}/scheduled-events/{event_id}/users', guild_id=guild_id, event_id=event_id),
+            params={
+                'with_guild_member': 'true' if with_member else 'false',
+                'limit': limit,
+            }
         )
 
     # Invite management
