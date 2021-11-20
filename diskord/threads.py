@@ -736,7 +736,7 @@ class Thread(Messageable, Hashable):
     async def fetch_starter_message(self) -> Message:
         """Fetches the message that the thread was created from.
 
-        If the thread was created from a message, the Message type will be `default`, otherwise it will be `thread_starter_message`.
+        If the thread was created from a message, the message type will be `default`, otherwise it will be `thread_starter_message`.
 
         Raises
         -------
