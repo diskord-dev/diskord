@@ -713,6 +713,23 @@ class Thread(Messageable, Hashable):
         """
         await self._state.http.delete_channel(self.id)
 
+    async def fetch_starter_message(self) -> Message:
+        """Fetches the message that the thread was created from.
+
+        If the thread was created from a message, the message type will be `default`, otherwise it will be `thread_starter_message`.
+
+        Raises
+        -------
+        HTTPException
+            Retrieving the message failed.
+
+        Returns
+        ---------
+        :class:`Message`
+            The message that the thread was created from.
+        """
+        return await self.parent.fetch_message(self.id)
+
     def get_partial_message(self, message_id: int, /) -> PartialMessage:
         """Creates a :class:`PartialMessage` from the message ID.
 
