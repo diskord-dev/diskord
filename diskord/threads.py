@@ -132,6 +132,7 @@ class Thread(Messageable, Hashable):
         "_members",
         "owner_id",
         "parent_id",
+        "_starter_message",
         "last_message_id",
         "message_count",
         "member_count",
@@ -149,6 +150,7 @@ class Thread(Messageable, Hashable):
         self._state: ConnectionState = state
         self.guild = guild
         self._members: Dict[int, ThreadMember] = {}
+        self._starter_message = None
         self._from_data(data)
 
     async def _get_channel(self):
@@ -251,7 +253,7 @@ class Thread(Messageable, Hashable):
         Optional[:class:`Message`]
             The message that the thread was created from or ``None``.
         """
-        return self._state.thread_cache_starter_messages.get(self.id)
+        return self._starter_message
 
     @property
     def last_message(self) -> Optional[Message]:
@@ -748,9 +750,8 @@ class Thread(Messageable, Hashable):
         :class:`Message`
             The message that the thread was created from.
         """
-        message = await self.parent.fetch_message(self.id)
-        self._state.thread_cache_starter_messages[self.id] = message
-        return message
+        self._starter_message = await self.parent.fetch_message(self.id)
+        return self._starter_message
 
     def get_partial_message(self, message_id: int, /) -> PartialMessage:
         """Creates a :class:`PartialMessage` from the message ID.

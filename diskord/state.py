@@ -250,7 +250,6 @@ class ConnectionState:
             cache_flags._verify_intents(intents)
 
         self.member_cache_flags: MemberCacheFlags = cache_flags
-        self.thread_cache_starter_messages = {}
         self._activity: Optional[ActivityPayload] = activity
         self._status: Optional[str] = status
         self._intents: Intents = intents
