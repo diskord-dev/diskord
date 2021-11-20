@@ -235,7 +235,7 @@ class Thread(Messageable, Hashable):
 
     @property
     def starter_message(self) -> Optional[Message]:
-        """Gets the message that the thread was created from.
+        """Gets the message that the thread was created from in cache.
 
         It can be None in case the thread was not made from a message or fetch_starter_message was never called.
 
@@ -733,10 +733,10 @@ class Thread(Messageable, Hashable):
         """
         await self._state.http.delete_channel(self.id)
 
-    async def fetch_starter_message(self) -> Optional[Message]:
+    async def fetch_starter_message(self) -> Message:
         """Fetches the message that the thread was created from.
 
-        It can be None in case the thread was not made from a message.
+        If the thread was created from a message, the Message type will be `default`, otherwise it will be `thread_starter_message`.
 
         Raises
         -------
@@ -745,8 +745,8 @@ class Thread(Messageable, Hashable):
 
         Returns
         ---------
-        Optional[:class:`Message`]
-            The message that the thread was created from or ``None`` if not found.
+        :class:`Message`
+            The message that the thread was created from.
         """
         message = await self.parent.fetch_message(self.id)
         self._state.thread_cache_starter_messages[self.id] = message
