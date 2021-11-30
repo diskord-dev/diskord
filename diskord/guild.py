@@ -2583,6 +2583,8 @@ class Guild(Hashable):
         permissions: Permissions = ...,
         colour: Union[Colour, int] = ...,
         hoist: bool = ...,
+        icon: bytes = MISSING,
+        unicode_emoji: str = MISSING,
         mentionable: bool = ...,
     ) -> Role:
         ...
@@ -2596,6 +2598,8 @@ class Guild(Hashable):
         permissions: Permissions = ...,
         color: Union[Colour, int] = ...,
         hoist: bool = ...,
+        icon: bytes = MISSING,
+        unicode_emoji: str = MISSING,
         mentionable: bool = ...,
     ) -> Role:
         ...
@@ -2608,6 +2612,8 @@ class Guild(Hashable):
         color: Union[Colour, int] = MISSING,
         colour: Union[Colour, int] = MISSING,
         hoist: bool = MISSING,
+        icon: bytes = MISSING,
+        unicode_emoji: str = MISSING,
         mentionable: bool = MISSING,
         reason: Optional[str] = None,
     ) -> Role:
@@ -2635,6 +2641,10 @@ class Guild(Hashable):
         hoist: :class:`bool`
             Indicates if the role should be shown separately in the member list.
             Defaults to ``False``.
+        icon: :class:`bytes`
+            The role's icon image (if the guild has the ROLE_ICONS feature)
+        unicode_emoji: :class:`str`
+            The role's unicode emoji as a standard emoji (if the guild has the ROLE_ICONS feature)
         mentionable: :class:`bool`
             Indicates if the role should be mentionable by others.
             Defaults to ``False``.
@@ -2669,6 +2679,12 @@ class Guild(Hashable):
 
         if hoist is not MISSING:
             fields["hoist"] = hoist
+
+        if icon is not MISSING:
+            fields["icon"] = utils._bytes_to_base64_data(icon)
+
+        if unicode_emoji is not MISSING:
+            fields["unicode_emoji"] = unicode_emoji
 
         if mentionable is not MISSING:
             fields["mentionable"] = mentionable
