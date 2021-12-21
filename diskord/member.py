@@ -417,7 +417,8 @@ class Member(diskord.abc.Messageable, _UserTag):
         self.premium_since = utils.parse_time(data.get("premium_since"))
         self._roles = utils.SnowflakeList(map(int, data["roles"]))
         self._avatar = data.get("avatar")
-        self.communication_disabled_until = utils.parse_time(data.get('communication_disabled_until'))
+        cdu = data.get('communication_disabled_until')
+        self.communication_disabled_until = utils.parse_time(cdu) if cdu is not None else None
 
     def _presence_update(
         self, data: PartialPresenceUpdate, user: UserPayload
