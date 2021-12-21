@@ -325,9 +325,8 @@ class Member(diskord.abc.Messageable, _UserTag):
         self.nick: Optional[str] = data.get("nick", None)
         self.pending: bool = data.get("pending", False)
         self._avatar: Optional[str] = data.get("avatar")
-        self.communication_disabled_until: Optional[datetime.datetime] = utils.parse_time(
-            data.get('communication_disabled_until')
-        )
+        communication_disabled_until = data.get('communication_disabled_until')
+        self.communication_disabled_until: Optional[datetime.datetime] = utils.parse_time(communication_disabled_until) if communication_disabled_until is not None else None
 
     def __str__(self) -> str:
         return str(self._user)
