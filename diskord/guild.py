@@ -252,8 +252,6 @@ class Guild(Hashable):
     premium_progress_bar_enabled: :class:`bool`
         Whether the guild has enabled progress bar to track premium subscriptions or
         server boosts count.
-    communication_disabled_members: List[:class:`Member`]
-        Returns a list of member that is timed out
     """
 
     __slots__ = (
