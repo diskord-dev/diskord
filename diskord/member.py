@@ -271,6 +271,8 @@ class Member(diskord.abc.Messageable, _UserTag):
     premium_since: Optional[:class:`datetime.datetime`]
         An aware datetime object that specifies the date and time in UTC when the member used their
         "Nitro boost" on the guild, if available. This could be ``None``.
+    communication_disabled_until: Optional[:class`datetime.datetime`]
+        Returns a timezone aware datetime object representing the time till member cannot interact with the guild.
     """
 
     __slots__ = (
@@ -285,6 +287,7 @@ class Member(diskord.abc.Messageable, _UserTag):
         "_user",
         "_state",
         "_avatar",
+        "communication_disabled_until",
     )
 
     if TYPE_CHECKING:
@@ -322,6 +325,8 @@ class Member(diskord.abc.Messageable, _UserTag):
         self.nick: Optional[str] = data.get("nick", None)
         self.pending: bool = data.get("pending", False)
         self._avatar: Optional[str] = data.get("avatar")
+        communication_disabled_until = data.get('communication_disabled_until')
+        self.communication_disabled_until: Optional[datetime.datetime] = utils.parse_time(communication_disabled_until) if communication_disabled_until is not None else None
 
     def __str__(self) -> str:
         return str(self._user)
@@ -411,6 +416,8 @@ class Member(diskord.abc.Messageable, _UserTag):
         self.premium_since = utils.parse_time(data.get("premium_since"))
         self._roles = utils.SnowflakeList(map(int, data["roles"]))
         self._avatar = data.get("avatar")
+        cdu = data.get('communication_disabled_until')
+        self.communication_disabled_until = utils.parse_time(cdu) if cdu is not None else None
 
     def _presence_update(
         self, data: PartialPresenceUpdate, user: UserPayload
@@ -686,6 +693,7 @@ class Member(diskord.abc.Messageable, _UserTag):
         suppress: bool = MISSING,
         roles: List[diskord.abc.Snowflake] = MISSING,
         voice_channel: Optional[VocalGuildChannel] = MISSING,
+        communication_disabled_until: Optional[datetime.datetime] = MISSING,
         reason: Optional[str] = None,
     ) -> Optional[Member]:
         """|coro|
@@ -694,19 +702,21 @@ class Member(diskord.abc.Messageable, _UserTag):
 
         Depending on the parameter passed, this requires different permissions listed below:
 
-        +---------------+--------------------------------------+
-        |   Parameter   |              Permission              |
-        +---------------+--------------------------------------+
-        | nick          | :attr:`Permissions.manage_nicknames` |
-        +---------------+--------------------------------------+
-        | mute          | :attr:`Permissions.mute_members`     |
-        +---------------+--------------------------------------+
-        | deafen        | :attr:`Permissions.deafen_members`   |
-        +---------------+--------------------------------------+
-        | roles         | :attr:`Permissions.manage_roles`     |
-        +---------------+--------------------------------------+
-        | voice_channel | :attr:`Permissions.move_members`     |
-        +---------------+--------------------------------------+
+        +------------------------------+--------------------------------------+
+        |          Parameter           |              Permission              |
+        +------------------------------+--------------------------------------+
+        | nick                         | :attr:`Permissions.manage_nicknames` |
+        +------------------------------+--------------------------------------+
+        | mute                         | :attr:`Permissions.mute_members`     |
+        +------------------------------+--------------------------------------+
+        | deafen                       | :attr:`Permissions.deafen_members`   |
+        +------------------------------+--------------------------------------+
+        | roles                        | :attr:`Permissions.manage_roles`     |
+        +------------------------------+--------------------------------------+
+        | voice_channel                | :attr:`Permissions.move_members`     |
+        +------------------------------+--------------------------------------+
+        | communication_disabled_until | :attr:`Permissions.moderate_members` |
+        +------------------------------+--------------------------------------+
 
         All parameters are optional.
 
@@ -736,6 +746,8 @@ class Member(diskord.abc.Messageable, _UserTag):
             Pass ``None`` to kick them from voice.
         reason: Optional[:class:`str`]
             The reason for editing this member. Shows up on the audit log.
+        communication_disabled_until: Optional[:class:`datetime.datetime`]
+            The time till member cannot interact with guild. ``None`` denotes removal of timeout.
 
         Raises
         -------
@@ -792,6 +804,11 @@ class Member(diskord.abc.Messageable, _UserTag):
         if roles is not MISSING:
             payload["roles"] = tuple(r.id for r in roles)
 
+        if communication_disabled_until is not MISSING:
+            if communication_disabled_until is None:
+                payload["communication_disabled_until"] = communication_disabled_until
+            else:
+                payload["communication_disabled_until"] = communication_disabled_until.isoformat()
         if payload:
             data = await http.edit_member(guild_id, self.id, reason=reason, **payload)
             return Member(data=data, guild=self.guild, state=self._state)
