@@ -747,7 +747,7 @@ class Member(diskord.abc.Messageable, _UserTag):
         reason: Optional[:class:`str`]
             The reason for editing this member. Shows up on the audit log.
         communication_disabled_until: Optional[:class:`datetime.datetime`]
-            Timeout the member until the specific time. Set to ``None`` to remove timeout for the member.
+            The time till member cannot interact with guild. ``None`` denotes removal of timeout.
 
         Raises
         -------
