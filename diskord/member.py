@@ -805,8 +805,10 @@ class Member(diskord.abc.Messageable, _UserTag):
             payload["roles"] = tuple(r.id for r in roles)
 
         if communication_disabled_until is not MISSING:
-            payload["communication_disabled_until"] = communication_disabled_until.isoformat() if communication_disabled_until is not None else None
-
+            if communication_disabled_until is None:
+                payload["communication_disabled_until"] = communication_disabled_until
+            else:
+                payload["communication_disabled_until"] = communication_disabled_until.isoformat()
         if payload:
             data = await http.edit_member(guild_id, self.id, reason=reason, **payload)
             return Member(data=data, guild=self.guild, state=self._state)
