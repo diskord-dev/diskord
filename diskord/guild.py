@@ -846,6 +846,14 @@ class Guild(Hashable):
             The role or ``None`` if not found.
         """
         return self._roles.get(role_id)
+    
+    @property
+    def communication_disabled_members(self) -> List[Member]:
+        """List[:class:`Member`]: Returns a list of timed out members
+        
+        This checks if :attr:`Member.communication_disabled_until` is not `None`
+        """
+        return [member for member in self.members if member.communication_disabled_until if not None]
 
     @property
     def default_role(self) -> Role:
