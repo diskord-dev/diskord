@@ -237,8 +237,11 @@ class Permissions(BaseFlags):
     @classmethod
     def voice(cls: Type[P]) -> P:
         """A factory method that creates a :class:`Permissions` with all
-        "Voice" permissions from the official Discord UI set to ``True``."""
-        return cls(0b00000011111100000000001100000000)
+        "Voice" permissions from the official Discord UI set to ``True``.
+        
+        ..versionchanged:: 2.6
+          Added :attr:`start_embedded_activities` permission."""
+        return cls(0b1000000000000011111100000000001100000000)
 
     @classmethod
     def stage(cls: Type[P]) -> P:
