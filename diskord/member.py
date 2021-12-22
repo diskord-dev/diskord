@@ -271,7 +271,7 @@ class Member(diskord.abc.Messageable, _UserTag):
     premium_since: Optional[:class:`datetime.datetime`]
         An aware datetime object that specifies the date and time in UTC when the member used their
         "Nitro boost" on the guild, if available. This could be ``None``.
-    communication_disabled_until: Optional[:class`datetime.datetime`]
+    communication_disabled_until: Optional[:class:`datetime.datetime`]
         Returns a timezone aware datetime object representing the time till member cannot interact with the guild.
     """
 
