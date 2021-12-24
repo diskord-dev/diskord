@@ -390,6 +390,7 @@ class Member(diskord.abc.Messageable, _UserTag):
         self.activities = member.activities
         self._state = member._state
         self._avatar = member._avatar
+        self.communication_disabled_until = member.communication_disabled_until
 
         # Reference will not be copied unless necessary by PRESENCE_UPDATE
         # See below
@@ -447,6 +448,11 @@ class Member(diskord.abc.Messageable, _UserTag):
             u.name, u._avatar, u.discriminator, u._public_flags = modified
             # Signal to dispatch on_user_update
             return to_return, u
+        
+    @property
+    def is_communication_disabled(self) -> bool:
+        """:class:`bool`: Checks if the member is able to interact with the guild"""
+        return self.communication_disabled_until is not None and self.communication_disabled_until > utils.utcnow()
 
     @property
     def status(self) -> Status:
