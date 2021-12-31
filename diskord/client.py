@@ -558,6 +558,7 @@ class Client:
 
         data = await self.http.static_login(token.strip())
         self._connection.user = ClientUser(state=self._connection, data=data)
+        await self.register_application_commands()
 
     async def connect(self, *, reconnect: bool = True) -> None:
         """|coro|
@@ -2275,8 +2276,3 @@ class Client:
                 )
 
         return cls(self, interaction)
-
-    # Events
-
-    async def on_connect(self):
-        await self.register_application_commands()
