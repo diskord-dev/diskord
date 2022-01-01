@@ -38,7 +38,7 @@ python -m pip install diskord[voice]
 ### Development Version
 You must have git installed to install development version. Otherwise, you can download the code.
 ```sh
-$ git clone https://github.com/nerdguyahmad/diskord
+$ git clone https://github.com/diskord-dev/diskord
 $ cd diskord
 $ python -m pip install -U .[voice]
 ```
