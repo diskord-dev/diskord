@@ -813,6 +813,31 @@ class Member(diskord.abc.Messageable, _UserTag):
             data = await http.edit_member(guild_id, self.id, reason=reason, **payload)
             return Member(data=data, guild=self.guild, state=self._state)
 
+    async def timeout(self, until: datetime.datetime, *, reason: Optional[str] = None) -> Optional[Member]:
+        """|coro|
+            
+        Timeouts this member for the specified duration.
+
+        .. versionadded:: 2.7
+
+        Parameters
+        -----------
+        until: :class:`datetime.datetime`
+            The time until when the member is timed out. ``None`` removes the timeout.
+        reason: Optional[:class:`str`]
+            The reason for timeouting this member. Shows up on the audit logs.
+
+        Raises
+        -------
+        Forbidden
+            You do not have the proper permissions to the action requested.
+        HTTPException
+            The operation failed.
+        """
+        return await self.edit(
+            communication_disabled_until=until, reason=reason
+        )
+
     async def request_to_speak(self) -> None:
         """|coro|
 
