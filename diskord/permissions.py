@@ -239,7 +239,7 @@ class Permissions(BaseFlags):
         """A factory method that creates a :class:`Permissions` with all
         "Voice" permissions from the official Discord UI set to ``True``.
         
-        ..versionchanged:: 2.6
+        ..versionchanged:: 2.7
           Added :attr:`start_embedded_activities` permission."""
         return cls(0b1000000000000011111100000000001100000000)
 
@@ -580,7 +580,7 @@ class Permissions(BaseFlags):
     def start_embedded_activities(self) -> int:
         """:class:`bool`: Returns ``True`` if a user can start embedded activities.
         
-        .. versionadded:: 2.0
+        .. versionadded:: 2.7
         """
         return 1 << 39
     
@@ -588,7 +588,7 @@ class Permissions(BaseFlags):
     def moderate_members(self) -> int:
         """:class:`bool`: Returns ``True`` if a user can timeout members
         
-        .. versionadded:: 2.0
+        .. versionadded:: 2.7
         """
         return 1 << 40
 
