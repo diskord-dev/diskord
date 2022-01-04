@@ -169,7 +169,7 @@ class Permissions(BaseFlags):
         """A factory method that creates a :class:`Permissions` with all
         permissions set to ``True``.
         """
-        return cls(0b111111111111111111111111111111111111111)
+        return cls(-1)
 
     @classmethod
     def all_channel(cls: Type[P]) -> P:
@@ -237,8 +237,11 @@ class Permissions(BaseFlags):
     @classmethod
     def voice(cls: Type[P]) -> P:
         """A factory method that creates a :class:`Permissions` with all
-        "Voice" permissions from the official Discord UI set to ``True``."""
-        return cls(0b00000011111100000000001100000000)
+        "Voice" permissions from the official Discord UI set to ``True``.
+        
+        ..versionchanged:: 2.7
+          Added :attr:`start_embedded_activities` permission."""
+        return cls(0b1000000000000011111100000000001100000000)
 
     @classmethod
     def stage(cls: Type[P]) -> P:
@@ -573,6 +576,22 @@ class Permissions(BaseFlags):
         """
         return 1 << 38
 
+    @flag_value
+    def start_embedded_activities(self) -> int:
+        """:class:`bool`: Returns ``True`` if a user can start embedded activities.
+        
+        .. versionadded:: 2.7
+        """
+        return 1 << 39
+    
+    @flag_value
+    def moderate_members(self) -> int:
+        """:class:`bool`: Returns ``True`` if a user can timeout members
+        
+        .. versionadded:: 2.7
+        """
+        return 1 << 40
+
 
 PO = TypeVar("PO", bound="PermissionOverwrite")
 
@@ -688,6 +707,8 @@ class PermissionOverwrite:
         send_messages_in_threads: Optional[bool]
         external_stickers: Optional[bool]
         use_external_stickers: Optional[bool]
+        start_embedded_activities: Optional[bool]
+        moderate_members: Optional[bool]
 
     def __init__(self, **kwargs: Optional[bool]):
         self._values: Dict[str, Optional[bool]] = {}
