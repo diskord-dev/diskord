@@ -703,6 +703,7 @@ class Client:
         """
         await self.login(token)
         await self.connect(reconnect=reconnect)
+        await self.register_application_commands()
 
     def run(self, *args: Any, **kwargs: Any) -> None:
         """A blocking call that abstracts away the event loop
@@ -2274,9 +2275,4 @@ class Client:
                     "cls parameter must be a subclass of InteractionContext."
                 )
 
-        return cls(self, interaction)
-
-    # Events
-
-    async def on_connect(self):
-        await self.register_application_commands()
+        return cls(self, interaction
