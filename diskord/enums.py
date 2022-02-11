@@ -649,6 +649,7 @@ class OptionType(Enum, comparable=True):
     role = 8
     mentionable = 9
     number = 10
+    attachment = 11
 
     # aliases
     command_group = 2
@@ -689,6 +690,8 @@ class OptionType(Enum, comparable=True):
                 return cls.role
             elif type_.__name__ == "GuildChannel":
                 return cls.channel
+            elif type_.__name__ == "Attachment":
+                return cls.attachment
 
         if option is not None:
             if option._channel_types:
