@@ -1,3 +1,6 @@
+## Discontinued
+[Discord.py](https://github.com/Rapptz/discord.py) was resumed as such this fork will no longer be receiving any updates. Please use discord.py instead.
+
 <div align="center">
     <h1>Diskord</h1>
     <img src="https://pepy.tech/badge/diskord">
