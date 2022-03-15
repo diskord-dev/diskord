@@ -33,6 +33,7 @@ from ..member import Member
 from ..user import User
 from ..errors import ApplicationCommandError, ApplicationCommandConversionError, ApplicationCommandCheckFailure
 from ..interactions import InteractionContext
+from ..message import Attachment
 
 from .command import ApplicationCommand
 from .mixins import ChildrenMixin, OptionsMixin
@@ -535,6 +536,13 @@ class SlashCommand(ApplicationCommand, ChildrenMixin, OptionsMixin):
             value = interaction.guild.get_member(
                 int(option["value"])
             ) or interaction.guild.get_role(int(option["value"]))
+            
+        elif option["type"] == OptionType.attachment.value:
+            resolved = interaction.data["resolved"]
+            value = Attachment(
+                state=self._state,
+                data=resolved["attachments"][option["value"]]
+            )
 
         return value
 
